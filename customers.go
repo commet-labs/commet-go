@@ -8,7 +8,7 @@ import (
 // CreateCustomerParams holds parameters for creating a customer.
 type CreateCustomerParams struct {
 	Email          string         `json:"billing_email"`
-	ExternalID     string         `json:"external_id,omitempty"`
+	ID             string         `json:"-"`
 	FullName       string         `json:"full_name,omitempty"`
 	Domain         string         `json:"domain,omitempty"`
 	Website        string         `json:"website,omitempty"`
@@ -53,7 +53,7 @@ type CustomersResource struct {
 func (r *CustomersResource) Create(ctx context.Context, params *CreateCustomerParams) (*ApiResponse, error) {
 	body := buildBody(map[string]any{
 		"billing_email": params.Email,
-		"external_id":   params.ExternalID,
+		"external_id":   params.ID,
 		"full_name":     params.FullName,
 		"domain":        params.Domain,
 		"website":       params.Website,
@@ -72,7 +72,7 @@ func (r *CustomersResource) CreateBatch(ctx context.Context, customers []CreateC
 	for i, c := range customers {
 		mapped[i] = buildBody(map[string]any{
 			"billing_email": c.Email,
-			"external_id":   c.ExternalID,
+			"external_id":   c.ID,
 			"full_name":     c.FullName,
 			"domain":        c.Domain,
 			"website":       c.Website,
