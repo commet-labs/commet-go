@@ -6,30 +6,26 @@ import "context"
 type SeatParams struct {
 	SeatType       string `json:"seat_type"`
 	Count          int    `json:"count"`
-	CustomerID     string `json:"customer_id,omitempty"`
-	ExternalID     string `json:"external_id,omitempty"`
+	CustomerID     string `json:"customer_id"`
 	IdempotencyKey string `json:"-"`
 }
 
 // SetAllSeatsParams holds parameters for setting all seat types at once.
 type SetAllSeatsParams struct {
 	Seats          map[string]int `json:"seats"`
-	CustomerID     string         `json:"customer_id,omitempty"`
-	ExternalID     string         `json:"external_id,omitempty"`
+	CustomerID     string         `json:"customer_id"`
 	IdempotencyKey string         `json:"-"`
 }
 
 // GetSeatBalanceParams holds parameters for retrieving a seat balance.
 type GetSeatBalanceParams struct {
 	SeatType   string `json:"seat_type"`
-	CustomerID string `json:"customer_id,omitempty"`
-	ExternalID string `json:"external_id,omitempty"`
+	CustomerID string `json:"customer_id"`
 }
 
 // GetAllSeatBalancesParams holds parameters for retrieving all seat balances.
 type GetAllSeatBalancesParams struct {
-	CustomerID string `json:"customer_id,omitempty"`
-	ExternalID string `json:"external_id,omitempty"`
+	CustomerID string `json:"customer_id"`
 }
 
 // SeatsResource provides access to seat operations.
@@ -43,7 +39,6 @@ func (r *SeatsResource) Add(ctx context.Context, params *SeatParams) (*ApiRespon
 		"seat_type":   params.SeatType,
 		"count":       params.Count,
 		"customer_id": params.CustomerID,
-		"external_id": params.ExternalID,
 	})
 	return r.http.post(ctx, "/seats", body, params.IdempotencyKey)
 }
@@ -54,7 +49,6 @@ func (r *SeatsResource) Remove(ctx context.Context, params *SeatParams) (*ApiRes
 		"seat_type":   params.SeatType,
 		"count":       params.Count,
 		"customer_id": params.CustomerID,
-		"external_id": params.ExternalID,
 	})
 	return r.http.delete(ctx, "/seats", body, params.IdempotencyKey)
 }
@@ -65,7 +59,6 @@ func (r *SeatsResource) Set(ctx context.Context, params *SeatParams) (*ApiRespon
 		"seat_type":   params.SeatType,
 		"count":       params.Count,
 		"customer_id": params.CustomerID,
-		"external_id": params.ExternalID,
 	})
 	return r.http.put(ctx, "/seats", body, params.IdempotencyKey)
 }
@@ -75,7 +68,6 @@ func (r *SeatsResource) SetAll(ctx context.Context, params *SetAllSeatsParams) (
 	body := buildBody(map[string]any{
 		"seats":       params.Seats,
 		"customer_id": params.CustomerID,
-		"external_id": params.ExternalID,
 	})
 	return r.http.put(ctx, "/seats/bulk", body, params.IdempotencyKey)
 }
@@ -88,9 +80,6 @@ func (r *SeatsResource) GetBalance(ctx context.Context, params *GetSeatBalancePa
 	if params.CustomerID != "" {
 		queryParams["customer_id"] = params.CustomerID
 	}
-	if params.ExternalID != "" {
-		queryParams["external_id"] = params.ExternalID
-	}
 	return r.http.get(ctx, "/seats/balance", queryParams)
 }
 
@@ -100,9 +89,6 @@ func (r *SeatsResource) GetAllBalances(ctx context.Context, params *GetAllSeatBa
 	if params != nil {
 		if params.CustomerID != "" {
 			queryParams["customer_id"] = params.CustomerID
-		}
-		if params.ExternalID != "" {
-			queryParams["external_id"] = params.ExternalID
 		}
 	}
 	return r.http.get(ctx, "/seats/balances", queryParams)

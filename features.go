@@ -11,16 +11,16 @@ type FeaturesResource struct {
 }
 
 // Get retrieves a feature by code for a customer.
-func (r *FeaturesResource) Get(ctx context.Context, code string, externalID string) (*ApiResponse, error) {
+func (r *FeaturesResource) Get(ctx context.Context, code string, customerID string) (*ApiResponse, error) {
 	return r.http.get(ctx, fmt.Sprintf("/features/%s", code), map[string]string{
-		"external_id": externalID,
+		"customer_id": customerID,
 	})
 }
 
 // Check checks if a customer has access to a feature, returning an ApiResponse with data containing "allowed" bool.
-func (r *FeaturesResource) Check(ctx context.Context, code string, externalID string) (*ApiResponse, error) {
+func (r *FeaturesResource) Check(ctx context.Context, code string, customerID string) (*ApiResponse, error) {
 	result, err := r.http.get(ctx, fmt.Sprintf("/features/%s", code), map[string]string{
-		"external_id": externalID,
+		"customer_id": customerID,
 	})
 	if err != nil {
 		return nil, err
@@ -52,16 +52,16 @@ func (r *FeaturesResource) Check(ctx context.Context, code string, externalID st
 }
 
 // CanUse checks if a customer can use a feature.
-func (r *FeaturesResource) CanUse(ctx context.Context, code string, externalID string) (*ApiResponse, error) {
+func (r *FeaturesResource) CanUse(ctx context.Context, code string, customerID string) (*ApiResponse, error) {
 	return r.http.get(ctx, fmt.Sprintf("/features/%s", code), map[string]string{
-		"external_id": externalID,
+		"customer_id": customerID,
 		"action":      "canUse",
 	})
 }
 
 // List retrieves all features for a customer.
-func (r *FeaturesResource) List(ctx context.Context, externalID string) (*ApiResponse, error) {
+func (r *FeaturesResource) List(ctx context.Context, customerID string) (*ApiResponse, error) {
 	return r.http.get(ctx, "/features", map[string]string{
-		"external_id": externalID,
+		"customer_id": customerID,
 	})
 }

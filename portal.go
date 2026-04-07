@@ -5,7 +5,6 @@ import "context"
 // GetPortalURLParams holds parameters for requesting a portal URL.
 type GetPortalURLParams struct {
 	CustomerID     string `json:"customer_id,omitempty"`
-	ExternalID     string `json:"external_id,omitempty"`
 	Email          string `json:"email,omitempty"`
 	IdempotencyKey string `json:"-"`
 }
@@ -19,7 +18,6 @@ type PortalResource struct {
 func (r *PortalResource) GetURL(ctx context.Context, params *GetPortalURLParams) (*ApiResponse, error) {
 	body := buildBody(map[string]any{
 		"customer_id": params.CustomerID,
-		"external_id": params.ExternalID,
 		"email":       params.Email,
 	})
 	return r.http.post(ctx, "/portal/request-access", body, params.IdempotencyKey)

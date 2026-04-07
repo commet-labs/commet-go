@@ -8,7 +8,6 @@ import (
 // CreateSubscriptionParams holds parameters for creating a subscription.
 type CreateSubscriptionParams struct {
 	CustomerID      string         `json:"customer_id,omitempty"`
-	ExternalID      string         `json:"external_id,omitempty"`
 	PlanCode        string         `json:"plan_code,omitempty"`
 	PlanID          string         `json:"plan_id,omitempty"`
 	BillingInterval string         `json:"billing_interval,omitempty"`
@@ -36,7 +35,6 @@ type SubscriptionsResource struct {
 func (r *SubscriptionsResource) Create(ctx context.Context, params *CreateSubscriptionParams) (*ApiResponse, error) {
 	body := buildBody(map[string]any{
 		"customer_id":      params.CustomerID,
-		"external_id":      params.ExternalID,
 		"plan_code":        params.PlanCode,
 		"plan_id":          params.PlanID,
 		"billing_interval": params.BillingInterval,
@@ -49,9 +47,9 @@ func (r *SubscriptionsResource) Create(ctx context.Context, params *CreateSubscr
 	return r.http.post(ctx, "/subscriptions", body, params.IdempotencyKey)
 }
 
-// Get retrieves the active subscription for a customer by external ID.
-func (r *SubscriptionsResource) Get(ctx context.Context, externalID string) (*ApiResponse, error) {
-	return r.http.get(ctx, "/subscriptions/active", map[string]string{"external_id": externalID})
+// Get retrieves the active subscription for a customer.
+func (r *SubscriptionsResource) Get(ctx context.Context, customerID string) (*ApiResponse, error) {
+	return r.http.get(ctx, "/subscriptions/active", map[string]string{"customer_id": customerID})
 }
 
 // Cancel cancels a subscription.

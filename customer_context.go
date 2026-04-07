@@ -3,7 +3,7 @@ package commet
 import "context"
 
 // CustomerContext provides customer-scoped API access.
-// All operations are automatically scoped to the customer's external ID.
+// All operations are automatically scoped to the customer ID.
 type CustomerContext struct {
 	Features     *CustomerFeatures
 	Seats        *CustomerSeats
@@ -14,33 +14,33 @@ type CustomerContext struct {
 
 // CustomerFeatures wraps FeaturesResource scoped to a customer.
 type CustomerFeatures struct {
-	externalID string
+	customerID string
 	resource   *FeaturesResource
 }
 
 // Get retrieves a feature by code.
 func (f *CustomerFeatures) Get(ctx context.Context, code string) (*ApiResponse, error) {
-	return f.resource.Get(ctx, code, f.externalID)
+	return f.resource.Get(ctx, code, f.customerID)
 }
 
 // Check checks if the customer has access to a feature.
 func (f *CustomerFeatures) Check(ctx context.Context, code string) (*ApiResponse, error) {
-	return f.resource.Check(ctx, code, f.externalID)
+	return f.resource.Check(ctx, code, f.customerID)
 }
 
 // CanUse checks if the customer can use a feature.
 func (f *CustomerFeatures) CanUse(ctx context.Context, code string) (*ApiResponse, error) {
-	return f.resource.CanUse(ctx, code, f.externalID)
+	return f.resource.CanUse(ctx, code, f.customerID)
 }
 
 // List retrieves all features for the customer.
 func (f *CustomerFeatures) List(ctx context.Context) (*ApiResponse, error) {
-	return f.resource.List(ctx, f.externalID)
+	return f.resource.List(ctx, f.customerID)
 }
 
 // CustomerSeats wraps SeatsResource scoped to a customer.
 type CustomerSeats struct {
-	externalID string
+	customerID string
 	resource   *SeatsResource
 }
 
@@ -49,7 +49,7 @@ func (s *CustomerSeats) Add(ctx context.Context, seatType string, count int) (*A
 	return s.resource.Add(ctx, &SeatParams{
 		SeatType:   seatType,
 		Count:      count,
-		ExternalID: s.externalID,
+		CustomerID: s.customerID,
 	})
 }
 
@@ -58,7 +58,7 @@ func (s *CustomerSeats) Remove(ctx context.Context, seatType string, count int) 
 	return s.resource.Remove(ctx, &SeatParams{
 		SeatType:   seatType,
 		Count:      count,
-		ExternalID: s.externalID,
+		CustomerID: s.customerID,
 	})
 }
 
@@ -67,7 +67,7 @@ func (s *CustomerSeats) Set(ctx context.Context, seatType string, count int) (*A
 	return s.resource.Set(ctx, &SeatParams{
 		SeatType:   seatType,
 		Count:      count,
-		ExternalID: s.externalID,
+		CustomerID: s.customerID,
 	})
 }
 
@@ -75,13 +75,13 @@ func (s *CustomerSeats) Set(ctx context.Context, seatType string, count int) (*A
 func (s *CustomerSeats) GetBalance(ctx context.Context, seatType string) (*ApiResponse, error) {
 	return s.resource.GetBalance(ctx, &GetSeatBalanceParams{
 		SeatType:   seatType,
-		ExternalID: s.externalID,
+		CustomerID: s.customerID,
 	})
 }
 
 // CustomerUsage wraps UsageResource scoped to a customer.
 type CustomerUsage struct {
-	externalID string
+	customerID string
 	resource   *UsageResource
 }
 
@@ -89,7 +89,7 @@ type CustomerUsage struct {
 func (u *CustomerUsage) Track(ctx context.Context, feature string, opts ...TrackOption) (*ApiResponse, error) {
 	params := &TrackUsageParams{
 		Feature:    feature,
-		ExternalID: u.externalID,
+		CustomerID: u.customerID,
 	}
 	for _, opt := range opts {
 		opt(params)
@@ -116,24 +116,24 @@ func WithProperties(properties map[string]string) TrackOption {
 
 // CustomerSubscription wraps SubscriptionsResource scoped to a customer.
 type CustomerSubscription struct {
-	externalID string
+	customerID string
 	resource   *SubscriptionsResource
 }
 
 // Get retrieves the active subscription for the customer.
 func (sub *CustomerSubscription) Get(ctx context.Context) (*ApiResponse, error) {
-	return sub.resource.Get(ctx, sub.externalID)
+	return sub.resource.Get(ctx, sub.customerID)
 }
 
 // CustomerPortal wraps PortalResource scoped to a customer.
 type CustomerPortal struct {
-	externalID string
+	customerID string
 	resource   *PortalResource
 }
 
 // GetURL requests a portal access URL for the customer.
 func (p *CustomerPortal) GetURL(ctx context.Context) (*ApiResponse, error) {
 	return p.resource.GetURL(ctx, &GetPortalURLParams{
-		ExternalID: p.externalID,
+		CustomerID: p.customerID,
 	})
 }

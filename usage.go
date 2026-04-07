@@ -8,8 +8,7 @@ import (
 // TrackUsageParams holds parameters for tracking a usage event.
 type TrackUsageParams struct {
 	Feature          string            `json:"feature"`
-	CustomerID       string            `json:"customer_id,omitempty"`
-	ExternalID       string            `json:"external_id,omitempty"`
+	CustomerID       string            `json:"customer_id"`
 	Value            *int              `json:"value,omitempty"`
 	Model            string            `json:"model,omitempty"`
 	InputTokens      *int              `json:"input_tokens,omitempty"`
@@ -32,16 +31,6 @@ func (r *UsageResource) Track(ctx context.Context, params *TrackUsageParams) (*A
 	return r.http.post(ctx, "/usage/events", body, params.IdempotencyKey)
 }
 
-// TrackBatch records multiple usage events in a single request.
-func (r *UsageResource) TrackBatch(ctx context.Context, events []TrackUsageParams, idempotencyKey string) (*ApiResponse, error) {
-	mapped := make([]any, len(events))
-	for i, evt := range events {
-		mapped[i] = buildUsageBody(&evt)
-	}
-	body := map[string]any{"events": mapped}
-	return r.http.post(ctx, "/usage/events/batch", body, idempotencyKey)
-}
-
 func buildUsageBody(params *TrackUsageParams) map[string]any {
 	var props []any
 	if params.Properties != nil {
@@ -59,7 +48,6 @@ func buildUsageBody(params *TrackUsageParams) map[string]any {
 	body := buildBody(map[string]any{
 		"feature":        params.Feature,
 		"customer_id":    params.CustomerID,
-		"external_id":    params.ExternalID,
 		"idempotency_key": params.IdempotencyKey,
 		"timestamp":      timestamp,
 		"properties":     props,

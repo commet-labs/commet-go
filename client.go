@@ -110,13 +110,13 @@ func (c *Client) Close() {
 }
 
 // Customer returns a customer-scoped context for cleaner API usage.
-func (c *Client) Customer(externalID string) *CustomerContext {
+func (c *Client) Customer(customerID string) *CustomerContext {
 	return &CustomerContext{
-		Features:     &CustomerFeatures{externalID: externalID, resource: c.Features},
-		Seats:        &CustomerSeats{externalID: externalID, resource: c.Seats},
-		Usage:        &CustomerUsage{externalID: externalID, resource: c.Usage},
-		Subscription: &CustomerSubscription{externalID: externalID, resource: c.Subscriptions},
-		Portal:       &CustomerPortal{externalID: externalID, resource: c.Portal},
+		Features:     &CustomerFeatures{customerID: customerID, resource: c.Features},
+		Seats:        &CustomerSeats{customerID: customerID, resource: c.Seats},
+		Usage:        &CustomerUsage{customerID: customerID, resource: c.Usage},
+		Subscription: &CustomerSubscription{customerID: customerID, resource: c.Subscriptions},
+		Portal:       &CustomerPortal{customerID: customerID, resource: c.Portal},
 	}
 }
 

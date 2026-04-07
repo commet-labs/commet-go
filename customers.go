@@ -22,21 +22,22 @@ type CreateCustomerParams struct {
 
 // UpdateCustomerParams holds parameters for updating a customer.
 type UpdateCustomerParams struct {
-	Email      string         `json:"billing_email,omitempty"`
-	ExternalID string         `json:"external_id,omitempty"`
-	FullName   string         `json:"full_name,omitempty"`
-	Domain     string         `json:"domain,omitempty"`
-	Website    string         `json:"website,omitempty"`
-	Timezone   string         `json:"timezone,omitempty"`
-	Language   string         `json:"language,omitempty"`
-	Industry   string         `json:"industry,omitempty"`
-	Metadata   map[string]any `json:"metadata,omitempty"`
-	IdempotencyKey string     `json:"-"`
+	Email      string            `json:"billing_email,omitempty"`
+	ExternalID string            `json:"external_id,omitempty"`
+	FullName   string            `json:"full_name,omitempty"`
+	Domain     string            `json:"domain,omitempty"`
+	Website    string            `json:"website,omitempty"`
+	Timezone   string            `json:"timezone,omitempty"`
+	Language   string            `json:"language,omitempty"`
+	Industry   string            `json:"industry,omitempty"`
+	Metadata   map[string]any    `json:"metadata,omitempty"`
+	Address    map[string]string `json:"address,omitempty"`
+	IdempotencyKey string        `json:"-"`
 }
 
 // ListCustomersParams holds parameters for listing customers.
 type ListCustomersParams struct {
-	ExternalID string `json:"external_id,omitempty"`
+	CustomerID string `json:"customer_id,omitempty"`
 	IsActive   *bool  `json:"is_active,omitempty"`
 	Search     string `json:"search,omitempty"`
 	Limit      *int   `json:"limit,omitempty"`
@@ -103,6 +104,7 @@ func (r *CustomersResource) Update(ctx context.Context, customerID string, param
 		"language":      params.Language,
 		"industry":      params.Industry,
 		"metadata":      params.Metadata,
+		"address":       params.Address,
 	})
 	return r.http.put(ctx, fmt.Sprintf("/customers/%s", customerID), body, params.IdempotencyKey)
 }
@@ -111,8 +113,8 @@ func (r *CustomersResource) Update(ctx context.Context, customerID string, param
 func (r *CustomersResource) List(ctx context.Context, params *ListCustomersParams) (*ApiResponse, error) {
 	queryParams := map[string]string{}
 	if params != nil {
-		if params.ExternalID != "" {
-			queryParams["external_id"] = params.ExternalID
+		if params.CustomerID != "" {
+			queryParams["customer_id"] = params.CustomerID
 		}
 		if params.IsActive != nil {
 			queryParams["is_active"] = fmt.Sprintf("%t", *params.IsActive)
