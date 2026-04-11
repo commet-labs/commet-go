@@ -5,7 +5,6 @@ import (
 	"time"
 )
 
-// TrackUsageParams holds parameters for tracking a usage event.
 type TrackUsageParams struct {
 	Feature          string            `json:"feature"`
 	CustomerID       string            `json:"customer_id"`
@@ -20,15 +19,13 @@ type TrackUsageParams struct {
 	Properties       map[string]string `json:"properties,omitempty"`
 }
 
-// UsageResource provides access to usage tracking operations.
 type UsageResource struct {
 	http *httpClient
 }
 
-// Track records a usage event.
-func (r *UsageResource) Track(ctx context.Context, params *TrackUsageParams) (*ApiResponse, error) {
+func (r *UsageResource) Track(ctx context.Context, params *TrackUsageParams) (*ApiResponse[UsageEvent], error) {
 	body := buildUsageBody(params)
-	return r.http.post(ctx, "/usage/events", body, params.IdempotencyKey)
+	return parseResponse[UsageEvent](r.http.post(ctx, "/usage/events", body, params.IdempotencyKey))
 }
 
 func buildUsageBody(params *TrackUsageParams) map[string]any {
@@ -46,11 +43,11 @@ func buildUsageBody(params *TrackUsageParams) map[string]any {
 	}
 
 	body := buildBody(map[string]any{
-		"feature":        params.Feature,
-		"customer_id":    params.CustomerID,
+		"feature":         params.Feature,
+		"customer_id":     params.CustomerID,
 		"idempotency_key": params.IdempotencyKey,
-		"timestamp":      timestamp,
-		"properties":     props,
+		"timestamp":       timestamp,
+		"properties":      props,
 	})
 
 	if params.Model != "" {

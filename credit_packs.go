@@ -2,12 +2,10 @@ package commet
 
 import "context"
 
-// CreditPacksResource provides access to credit pack operations.
 type CreditPacksResource struct {
 	http *httpClient
 }
 
-// List retrieves all available credit packs.
-func (r *CreditPacksResource) List(ctx context.Context) (*ApiResponse, error) {
-	return r.http.get(ctx, "/credit-packs", nil)
+func (r *CreditPacksResource) List(ctx context.Context) (*ApiResponse[[]CreditPack], error) {
+	return parseResponse[[]CreditPack](r.http.get(ctx, "/credit-packs", nil))
 }

@@ -5,7 +5,6 @@ import (
 	"fmt"
 )
 
-// CreateSubscriptionParams holds parameters for creating a subscription.
 type CreateSubscriptionParams struct {
 	CustomerID      string         `json:"customer_id,omitempty"`
 	PlanCode        string         `json:"plan_code,omitempty"`
@@ -19,20 +18,17 @@ type CreateSubscriptionParams struct {
 	IdempotencyKey  string         `json:"-"`
 }
 
-// CancelSubscriptionParams holds parameters for cancelling a subscription.
 type CancelSubscriptionParams struct {
 	Reason         string `json:"reason,omitempty"`
 	Immediate      *bool  `json:"immediate,omitempty"`
 	IdempotencyKey string `json:"-"`
 }
 
-// SubscriptionsResource provides access to subscription operations.
 type SubscriptionsResource struct {
 	http *httpClient
 }
 
-// Create creates a new subscription.
-func (r *SubscriptionsResource) Create(ctx context.Context, params *CreateSubscriptionParams) (*ApiResponse, error) {
+func (r *SubscriptionsResource) Create(ctx context.Context, params *CreateSubscriptionParams) (*ApiResponse[Subscription], error) {
 	body := buildBody(map[string]any{
 		"customer_id":      params.CustomerID,
 		"plan_code":        params.PlanCode,
@@ -44,23 +40,17 @@ func (r *SubscriptionsResource) Create(ctx context.Context, params *CreateSubscr
 		"start_date":       params.StartDate,
 		"success_url":      params.SuccessURL,
 	})
-	return r.http.post(ctx, "/subscriptions", body, params.IdempotencyKey)
+	return parseResponse[Subscription](r.http.post(ctx, "/subscriptions", body, params.IdempotencyKey))
 }
 
-// Get retrieves the active subscription for a customer.
-func (r *SubscriptionsResource) Get(ctx context.Context, customerID string) (*ApiResponse, error) {
-	return r.http.get(ctx, "/subscriptions/active", map[string]string{"customer_id": customerID})
+func (r *SubscriptionsResource) Get(ctx context.Context, customerID string) (*ApiResponse[ActiveSubscription], error) {
+	return parseResponse[ActiveSubscription](r.http.get(ctx, "/subscriptions/active", map[string]string{"customer_id": customerID}))
 }
 
-// Cancel cancels a subscription.
-func (r *SubscriptionsResource) Cancel(ctx context.Context, subscriptionID string, params *CancelSubscriptionParams) (*ApiResponse, error) {
+func (r *SubscriptionsResource) Cancel(ctx context.Context, subscriptionID string, params *CancelSubscriptionParams) (*ApiResponse[Subscription], error) {
 	body := buildBody(map[string]any{
 		"reason":    params.Reason,
 		"immediate": params.Immediate,
 	})
-	idempotencyKey := ""
-	if params != nil {
-		idempotencyKey = params.IdempotencyKey
-	}
-	return r.http.post(ctx, fmt.Sprintf("/subscriptions/%s/cancel", subscriptionID), body, idempotencyKey)
+	return parseResponse[Subscription](r.http.post(ctx, fmt.Sprintf("/subscriptions/%s/cancel", subscriptionID), body, params.IdempotencyKey))
 }

@@ -46,15 +46,15 @@ func WithRetries(retries int) Option {
 
 // Client is the Commet SDK client.
 type Client struct {
-	Customers     *CustomersResource
-	Plans         *PlansResource
-	Subscriptions *SubscriptionsResource
-	Usage         *UsageResource
-	Seats         *SeatsResource
-	Features      *FeaturesResource
-	Portal        *PortalResource
-	CreditPacks   *CreditPacksResource
-	Webhooks      *Webhooks
+	Customers     Customers
+	Plans         Plans
+	Subscriptions Subscriptions
+	Usage         Usage
+	Seats         Seats
+	Features      Features
+	Portal        Portal
+	CreditPacks   CreditPacks
+	Webhooks      WebhookVerifier
 
 	http        *httpClient
 	environment Environment

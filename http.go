@@ -15,7 +15,7 @@ import (
 	"unicode"
 )
 
-const version = "0.1.0"
+const version = "1.9.0"
 
 var baseURLs = map[Environment]string{
 	Production: "https://commet.co",
@@ -51,7 +51,7 @@ func (h *httpClient) close() {
 	h.client.CloseIdleConnections()
 }
 
-func (h *httpClient) get(ctx context.Context, endpoint string, params map[string]string) (*ApiResponse, error) {
+func (h *httpClient) get(ctx context.Context, endpoint string, params map[string]string) (*rawApiResponse, error) {
 	cleanParams := make(map[string]string)
 	for k, v := range params {
 		if v != "" {
@@ -61,19 +61,19 @@ func (h *httpClient) get(ctx context.Context, endpoint string, params map[string
 	return h.request(ctx, http.MethodGet, endpoint, nil, cleanParams, "")
 }
 
-func (h *httpClient) post(ctx context.Context, endpoint string, body map[string]any, idempotencyKey string) (*ApiResponse, error) {
+func (h *httpClient) post(ctx context.Context, endpoint string, body map[string]any, idempotencyKey string) (*rawApiResponse, error) {
 	return h.request(ctx, http.MethodPost, endpoint, body, nil, idempotencyKey)
 }
 
-func (h *httpClient) put(ctx context.Context, endpoint string, body map[string]any, idempotencyKey string) (*ApiResponse, error) {
+func (h *httpClient) put(ctx context.Context, endpoint string, body map[string]any, idempotencyKey string) (*rawApiResponse, error) {
 	return h.request(ctx, http.MethodPut, endpoint, body, nil, idempotencyKey)
 }
 
-func (h *httpClient) delete(ctx context.Context, endpoint string, body map[string]any, idempotencyKey string) (*ApiResponse, error) {
+func (h *httpClient) delete(ctx context.Context, endpoint string, body map[string]any, idempotencyKey string) (*rawApiResponse, error) {
 	return h.request(ctx, http.MethodDelete, endpoint, body, nil, idempotencyKey)
 }
 
-func (h *httpClient) request(ctx context.Context, method string, endpoint string, body map[string]any, params map[string]string, idempotencyKey string) (*ApiResponse, error) {
+func (h *httpClient) request(ctx context.Context, method string, endpoint string, body map[string]any, params map[string]string, idempotencyKey string) (*rawApiResponse, error) {
 	headers := map[string]string{}
 	if method == http.MethodPost {
 		if idempotencyKey != "" {
@@ -96,7 +96,7 @@ func (h *httpClient) request(ctx context.Context, method string, endpoint string
 	return h.execute(ctx, method, endpoint, jsonBody, params, headers, 1)
 }
 
-func (h *httpClient) execute(ctx context.Context, method string, endpoint string, jsonBody []byte, params map[string]string, headers map[string]string, attempt int) (*ApiResponse, error) {
+func (h *httpClient) execute(ctx context.Context, method string, endpoint string, jsonBody []byte, params map[string]string, headers map[string]string, attempt int) (*rawApiResponse, error) {
 	fullURL := h.baseURL + endpoint
 	if len(params) > 0 {
 		query := url.Values{}
@@ -144,9 +144,6 @@ func (h *httpClient) execute(ctx context.Context, method string, endpoint string
 	}
 
 	if len(respBody) == 0 {
-		if resp.StatusCode == 404 {
-			return &ApiResponse{Success: false, Code: "not_found", Message: "Resource not found"}, nil
-		}
 		return nil, &CommetError{
 			Message:    fmt.Sprintf("Empty response with status %d", resp.StatusCode),
 			StatusCode: resp.StatusCode,
@@ -156,9 +153,6 @@ func (h *httpClient) execute(ctx context.Context, method string, endpoint string
 
 	var rawData map[string]any
 	if err := json.Unmarshal(respBody, &rawData); err != nil {
-		if resp.StatusCode == 404 {
-			return &ApiResponse{Success: false, Code: "not_found", Message: "Resource not found"}, nil
-		}
 		return nil, &CommetError{
 			Message:    fmt.Sprintf("Invalid JSON response: %d", resp.StatusCode),
 			StatusCode: resp.StatusCode,
@@ -172,12 +166,16 @@ func (h *httpClient) execute(ctx context.Context, method string, endpoint string
 
 	converted := convertKeys(rawData, toSnake).(map[string]any)
 
-	apiResp := &ApiResponse{Success: true}
+	apiResp := &rawApiResponse{Success: true}
 	if v, ok := converted["success"].(bool); ok {
 		apiResp.Success = v
 	}
 	if v, ok := converted["data"]; ok {
-		apiResp.Data = v
+		dataBytes, err := json.Marshal(v)
+		if err != nil {
+			return nil, fmt.Errorf("commet: failed to re-marshal data: %w", err)
+		}
+		apiResp.Data = dataBytes
 	}
 	if v, ok := converted["code"].(string); ok {
 		apiResp.Code = v
@@ -193,6 +191,28 @@ func (h *httpClient) execute(ctx context.Context, method string, endpoint string
 	}
 
 	return apiResp, nil
+}
+
+func parseResponse[T any](raw *rawApiResponse, err error) (*ApiResponse[T], error) {
+	if err != nil {
+		return nil, err
+	}
+
+	result := &ApiResponse[T]{
+		Success:    raw.Success,
+		Code:       raw.Code,
+		Message:    raw.Message,
+		HasMore:    raw.HasMore,
+		NextCursor: raw.NextCursor,
+	}
+
+	if len(raw.Data) > 0 {
+		if err := json.Unmarshal(raw.Data, &result.Data); err != nil {
+			return nil, fmt.Errorf("commet: failed to unmarshal response data: %w", err)
+		}
+	}
+
+	return result, nil
 }
 
 func (h *httpClient) handleError(statusCode int, data map[string]any) error {

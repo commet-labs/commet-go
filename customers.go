@@ -5,37 +5,34 @@ import (
 	"fmt"
 )
 
-// CreateCustomerParams holds parameters for creating a customer.
 type CreateCustomerParams struct {
-	Email          string         `json:"billing_email"`
-	ID             string         `json:"-"`
-	FullName       string         `json:"full_name,omitempty"`
-	Domain         string         `json:"domain,omitempty"`
-	Website        string         `json:"website,omitempty"`
-	Timezone       string         `json:"timezone,omitempty"`
-	Language       string         `json:"language,omitempty"`
-	Industry       string         `json:"industry,omitempty"`
-	Metadata       map[string]any `json:"metadata,omitempty"`
+	Email          string            `json:"billing_email"`
+	ID             string            `json:"-"`
+	FullName       string            `json:"full_name,omitempty"`
+	Domain         string            `json:"domain,omitempty"`
+	Website        string            `json:"website,omitempty"`
+	Timezone       string            `json:"timezone,omitempty"`
+	Language       string            `json:"language,omitempty"`
+	Industry       string            `json:"industry,omitempty"`
+	Metadata       map[string]any    `json:"metadata,omitempty"`
 	Address        map[string]string `json:"address,omitempty"`
-	IdempotencyKey string         `json:"-"`
+	IdempotencyKey string            `json:"-"`
 }
 
-// UpdateCustomerParams holds parameters for updating a customer.
 type UpdateCustomerParams struct {
-	Email      string            `json:"billing_email,omitempty"`
-	ExternalID string            `json:"external_id,omitempty"`
-	FullName   string            `json:"full_name,omitempty"`
-	Domain     string            `json:"domain,omitempty"`
-	Website    string            `json:"website,omitempty"`
-	Timezone   string            `json:"timezone,omitempty"`
-	Language   string            `json:"language,omitempty"`
-	Industry   string            `json:"industry,omitempty"`
-	Metadata   map[string]any    `json:"metadata,omitempty"`
-	Address    map[string]string `json:"address,omitempty"`
-	IdempotencyKey string        `json:"-"`
+	Email          string            `json:"billing_email,omitempty"`
+	ExternalID     string            `json:"external_id,omitempty"`
+	FullName       string            `json:"full_name,omitempty"`
+	Domain         string            `json:"domain,omitempty"`
+	Website        string            `json:"website,omitempty"`
+	Timezone       string            `json:"timezone,omitempty"`
+	Language       string            `json:"language,omitempty"`
+	Industry       string            `json:"industry,omitempty"`
+	Metadata       map[string]any    `json:"metadata,omitempty"`
+	Address        map[string]string `json:"address,omitempty"`
+	IdempotencyKey string            `json:"-"`
 }
 
-// ListCustomersParams holds parameters for listing customers.
 type ListCustomersParams struct {
 	CustomerID string `json:"customer_id,omitempty"`
 	IsActive   *bool  `json:"is_active,omitempty"`
@@ -44,13 +41,11 @@ type ListCustomersParams struct {
 	Cursor     string `json:"cursor,omitempty"`
 }
 
-// CustomersResource provides access to customer operations.
 type CustomersResource struct {
 	http *httpClient
 }
 
-// Create creates a new customer.
-func (r *CustomersResource) Create(ctx context.Context, params *CreateCustomerParams) (*ApiResponse, error) {
+func (r *CustomersResource) Create(ctx context.Context, params *CreateCustomerParams) (*ApiResponse[Customer], error) {
 	body := buildBody(map[string]any{
 		"billing_email": params.Email,
 		"external_id":   params.ID,
@@ -63,11 +58,10 @@ func (r *CustomersResource) Create(ctx context.Context, params *CreateCustomerPa
 		"metadata":      params.Metadata,
 		"address":       params.Address,
 	})
-	return r.http.post(ctx, "/customers", body, params.IdempotencyKey)
+	return parseResponse[Customer](r.http.post(ctx, "/customers", body, params.IdempotencyKey))
 }
 
-// CreateBatch creates multiple customers in a single request.
-func (r *CustomersResource) CreateBatch(ctx context.Context, customers []CreateCustomerParams, idempotencyKey string) (*ApiResponse, error) {
+func (r *CustomersResource) CreateBatch(ctx context.Context, customers []CreateCustomerParams, idempotencyKey string) (*ApiResponse[BatchResult], error) {
 	mapped := make([]any, len(customers))
 	for i, c := range customers {
 		mapped[i] = buildBody(map[string]any{
@@ -84,16 +78,14 @@ func (r *CustomersResource) CreateBatch(ctx context.Context, customers []CreateC
 		})
 	}
 	body := map[string]any{"customers": mapped}
-	return r.http.post(ctx, "/customers/batch", body, idempotencyKey)
+	return parseResponse[BatchResult](r.http.post(ctx, "/customers/batch", body, idempotencyKey))
 }
 
-// Get retrieves a customer by ID.
-func (r *CustomersResource) Get(ctx context.Context, customerID string) (*ApiResponse, error) {
-	return r.http.get(ctx, fmt.Sprintf("/customers/%s", customerID), nil)
+func (r *CustomersResource) Get(ctx context.Context, customerID string) (*ApiResponse[Customer], error) {
+	return parseResponse[Customer](r.http.get(ctx, fmt.Sprintf("/customers/%s", customerID), nil))
 }
 
-// Update updates an existing customer.
-func (r *CustomersResource) Update(ctx context.Context, customerID string, params *UpdateCustomerParams) (*ApiResponse, error) {
+func (r *CustomersResource) Update(ctx context.Context, customerID string, params *UpdateCustomerParams) (*ApiResponse[Customer], error) {
 	body := buildBody(map[string]any{
 		"billing_email": params.Email,
 		"external_id":   params.ExternalID,
@@ -106,11 +98,10 @@ func (r *CustomersResource) Update(ctx context.Context, customerID string, param
 		"metadata":      params.Metadata,
 		"address":       params.Address,
 	})
-	return r.http.put(ctx, fmt.Sprintf("/customers/%s", customerID), body, params.IdempotencyKey)
+	return parseResponse[Customer](r.http.put(ctx, fmt.Sprintf("/customers/%s", customerID), body, params.IdempotencyKey))
 }
 
-// List retrieves a paginated list of customers.
-func (r *CustomersResource) List(ctx context.Context, params *ListCustomersParams) (*ApiResponse, error) {
+func (r *CustomersResource) List(ctx context.Context, params *ListCustomersParams) (*ApiResponse[[]Customer], error) {
 	queryParams := map[string]string{}
 	if params != nil {
 		if params.CustomerID != "" {
@@ -129,11 +120,10 @@ func (r *CustomersResource) List(ctx context.Context, params *ListCustomersParam
 			queryParams["cursor"] = params.Cursor
 		}
 	}
-	return r.http.get(ctx, "/customers", queryParams)
+	return parseResponse[[]Customer](r.http.get(ctx, "/customers", queryParams))
 }
 
-// Archive marks a customer as inactive.
-func (r *CustomersResource) Archive(ctx context.Context, customerID string, idempotencyKey string) (*ApiResponse, error) {
+func (r *CustomersResource) Archive(ctx context.Context, customerID string, idempotencyKey string) (*ApiResponse[Customer], error) {
 	body := map[string]any{"is_active": false}
-	return r.http.put(ctx, fmt.Sprintf("/customers/%s", customerID), body, idempotencyKey)
+	return parseResponse[Customer](r.http.put(ctx, fmt.Sprintf("/customers/%s", customerID), body, idempotencyKey))
 }
