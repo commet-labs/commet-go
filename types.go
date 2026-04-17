@@ -53,22 +53,37 @@ type Subscription struct {
 }
 
 type ActiveSubscription struct {
-	ID             string              `json:"id"`
-	CustomerID     string              `json:"customer_id"`
-	Plan           SubscriptionPlan    `json:"plan"`
-	Name           string              `json:"name"`
-	Description    string              `json:"description,omitempty"`
-	Status         string              `json:"status"`
-	TrialEndsAt    string              `json:"trial_ends_at,omitempty"`
-	CurrentPeriod  SubscriptionPeriod  `json:"current_period"`
-	Features       []FeatureSummary    `json:"features"`
-	StartDate      string              `json:"start_date"`
-	EndDate        string              `json:"end_date,omitempty"`
-	BillingDayOfMonth int              `json:"billing_day_of_month"`
-	NextBillingDate string             `json:"next_billing_date"`
-	CheckoutURL    string              `json:"checkout_url,omitempty"`
-	CreatedAt      string              `json:"created_at"`
-	UpdatedAt      string              `json:"updated_at"`
+	ID                string              `json:"id"`
+	CustomerID        string              `json:"customer_id"`
+	Plan              SubscriptionPlan    `json:"plan"`
+	Name              string              `json:"name"`
+	Description       string              `json:"description,omitempty"`
+	Status            string              `json:"status"`
+	ConsumptionModel  string              `json:"consumption_model"`
+	TrialEndsAt       string              `json:"trial_ends_at,omitempty"`
+	CurrentPeriod     SubscriptionPeriod  `json:"current_period"`
+	Features          []FeatureSummary    `json:"features"`
+	Credits           *CreditsSummary     `json:"credits,omitempty"`
+	Balance           *BalanceSummary     `json:"balance,omitempty"`
+	StartDate         string              `json:"start_date"`
+	EndDate           string              `json:"end_date,omitempty"`
+	BillingDayOfMonth int                 `json:"billing_day_of_month"`
+	NextBillingDate   string              `json:"next_billing_date"`
+	CheckoutURL       string              `json:"checkout_url,omitempty"`
+	CreatedAt         string              `json:"created_at"`
+	UpdatedAt         string              `json:"updated_at"`
+}
+
+type CreditsSummary struct {
+	Remaining int `json:"remaining"`
+	Included  int `json:"included"`
+	Purchased int `json:"purchased"`
+}
+
+type BalanceSummary struct {
+	Remaining int    `json:"remaining"`
+	Included  int    `json:"included"`
+	Currency  string `json:"currency"`
 }
 
 type SubscriptionPlan struct {
