@@ -21,9 +21,7 @@ import (
 )
 
 func main() {
-	client, err := commet.New("ck_xxx",
-		commet.WithEnvironment(commet.Production),
-	)
+	client, err := commet.New("ck_xxx")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -92,16 +90,6 @@ if err != nil {
 if payload["event"] == "subscription.activated" {
 	// handle activation
 }
-```
-
-## Environments
-
-The SDK defaults to `Sandbox`. Set `Production` for live operations:
-
-```go
-client, err := commet.New("ck_xxx",
-	commet.WithEnvironment(commet.Production),
-)
 ```
 
 ## License

@@ -15,12 +15,9 @@ import (
 	"unicode"
 )
 
-const version = "1.10.0"
+const version = "2.0.0"
 
-var baseURLs = map[Environment]string{
-	Production: "https://commet.co",
-	Sandbox:    "https://sandbox.commet.co",
-}
+const baseURL = "https://commet.co"
 
 var retryableStatusCodes = map[int]bool{
 	408: true,
@@ -38,10 +35,10 @@ type httpClient struct {
 	maxRetries int
 }
 
-func newHTTPClient(apiKey string, environment Environment, timeout time.Duration, retries int) *httpClient {
+func newHTTPClient(apiKey string, timeout time.Duration, retries int) *httpClient {
 	return &httpClient{
 		client:     &http.Client{Timeout: timeout},
-		baseURL:    baseURLs[environment] + "/api",
+		baseURL:    baseURL + "/api",
 		apiKey:     apiKey,
 		maxRetries: retries,
 	}

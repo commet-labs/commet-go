@@ -9,7 +9,7 @@ func TestNewClient(t *testing.T) {
 		wantErr string
 	}{
 		{
-			name:   "valid API key defaults to sandbox",
+			name:   "valid API key",
 			apiKey: "ck_test_abc123",
 		},
 		{
@@ -40,10 +40,6 @@ func TestNewClient(t *testing.T) {
 
 			if err != nil {
 				t.Fatalf("unexpected error: %v", err)
-			}
-
-			if !client.IsSandbox() {
-				t.Error("expected default environment to be sandbox")
 			}
 
 			client.Close()

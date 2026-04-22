@@ -6,28 +6,12 @@ import (
 	"time"
 )
 
-// Environment represents the target API environment.
-type Environment string
-
-const (
-	Sandbox    Environment = "sandbox"
-	Production Environment = "production"
-)
-
 // Option configures the Commet client.
 type Option func(*clientConfig)
 
 type clientConfig struct {
-	environment Environment
-	timeout     time.Duration
-	retries     int
-}
-
-// WithEnvironment sets the API environment. Defaults to Sandbox.
-func WithEnvironment(env Environment) Option {
-	return func(c *clientConfig) {
-		c.environment = env
-	}
+	timeout time.Duration
+	retries int
 }
 
 // WithTimeout sets the HTTP request timeout. Defaults to 30 seconds.
@@ -56,8 +40,7 @@ type Client struct {
 	CreditPacks   CreditPacks
 	Webhooks      WebhookVerifier
 
-	http        *httpClient
-	environment Environment
+	http *httpClient
 }
 
 // New creates a new Commet client with the given API key and options.
@@ -71,24 +54,18 @@ func New(apiKey string, opts ...Option) (*Client, error) {
 	}
 
 	cfg := &clientConfig{
-		environment: Sandbox,
-		timeout:     30 * time.Second,
-		retries:     3,
+		timeout: 30 * time.Second,
+		retries: 3,
 	}
 
 	for _, opt := range opts {
 		opt(cfg)
 	}
 
-	if _, ok := baseURLs[cfg.environment]; !ok {
-		return nil, errors.New("commet: invalid environment, must be 'sandbox' or 'production'")
-	}
-
-	h := newHTTPClient(apiKey, cfg.environment, cfg.timeout, cfg.retries)
+	h := newHTTPClient(apiKey, cfg.timeout, cfg.retries)
 
 	c := &Client{
-		http:        h,
-		environment: cfg.environment,
+		http: h,
 	}
 
 	c.Customers = &CustomersResource{http: h}
@@ -118,19 +95,4 @@ func (c *Client) Customer(customerID string) *CustomerContext {
 		Subscription: &CustomerSubscription{customerID: customerID, resource: c.Subscriptions},
 		Portal:       &CustomerPortal{customerID: customerID, resource: c.Portal},
 	}
-}
-
-// Environment returns the configured environment.
-func (c *Client) Environment() Environment {
-	return c.environment
-}
-
-// IsSandbox returns true if the client is configured for sandbox.
-func (c *Client) IsSandbox() bool {
-	return c.environment == Sandbox
-}
-
-// IsProduction returns true if the client is configured for production.
-func (c *Client) IsProduction() bool {
-	return c.environment == Production
 }
