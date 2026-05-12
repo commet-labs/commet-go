@@ -15,9 +15,11 @@ import (
 	"unicode"
 )
 
-const version = "2.0.0"
+const version = "3.0.0"
 
 const baseURL = "https://commet.co"
+
+const APIVersion = "2026-05-01"
 
 var retryableStatusCodes = map[int]bool{
 	408: true,
@@ -38,7 +40,7 @@ type httpClient struct {
 func newHTTPClient(apiKey string, timeout time.Duration, retries int) *httpClient {
 	return &httpClient{
 		client:     &http.Client{Timeout: timeout},
-		baseURL:    baseURL + "/api",
+		baseURL:    baseURL + "/api/v1",
 		apiKey:     apiKey,
 		maxRetries: retries,
 	}
@@ -114,6 +116,7 @@ func (h *httpClient) execute(ctx context.Context, method string, endpoint string
 	}
 
 	req.Header.Set("x-api-key", h.apiKey)
+	req.Header.Set("commet-version", APIVersion)
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("User-Agent", "commet-go/"+version)
 	for k, v := range headers {
