@@ -15,7 +15,7 @@ import (
 	"unicode"
 )
 
-const version = "3.0.0"
+const version = "3.1.0"
 
 const baseURL = "https://commet.co"
 
@@ -31,18 +31,21 @@ var retryableStatusCodes = map[int]bool{
 }
 
 type httpClient struct {
-	client     *http.Client
-	baseURL    string
-	apiKey     string
-	maxRetries int
+	client              *http.Client
+	baseURL             string
+	apiKey              string
+	maxRetries          int
+	telemetryEnabled    bool
+	lastRequestMetrics  *requestMetrics
 }
 
-func newHTTPClient(apiKey string, timeout time.Duration, retries int) *httpClient {
+func newHTTPClient(apiKey string, timeout time.Duration, retries int, telemetry bool) *httpClient {
 	return &httpClient{
-		client:     &http.Client{Timeout: timeout},
-		baseURL:    baseURL + "/api/v1",
-		apiKey:     apiKey,
-		maxRetries: retries,
+		client:           &http.Client{Timeout: timeout},
+		baseURL:          baseURL + "/api/v1",
+		apiKey:           apiKey,
+		maxRetries:       retries,
+		telemetryEnabled: telemetry,
 	}
 }
 
@@ -118,11 +121,19 @@ func (h *httpClient) execute(ctx context.Context, method string, endpoint string
 	req.Header.Set("x-api-key", h.apiKey)
 	req.Header.Set("commet-version", APIVersion)
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("User-Agent", "commet-go/"+version)
+	req.Header.Set("User-Agent", getUserAgent())
+	if h.telemetryEnabled {
+		req.Header.Set("commet-client-info", getClientInfoHeader())
+		if h.lastRequestMetrics != nil {
+			req.Header.Set("commet-client-telemetry", formatTelemetryHeader(*h.lastRequestMetrics))
+			h.lastRequestMetrics = nil
+		}
+	}
 	for k, v := range headers {
 		req.Header.Set(k, v)
 	}
 
+	requestStart := time.Now()
 	resp, err := h.client.Do(req)
 	if err != nil {
 		if attempt <= h.maxRetries {
@@ -188,6 +199,17 @@ func (h *httpClient) execute(ctx context.Context, method string, endpoint string
 	}
 	if v, ok := converted["next_cursor"].(string); ok {
 		apiResp.NextCursor = v
+	}
+
+	if h.telemetryEnabled {
+		requestID := resp.Header.Get("x-request-id")
+		if requestID == "" {
+			requestID = fmt.Sprintf("req_%d", time.Now().UnixMilli())
+		}
+		h.lastRequestMetrics = &requestMetrics{
+			RequestID:  requestID,
+			DurationMs: time.Since(requestStart).Milliseconds(),
+		}
 	}
 
 	return apiResp, nil

@@ -10,8 +10,9 @@ import (
 type Option func(*clientConfig)
 
 type clientConfig struct {
-	timeout time.Duration
-	retries int
+	timeout   time.Duration
+	retries   int
+	telemetry bool
 }
 
 // WithTimeout sets the HTTP request timeout. Defaults to 30 seconds.
@@ -25,6 +26,13 @@ func WithTimeout(timeout time.Duration) Option {
 func WithRetries(retries int) Option {
 	return func(c *clientConfig) {
 		c.retries = retries
+	}
+}
+
+// WithTelemetry enables or disables client telemetry headers. Defaults to true.
+func WithTelemetry(enabled bool) Option {
+	return func(c *clientConfig) {
+		c.telemetry = enabled
 	}
 }
 
@@ -54,15 +62,16 @@ func New(apiKey string, opts ...Option) (*Client, error) {
 	}
 
 	cfg := &clientConfig{
-		timeout: 30 * time.Second,
-		retries: 3,
+		timeout:   30 * time.Second,
+		retries:   3,
+		telemetry: true,
 	}
 
 	for _, opt := range opts {
 		opt(cfg)
 	}
 
-	h := newHTTPClient(apiKey, cfg.timeout, cfg.retries)
+	h := newHTTPClient(apiKey, cfg.timeout, cfg.retries, cfg.telemetry)
 
 	c := &Client{
 		http: h,
