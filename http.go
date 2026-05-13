@@ -15,11 +15,11 @@ import (
 	"unicode"
 )
 
-const version = "3.1.0"
+const version = "4.0.0"
 
 const baseURL = "https://commet.co"
 
-const APIVersion = "2026-05-01"
+const APIVersion = "2026-05-12"
 
 var retryableStatusCodes = map[int]bool{
 	408: true,

@@ -8,7 +8,6 @@ type Customers interface {
 	Get(ctx context.Context, customerID string) (*ApiResponse[Customer], error)
 	Update(ctx context.Context, customerID string, params *UpdateCustomerParams) (*ApiResponse[Customer], error)
 	List(ctx context.Context, params *ListCustomersParams) (*ApiResponse[[]Customer], error)
-	Archive(ctx context.Context, customerID string, idempotencyKey string) (*ApiResponse[Customer], error)
 }
 
 type Subscriptions interface {

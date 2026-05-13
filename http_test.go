@@ -20,7 +20,6 @@ func TestToSnake(t *testing.T) {
 		{"userID", "user_id"},
 		{"hasMore", "has_more"},
 		{"nextCursor", "next_cursor"},
-		{"isActive", "is_active"},
 		{"billingDayOfMonth", "billing_day_of_month"},
 	}
 
@@ -47,7 +46,6 @@ func TestToCamel(t *testing.T) {
 		{"", ""},
 		{"has_more", "hasMore"},
 		{"next_cursor", "nextCursor"},
-		{"is_active", "isActive"},
 		{"billing_day_of_month", "billingDayOfMonth"},
 		{"full_name", "fullName"},
 	}
@@ -171,7 +169,7 @@ func TestParseResponse(t *testing.T) {
 	t.Run("parses typed data from raw response", func(t *testing.T) {
 		raw := &rawApiResponse{
 			Success: true,
-			Data:    []byte(`{"id":"cust_123","billing_email":"test@example.com","is_active":true,"created_at":"2024-01-01","updated_at":"2024-01-01"}`),
+			Data:    []byte(`{"id":"cust_123","billing_email":"test@example.com","created_at":"2024-01-01","updated_at":"2024-01-01"}`),
 			Code:    "ok",
 			Message: "Customer created",
 		}
@@ -189,15 +187,12 @@ func TestParseResponse(t *testing.T) {
 		if resp.Data.BillingEmail != "test@example.com" {
 			t.Errorf("BillingEmail = %v, want test@example.com", resp.Data.BillingEmail)
 		}
-		if !resp.Data.IsActive {
-			t.Error("expected IsActive=true")
-		}
 	})
 
 	t.Run("parses list data", func(t *testing.T) {
 		raw := &rawApiResponse{
 			Success:    true,
-			Data:       []byte(`[{"id":"cust_1","billing_email":"a@b.com","is_active":true,"created_at":"2024-01-01","updated_at":"2024-01-01"},{"id":"cust_2","billing_email":"c@d.com","is_active":false,"created_at":"2024-01-01","updated_at":"2024-01-01"}]`),
+			Data:       []byte(`[{"id":"cust_1","billing_email":"a@b.com","created_at":"2024-01-01","updated_at":"2024-01-01"},{"id":"cust_2","billing_email":"c@d.com","created_at":"2024-01-01","updated_at":"2024-01-01"}]`),
 			HasMore:    true,
 			NextCursor: "cursor_abc",
 		}

@@ -13,7 +13,6 @@ type Customer struct {
 	Industry       string         `json:"industry,omitempty"`
 	EmployeeCount  string         `json:"employee_count,omitempty"`
 	Metadata       map[string]any `json:"metadata,omitempty"`
-	IsActive       bool           `json:"is_active"`
 	CreatedAt      string         `json:"created_at"`
 	UpdatedAt      string         `json:"updated_at"`
 }

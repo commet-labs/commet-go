@@ -35,7 +35,6 @@ type UpdateCustomerParams struct {
 
 type ListCustomersParams struct {
 	CustomerID string `json:"customer_id,omitempty"`
-	IsActive   *bool  `json:"is_active,omitempty"`
 	Search     string `json:"search,omitempty"`
 	Limit      *int   `json:"limit,omitempty"`
 	Cursor     string `json:"cursor,omitempty"`
@@ -107,9 +106,6 @@ func (r *CustomersResource) List(ctx context.Context, params *ListCustomersParam
 		if params.CustomerID != "" {
 			queryParams["customer_id"] = params.CustomerID
 		}
-		if params.IsActive != nil {
-			queryParams["is_active"] = fmt.Sprintf("%t", *params.IsActive)
-		}
 		if params.Search != "" {
 			queryParams["search"] = params.Search
 		}
@@ -121,9 +117,4 @@ func (r *CustomersResource) List(ctx context.Context, params *ListCustomersParam
 		}
 	}
 	return parseResponse[[]Customer](r.http.get(ctx, "/customers", queryParams))
-}
-
-func (r *CustomersResource) Archive(ctx context.Context, customerID string, idempotencyKey string) (*ApiResponse[Customer], error) {
-	body := map[string]any{"is_active": false}
-	return parseResponse[Customer](r.http.put(ctx, fmt.Sprintf("/customers/%s", customerID), body, idempotencyKey))
 }
