@@ -3,6 +3,8 @@ package commet
 import "context"
 
 type SeatParams struct {
+	FeatureCode    string `json:"feature_code"`
+	// Deprecated: use FeatureCode instead.
 	SeatType       string `json:"seat_type"`
 	Count          int    `json:"count"`
 	CustomerID     string `json:"customer_id"`
@@ -16,12 +18,21 @@ type SetAllSeatsParams struct {
 }
 
 type GetSeatBalanceParams struct {
-	SeatType   string `json:"seat_type"`
-	CustomerID string `json:"customer_id"`
+	FeatureCode string `json:"feature_code"`
+	// Deprecated: use FeatureCode instead.
+	SeatType    string `json:"seat_type"`
+	CustomerID  string `json:"customer_id"`
 }
 
 type GetAllSeatBalancesParams struct {
 	CustomerID string `json:"customer_id"`
+}
+
+func resolveSeatCode(featureCode, seatType string) string {
+	if featureCode != "" {
+		return featureCode
+	}
+	return seatType
 }
 
 type SeatsResource struct {
@@ -29,8 +40,9 @@ type SeatsResource struct {
 }
 
 func (r *SeatsResource) Add(ctx context.Context, params *SeatParams) (*ApiResponse[SeatEvent], error) {
+	code := resolveSeatCode(params.FeatureCode, params.SeatType)
 	body := buildBody(map[string]any{
-		"seat_type":   params.SeatType,
+		"seat_type":   code,
 		"count":       params.Count,
 		"customer_id": params.CustomerID,
 	})
@@ -38,8 +50,9 @@ func (r *SeatsResource) Add(ctx context.Context, params *SeatParams) (*ApiRespon
 }
 
 func (r *SeatsResource) Remove(ctx context.Context, params *SeatParams) (*ApiResponse[SeatEvent], error) {
+	code := resolveSeatCode(params.FeatureCode, params.SeatType)
 	body := buildBody(map[string]any{
-		"seat_type":   params.SeatType,
+		"seat_type":   code,
 		"count":       params.Count,
 		"customer_id": params.CustomerID,
 	})
@@ -47,8 +60,9 @@ func (r *SeatsResource) Remove(ctx context.Context, params *SeatParams) (*ApiRes
 }
 
 func (r *SeatsResource) Set(ctx context.Context, params *SeatParams) (*ApiResponse[SeatEvent], error) {
+	code := resolveSeatCode(params.FeatureCode, params.SeatType)
 	body := buildBody(map[string]any{
-		"seat_type":   params.SeatType,
+		"seat_type":   code,
 		"count":       params.Count,
 		"customer_id": params.CustomerID,
 	})
@@ -64,8 +78,9 @@ func (r *SeatsResource) SetAll(ctx context.Context, params *SetAllSeatsParams) (
 }
 
 func (r *SeatsResource) GetBalance(ctx context.Context, params *GetSeatBalanceParams) (*ApiResponse[SeatBalance], error) {
+	code := resolveSeatCode(params.FeatureCode, params.SeatType)
 	queryParams := map[string]string{
-		"seat_type": params.SeatType,
+		"seat_type": code,
 	}
 	if params.CustomerID != "" {
 		queryParams["customer_id"] = params.CustomerID

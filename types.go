@@ -223,6 +223,8 @@ type SeatEvent struct {
 	ID              string `json:"id"`
 	OrganizationID  string `json:"organization_id"`
 	CustomerID      string `json:"customer_id"`
+	FeatureCode     string `json:"feature_code"`
+	// Deprecated: use FeatureCode instead.
 	SeatType        string `json:"seat_type"`
 	EventType       string `json:"event_type"`
 	Quantity        int    `json:"quantity"`
