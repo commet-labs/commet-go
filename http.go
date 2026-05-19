@@ -15,7 +15,7 @@ import (
 	"unicode"
 )
 
-const version = "4.0.0"
+const version = "4.3.0"
 
 const baseURL = "https://commet.co"
 
@@ -280,8 +280,6 @@ func (h *httpClient) wait(attempt int) {
 	time.Sleep(time.Duration(delay * float64(time.Second)))
 }
 
-// -- Case conversion --
-
 func toSnake(s string) string {
 	var result strings.Builder
 	for i, r := range s {
@@ -334,8 +332,6 @@ func convertKeys(obj any, fn func(string) string) any {
 		return obj
 	}
 }
-
-// -- Helpers --
 
 func generateUUID() string {
 	b := make([]byte, 16)
