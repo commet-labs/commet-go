@@ -19,7 +19,7 @@ const version = "4.0.0"
 
 const baseURL = "https://commet.co"
 
-const APIVersion = "2026-05-12"
+const APIVersion = "2026-05-18"
 
 var retryableStatusCodes = map[int]bool{
 	408: true,
