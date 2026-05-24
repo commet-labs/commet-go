@@ -54,3 +54,7 @@ func (r *SubscriptionsResource) Cancel(ctx context.Context, subscriptionID strin
 	})
 	return parseResponse[Subscription](r.http.post(ctx, fmt.Sprintf("/subscriptions/%s/cancel", subscriptionID), body, params.IdempotencyKey))
 }
+
+func (r *SubscriptionsResource) Uncancel(ctx context.Context, subscriptionID string) (*ApiResponse[Subscription], error) {
+	return parseResponse[Subscription](r.http.post(ctx, fmt.Sprintf("/subscriptions/%s/uncancel", subscriptionID), map[string]any{}, ""))
+}
