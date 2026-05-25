@@ -19,6 +19,37 @@ type TrackUsageParams struct {
 	Properties       map[string]string `json:"properties,omitempty"`
 }
 
+type CheckUsageParams struct {
+	CustomerID  string `json:"customer_id"`
+	FeatureCode string `json:"feature_code"`
+	Quantity    int    `json:"quantity"`
+}
+
+type UsageCheckResult struct {
+	Allowed            bool    `json:"allowed"`
+	ConsumptionModel   string  `json:"consumption_model"`
+	Feature            string  `json:"feature"`
+	Quantity           int     `json:"quantity"`
+	Current            *int    `json:"current,omitempty"`
+	Remaining          *int    `json:"remaining,omitempty"`
+	Unlimited          *bool   `json:"unlimited,omitempty"`
+	Included           *int    `json:"included,omitempty"`
+	OverageEnabled     *bool   `json:"overage_enabled,omitempty"`
+	OverageUnitPrice   *float64 `json:"overage_unit_price,omitempty"`
+	CreditsPerUnit     *int    `json:"credits_per_unit,omitempty"`
+	EstimatedCredits   *int    `json:"estimated_credits,omitempty"`
+	PlanCredits        *int    `json:"plan_credits,omitempty"`
+	PurchasedCredits   *int    `json:"purchased_credits,omitempty"`
+	TotalCredits       *int    `json:"total_credits,omitempty"`
+	UnitPrice          *float64 `json:"unit_price,omitempty"`
+	EstimatedAmount    *float64 `json:"estimated_amount,omitempty"`
+	CurrentBalance     *float64 `json:"current_balance,omitempty"`
+	BlockOnExhaustion  *bool   `json:"block_on_exhaustion,omitempty"`
+	Currency           string  `json:"currency,omitempty"`
+	Reason             string  `json:"reason,omitempty"`
+	Message            string  `json:"message,omitempty"`
+}
+
 type UsageResource struct {
 	http *httpClient
 }
@@ -26,6 +57,15 @@ type UsageResource struct {
 func (r *UsageResource) Track(ctx context.Context, params *TrackUsageParams) (*ApiResponse[UsageEvent], error) {
 	body := buildUsageBody(params)
 	return parseResponse[UsageEvent](r.http.post(ctx, "/usage/events", body, params.IdempotencyKey))
+}
+
+func (r *UsageResource) Check(ctx context.Context, params *CheckUsageParams) (*ApiResponse[UsageCheckResult], error) {
+	body := buildBody(map[string]any{
+		"customer_id":  params.CustomerID,
+		"feature_code": params.FeatureCode,
+		"quantity":     params.Quantity,
+	})
+	return parseResponse[UsageCheckResult](r.http.post(ctx, "/usage/check", body, ""))
 }
 
 func buildUsageBody(params *TrackUsageParams) map[string]any {

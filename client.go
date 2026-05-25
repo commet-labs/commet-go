@@ -46,6 +46,7 @@ type Client struct {
 	Features      Features
 	Portal        Portal
 	CreditPacks   CreditPacks
+	Addons        Addons
 	Webhooks      WebhookVerifier
 
 	http *httpClient
@@ -85,6 +86,7 @@ func New(apiKey string, opts ...Option) (*Client, error) {
 	c.Features = &FeaturesResource{http: h}
 	c.Portal = &PortalResource{http: h}
 	c.CreditPacks = &CreditPacksResource{http: h}
+	c.Addons = &AddonsResource{http: h}
 	c.Webhooks = &Webhooks{}
 
 	return c, nil

@@ -14,10 +14,12 @@ type Subscriptions interface {
 	Create(ctx context.Context, params *CreateSubscriptionParams) (*ApiResponse[Subscription], error)
 	Get(ctx context.Context, customerID string) (*ApiResponse[ActiveSubscription], error)
 	Cancel(ctx context.Context, subscriptionID string, params *CancelSubscriptionParams) (*ApiResponse[Subscription], error)
+	ChangePlan(ctx context.Context, params *ChangePlanParams) (*ApiResponse[ChangePlanResult], error)
 }
 
 type Usage interface {
 	Track(ctx context.Context, params *TrackUsageParams) (*ApiResponse[UsageEvent], error)
+	Check(ctx context.Context, params *CheckUsageParams) (*ApiResponse[UsageCheckResult], error)
 }
 
 type Seats interface {
@@ -47,6 +49,10 @@ type Portal interface {
 
 type CreditPacks interface {
 	List(ctx context.Context) (*ApiResponse[[]CreditPack], error)
+}
+
+type Addons interface {
+	GetActive(ctx context.Context, customerID string) (*ApiResponse[[]ActiveAddon], error)
 }
 
 type WebhookVerifier interface {
