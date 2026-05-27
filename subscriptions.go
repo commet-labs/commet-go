@@ -66,6 +66,40 @@ type ChangePlanResult struct {
 	CheckoutURL      string              `json:"checkout_url,omitempty"`
 }
 
+type ListSubscriptionsParams struct {
+	CustomerID string `json:"customer_id,omitempty"`
+	Status     string `json:"status,omitempty"`
+	Limit      *int   `json:"limit,omitempty"`
+	Cursor     string `json:"cursor,omitempty"`
+}
+
+type PreviewChangeParams struct {
+	PlanID          string `json:"plan_id,omitempty"`
+	BillingInterval string `json:"billing_interval,omitempty"`
+}
+
+type ActivateAddonParams struct {
+	AddonID string `json:"addon_id"`
+}
+
+type DeactivateAddonParams struct {
+	AddonID string `json:"-"`
+}
+
+type AdjustBalanceParams struct {
+	Amount float64 `json:"amount"`
+	Reason string  `json:"reason,omitempty"`
+	Type   string  `json:"type,omitempty"`
+}
+
+type TopupBalanceParams struct {
+	Amount float64 `json:"amount"`
+}
+
+type PurchaseCreditsParams struct {
+	CreditPackID string `json:"credit_pack_id"`
+}
+
 type SubscriptionsResource struct {
 	http *httpClient
 }
@@ -85,7 +119,7 @@ func (r *SubscriptionsResource) Create(ctx context.Context, params *CreateSubscr
 	return parseResponse[Subscription](r.http.post(ctx, "/subscriptions", body, params.IdempotencyKey))
 }
 
-func (r *SubscriptionsResource) Get(ctx context.Context, customerID string) (*ApiResponse[ActiveSubscription], error) {
+func (r *SubscriptionsResource) GetActive(ctx context.Context, customerID string) (*ApiResponse[ActiveSubscription], error) {
 	return parseResponse[ActiveSubscription](r.http.get(ctx, "/subscriptions/active", map[string]string{"customer_id": customerID}))
 }
 
@@ -107,4 +141,65 @@ func (r *SubscriptionsResource) ChangePlan(ctx context.Context, params *ChangePl
 		"new_billing_interval": params.NewBillingInterval,
 	})
 	return parseResponse[ChangePlanResult](r.http.post(ctx, fmt.Sprintf("/subscriptions/%s/change-plan", params.SubscriptionID), body, params.IdempotencyKey))
+}
+
+func (r *SubscriptionsResource) List(ctx context.Context, params *ListSubscriptionsParams) (*ApiResponse[[]SubscriptionListItem], error) {
+	queryParams := map[string]string{}
+	if params != nil {
+		if params.CustomerID != "" {
+			queryParams["customer_id"] = params.CustomerID
+		}
+		if params.Status != "" {
+			queryParams["status"] = params.Status
+		}
+		if params.Limit != nil {
+			queryParams["limit"] = fmt.Sprintf("%d", *params.Limit)
+		}
+		if params.Cursor != "" {
+			queryParams["cursor"] = params.Cursor
+		}
+	}
+	return parseResponse[[]SubscriptionListItem](r.http.get(ctx, "/subscriptions", queryParams))
+}
+
+func (r *SubscriptionsResource) PreviewChange(ctx context.Context, subscriptionID string, params *PreviewChangeParams) (*ApiResponse[PreviewChangeResult], error) {
+	body := buildBody(map[string]any{
+		"plan_id":          params.PlanID,
+		"billing_interval": params.BillingInterval,
+	})
+	return parseResponse[PreviewChangeResult](r.http.post(ctx, fmt.Sprintf("/subscriptions/%s/preview-change", subscriptionID), body, ""))
+}
+
+func (r *SubscriptionsResource) ActivateAddon(ctx context.Context, subscriptionID string, params *ActivateAddonParams) (*ApiResponse[ActivateAddonResult], error) {
+	body := buildBody(map[string]any{
+		"addon_id": params.AddonID,
+	})
+	return parseResponse[ActivateAddonResult](r.http.post(ctx, fmt.Sprintf("/subscriptions/%s/addons", subscriptionID), body, ""))
+}
+
+func (r *SubscriptionsResource) DeactivateAddon(ctx context.Context, subscriptionID string, addonID string) (*ApiResponse[DeactivateAddonResult], error) {
+	return parseResponse[DeactivateAddonResult](r.http.delete(ctx, fmt.Sprintf("/subscriptions/%s/addons/%s", subscriptionID, addonID), nil, ""))
+}
+
+func (r *SubscriptionsResource) AdjustBalance(ctx context.Context, subscriptionID string, params *AdjustBalanceParams) (*ApiResponse[AdjustBalanceResult], error) {
+	body := buildBody(map[string]any{
+		"amount": params.Amount,
+		"reason": params.Reason,
+		"type":   params.Type,
+	})
+	return parseResponse[AdjustBalanceResult](r.http.post(ctx, fmt.Sprintf("/subscriptions/%s/balance/adjust", subscriptionID), body, ""))
+}
+
+func (r *SubscriptionsResource) TopupBalance(ctx context.Context, subscriptionID string, params *TopupBalanceParams) (*ApiResponse[TopupBalanceResult], error) {
+	body := buildBody(map[string]any{
+		"amount": params.Amount,
+	})
+	return parseResponse[TopupBalanceResult](r.http.post(ctx, fmt.Sprintf("/subscriptions/%s/balance/topup", subscriptionID), body, ""))
+}
+
+func (r *SubscriptionsResource) PurchaseCredits(ctx context.Context, subscriptionID string, params *PurchaseCreditsParams) (*ApiResponse[PurchaseCreditsResult], error) {
+	body := buildBody(map[string]any{
+		"credit_pack_id": params.CreditPackID,
+	})
+	return parseResponse[PurchaseCreditsResult](r.http.post(ctx, fmt.Sprintf("/subscriptions/%s/credits", subscriptionID), body, ""))
 }

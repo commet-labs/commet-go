@@ -2,11 +2,13 @@ package commet
 
 import "fmt"
 
-// CommetError is the base error type for all SDK errors.
 type CommetError struct {
 	Message    string
 	Code       string
+	Type       string
 	StatusCode int
+	Param      string
+	DocURL     string
 	Details    any
 }
 

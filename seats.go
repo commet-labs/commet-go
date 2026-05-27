@@ -4,8 +4,6 @@ import "context"
 
 type SeatParams struct {
 	FeatureCode    string `json:"feature_code"`
-	// Deprecated: use FeatureCode instead.
-	SeatType       string `json:"seat_type"`
 	Count          int    `json:"count"`
 	CustomerID     string `json:"customer_id"`
 	IdempotencyKey string `json:"-"`
@@ -19,8 +17,6 @@ type SetAllSeatsParams struct {
 
 type GetSeatBalanceParams struct {
 	FeatureCode string `json:"feature_code"`
-	// Deprecated: use FeatureCode instead.
-	SeatType    string `json:"seat_type"`
 	CustomerID  string `json:"customer_id"`
 }
 
@@ -28,43 +24,41 @@ type GetAllSeatBalancesParams struct {
 	CustomerID string `json:"customer_id"`
 }
 
-func resolveSeatCode(featureCode, seatType string) string {
-	if featureCode != "" {
-		return featureCode
-	}
-	return seatType
-}
-
 type SeatsResource struct {
 	http *httpClient
 }
 
 func (r *SeatsResource) Add(ctx context.Context, params *SeatParams) (*ApiResponse[SeatEvent], error) {
-	code := resolveSeatCode(params.FeatureCode, params.SeatType)
+	count := params.Count
+	if count == 0 {
+		count = 1
+	}
 	body := buildBody(map[string]any{
-		"seat_type":   code,
-		"count":       params.Count,
-		"customer_id": params.CustomerID,
+		"feature_code": params.FeatureCode,
+		"count":        count,
+		"customer_id":  params.CustomerID,
 	})
 	return parseResponse[SeatEvent](r.http.post(ctx, "/seats", body, params.IdempotencyKey))
 }
 
 func (r *SeatsResource) Remove(ctx context.Context, params *SeatParams) (*ApiResponse[SeatEvent], error) {
-	code := resolveSeatCode(params.FeatureCode, params.SeatType)
+	count := params.Count
+	if count == 0 {
+		count = 1
+	}
 	body := buildBody(map[string]any{
-		"seat_type":   code,
-		"count":       params.Count,
-		"customer_id": params.CustomerID,
+		"feature_code": params.FeatureCode,
+		"count":        count,
+		"customer_id":  params.CustomerID,
 	})
 	return parseResponse[SeatEvent](r.http.delete(ctx, "/seats", body, params.IdempotencyKey))
 }
 
 func (r *SeatsResource) Set(ctx context.Context, params *SeatParams) (*ApiResponse[SeatEvent], error) {
-	code := resolveSeatCode(params.FeatureCode, params.SeatType)
 	body := buildBody(map[string]any{
-		"seat_type":   code,
-		"count":       params.Count,
-		"customer_id": params.CustomerID,
+		"feature_code": params.FeatureCode,
+		"count":        params.Count,
+		"customer_id":  params.CustomerID,
 	})
 	return parseResponse[SeatEvent](r.http.put(ctx, "/seats", body, params.IdempotencyKey))
 }
@@ -78,9 +72,8 @@ func (r *SeatsResource) SetAll(ctx context.Context, params *SetAllSeatsParams) (
 }
 
 func (r *SeatsResource) GetBalance(ctx context.Context, params *GetSeatBalanceParams) (*ApiResponse[SeatBalance], error) {
-	code := resolveSeatCode(params.FeatureCode, params.SeatType)
 	queryParams := map[string]string{
-		"seat_type": code,
+		"feature_code": params.FeatureCode,
 	}
 	if params.CustomerID != "" {
 		queryParams["customer_id"] = params.CustomerID

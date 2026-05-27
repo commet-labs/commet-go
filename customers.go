@@ -21,7 +21,6 @@ type CreateCustomerParams struct {
 
 type UpdateCustomerParams struct {
 	Email          string            `json:"billing_email,omitempty"`
-	ExternalID     string            `json:"external_id,omitempty"`
 	FullName       string            `json:"full_name,omitempty"`
 	Domain         string            `json:"domain,omitempty"`
 	Website        string            `json:"website,omitempty"`
@@ -47,7 +46,6 @@ type CustomersResource struct {
 func (r *CustomersResource) Create(ctx context.Context, params *CreateCustomerParams) (*ApiResponse[Customer], error) {
 	body := buildBody(map[string]any{
 		"billing_email": params.Email,
-		"external_id":   params.ID,
 		"full_name":     params.FullName,
 		"domain":        params.Domain,
 		"website":       params.Website,
@@ -65,7 +63,6 @@ func (r *CustomersResource) CreateBatch(ctx context.Context, customers []CreateC
 	for i, c := range customers {
 		mapped[i] = buildBody(map[string]any{
 			"billing_email": c.Email,
-			"external_id":   c.ID,
 			"full_name":     c.FullName,
 			"domain":        c.Domain,
 			"website":       c.Website,
@@ -87,7 +84,6 @@ func (r *CustomersResource) Get(ctx context.Context, customerID string) (*ApiRes
 func (r *CustomersResource) Update(ctx context.Context, customerID string, params *UpdateCustomerParams) (*ApiResponse[Customer], error) {
 	body := buildBody(map[string]any{
 		"billing_email": params.Email,
-		"external_id":   params.ExternalID,
 		"full_name":     params.FullName,
 		"domain":        params.Domain,
 		"website":       params.Website,

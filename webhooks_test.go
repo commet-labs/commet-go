@@ -14,7 +14,7 @@ func computeSignature(payload, secret string) string {
 }
 
 func TestWebhooksVerify(t *testing.T) {
-	w := &Webhooks{}
+	w := &WebhooksResource{}
 	secret := "whsec_test_secret_123"
 	payload := `{"event":"subscription.created","data":{"id":"sub_123"}}`
 	validSignature := computeSignature(payload, secret)
@@ -88,7 +88,7 @@ func TestWebhooksVerify(t *testing.T) {
 }
 
 func TestWebhooksVerifyAndParse(t *testing.T) {
-	w := &Webhooks{}
+	w := &WebhooksResource{}
 	secret := "whsec_test_secret_456"
 
 	t.Run("valid signature parses JSON", func(t *testing.T) {

@@ -68,6 +68,49 @@ func (r *UsageResource) Check(ctx context.Context, params *CheckUsageParams) (*A
 	return parseResponse[UsageCheckResult](r.http.post(ctx, "/usage/check", body, ""))
 }
 
+type TrackModelTokensParams struct {
+	Feature          string            `json:"feature"`
+	CustomerID       string            `json:"customer_id"`
+	Model            string            `json:"model"`
+	InputTokens      int               `json:"input_tokens"`
+	OutputTokens     int               `json:"output_tokens"`
+	CacheReadTokens  *int              `json:"cache_read_tokens,omitempty"`
+	CacheWriteTokens *int              `json:"cache_write_tokens,omitempty"`
+	IdempotencyKey   string            `json:"-"`
+	Timestamp        string            `json:"timestamp,omitempty"`
+	Properties       map[string]string `json:"properties,omitempty"`
+}
+
+func (r *UsageResource) TrackModelTokens(ctx context.Context, params *TrackModelTokensParams) (*ApiResponse[UsageEvent], error) {
+	var props []any
+	if params.Properties != nil {
+		props = make([]any, 0, len(params.Properties))
+		for k, v := range params.Properties {
+			props = append(props, map[string]any{"property": k, "value": v})
+		}
+	}
+
+	timestamp := params.Timestamp
+	if timestamp == "" {
+		timestamp = time.Now().UTC().Format(time.RFC3339)
+	}
+
+	body := buildBody(map[string]any{
+		"feature":            params.Feature,
+		"customer_id":        params.CustomerID,
+		"idempotency_key":    params.IdempotencyKey,
+		"timestamp":          timestamp,
+		"properties":         props,
+		"model":              params.Model,
+		"input_tokens":       params.InputTokens,
+		"output_tokens":      params.OutputTokens,
+		"cache_read_tokens":  params.CacheReadTokens,
+		"cache_write_tokens": params.CacheWriteTokens,
+	})
+
+	return parseResponse[UsageEvent](r.http.post(ctx, "/usage/events", body, params.IdempotencyKey))
+}
+
 func buildUsageBody(params *TrackUsageParams) map[string]any {
 	var props []any
 	if params.Properties != nil {

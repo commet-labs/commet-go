@@ -10,6 +10,7 @@ import (
 	"math"
 	"net/http"
 	"net/url"
+	"os"
 	"strings"
 	"time"
 	"unicode"
@@ -19,7 +20,7 @@ const version = "4.3.0"
 
 const baseURL = "https://commet.co"
 
-const APIVersion = "2026-05-18"
+const APIVersion = "2026-05-25"
 
 var retryableStatusCodes = map[int]bool{
 	408: true,
@@ -31,22 +32,51 @@ var retryableStatusCodes = map[int]bool{
 }
 
 type httpClient struct {
-	client              *http.Client
-	baseURL             string
-	apiKey              string
-	maxRetries          int
-	telemetryEnabled    bool
-	lastRequestMetrics  *requestMetrics
+	client             *http.Client
+	baseURL            string
+	apiKey             string
+	apiVersion         string
+	maxRetries         int
+	telemetryEnabled   bool
+	debug              bool
+	defaultTimeout     time.Duration
+	lastRequestMetrics *requestMetrics
 }
 
-func newHTTPClient(apiKey string, timeout time.Duration, retries int, telemetry bool) *httpClient {
+func newHTTPClient(apiKey string, apiVersion string, timeout time.Duration, retries int, telemetry bool, debug bool) *httpClient {
 	return &httpClient{
-		client:           &http.Client{Timeout: timeout},
+		client:           &http.Client{},
 		baseURL:          baseURL + "/api/v1",
 		apiKey:           apiKey,
+		apiVersion:       apiVersion,
 		maxRetries:       retries,
 		telemetryEnabled: telemetry,
+		debug:            debug,
+		defaultTimeout:   timeout,
 	}
+}
+
+func (h *httpClient) resolveApiVersion(opts *RequestOptions) string {
+	if opts != nil && opts.ApiVersion != "" {
+		return opts.ApiVersion
+	}
+	if h.apiVersion != "" {
+		return h.apiVersion
+	}
+	return APIVersion
+}
+
+func (h *httpClient) resolveTimeout(opts *RequestOptions) time.Duration {
+	if opts != nil && opts.Timeout > 0 {
+		return opts.Timeout
+	}
+	return h.defaultTimeout
+}
+
+var bodyMethods = map[string]bool{
+	http.MethodPost:  true,
+	http.MethodPut:   true,
+	http.MethodPatch: true,
 }
 
 func (h *httpClient) close() {
@@ -60,29 +90,32 @@ func (h *httpClient) get(ctx context.Context, endpoint string, params map[string
 			cleanParams[toCamel(k)] = v
 		}
 	}
-	return h.request(ctx, http.MethodGet, endpoint, nil, cleanParams, "")
+	return h.request(ctx, http.MethodGet, endpoint, nil, cleanParams, "", nil)
 }
 
 func (h *httpClient) post(ctx context.Context, endpoint string, body map[string]any, idempotencyKey string) (*rawApiResponse, error) {
-	return h.request(ctx, http.MethodPost, endpoint, body, nil, idempotencyKey)
+	return h.request(ctx, http.MethodPost, endpoint, body, nil, idempotencyKey, nil)
 }
 
 func (h *httpClient) put(ctx context.Context, endpoint string, body map[string]any, idempotencyKey string) (*rawApiResponse, error) {
-	return h.request(ctx, http.MethodPut, endpoint, body, nil, idempotencyKey)
+	return h.request(ctx, http.MethodPut, endpoint, body, nil, idempotencyKey, nil)
 }
 
 func (h *httpClient) delete(ctx context.Context, endpoint string, body map[string]any, idempotencyKey string) (*rawApiResponse, error) {
-	return h.request(ctx, http.MethodDelete, endpoint, body, nil, idempotencyKey)
+	return h.request(ctx, http.MethodDelete, endpoint, body, nil, idempotencyKey, nil)
 }
 
-func (h *httpClient) request(ctx context.Context, method string, endpoint string, body map[string]any, params map[string]string, idempotencyKey string) (*rawApiResponse, error) {
+func (h *httpClient) request(ctx context.Context, method string, endpoint string, body map[string]any, params map[string]string, idempotencyKey string, opts *RequestOptions) (*rawApiResponse, error) {
+	resolvedKey := idempotencyKey
+	if opts != nil && opts.IdempotencyKey != "" {
+		resolvedKey = opts.IdempotencyKey
+	}
+
 	headers := map[string]string{}
-	if method == http.MethodPost {
-		if idempotencyKey != "" {
-			headers["Idempotency-Key"] = idempotencyKey
-		} else {
-			headers["Idempotency-Key"] = "sdk_" + generateUUID()
-		}
+	if bodyMethods[method] && h.maxRetries > 0 && resolvedKey == "" {
+		headers["Idempotency-Key"] = "commet-go-retry-" + generateUUID()
+	} else if resolvedKey != "" {
+		headers["Idempotency-Key"] = resolvedKey
 	}
 
 	var jsonBody []byte
@@ -95,10 +128,10 @@ func (h *httpClient) request(ctx context.Context, method string, endpoint string
 		}
 	}
 
-	return h.execute(ctx, method, endpoint, jsonBody, params, headers, 1)
+	return h.execute(ctx, method, endpoint, jsonBody, params, headers, opts, 1)
 }
 
-func (h *httpClient) execute(ctx context.Context, method string, endpoint string, jsonBody []byte, params map[string]string, headers map[string]string, attempt int) (*rawApiResponse, error) {
+func (h *httpClient) execute(ctx context.Context, method string, endpoint string, jsonBody []byte, params map[string]string, headers map[string]string, opts *RequestOptions, attempt int) (*rawApiResponse, error) {
 	fullURL := h.baseURL + endpoint
 	if len(params) > 0 {
 		query := url.Values{}
@@ -108,18 +141,29 @@ func (h *httpClient) execute(ctx context.Context, method string, endpoint string
 		fullURL += "?" + query.Encode()
 	}
 
+	if h.debug {
+		fmt.Fprintf(os.Stderr, "[Commet SDK] %s %s\n", method, fullURL)
+		if jsonBody != nil {
+			fmt.Fprintf(os.Stderr, "[Commet SDK] Request body: %s\n", string(jsonBody))
+		}
+	}
+
 	var bodyReader io.Reader
 	if jsonBody != nil {
 		bodyReader = bytes.NewReader(jsonBody)
 	}
 
-	req, err := http.NewRequestWithContext(ctx, method, fullURL, bodyReader)
+	timeout := h.resolveTimeout(opts)
+	reqCtx, cancel := context.WithTimeout(ctx, timeout)
+	defer cancel()
+
+	req, err := http.NewRequestWithContext(reqCtx, method, fullURL, bodyReader)
 	if err != nil {
 		return nil, fmt.Errorf("commet: failed to create request: %w", err)
 	}
 
 	req.Header.Set("x-api-key", h.apiKey)
-	req.Header.Set("commet-version", APIVersion)
+	req.Header.Set("commet-version", h.resolveApiVersion(opts))
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("User-Agent", getUserAgent())
 	if h.telemetryEnabled {
@@ -137,16 +181,28 @@ func (h *httpClient) execute(ctx context.Context, method string, endpoint string
 	resp, err := h.client.Do(req)
 	if err != nil {
 		if attempt <= h.maxRetries {
-			h.wait(attempt)
-			return h.execute(ctx, method, endpoint, jsonBody, params, headers, attempt+1)
+			delay := h.retryDelay(attempt)
+			if h.debug {
+				fmt.Fprintf(os.Stderr, "[Commet SDK] Network error, retrying in %v (attempt %d/%d)\n", delay, attempt, h.maxRetries)
+			}
+			time.Sleep(delay)
+			return h.execute(ctx, method, endpoint, jsonBody, params, headers, opts, attempt+1)
 		}
 		return nil, fmt.Errorf("commet: request failed: %w", err)
 	}
 	defer resp.Body.Close()
 
+	if h.debug {
+		fmt.Fprintf(os.Stderr, "[Commet SDK] Response status: %d\n", resp.StatusCode)
+	}
+
 	if retryableStatusCodes[resp.StatusCode] && attempt <= h.maxRetries {
-		h.wait(attempt)
-		return h.execute(ctx, method, endpoint, jsonBody, params, headers, attempt+1)
+		delay := h.retryDelay(attempt)
+		if h.debug {
+			fmt.Fprintf(os.Stderr, "[Commet SDK] Retrying in %v (attempt %d/%d)\n", delay, attempt, h.maxRetries)
+		}
+		time.Sleep(delay)
+		return h.execute(ctx, method, endpoint, jsonBody, params, headers, opts, attempt+1)
 	}
 
 	respBody, err := io.ReadAll(resp.Body)
@@ -238,13 +294,29 @@ func parseResponse[T any](raw *rawApiResponse, err error) (*ApiResponse[T], erro
 }
 
 func (h *httpClient) handleError(statusCode int, data map[string]any) error {
-	code, _ := data["code"].(string)
-	message, _ := data["message"].(string)
+	errorObj := data
+	if nested, ok := data["error"].(map[string]any); ok {
+		errorObj = nested
+	}
+
+	errType, _ := errorObj["type"].(string)
+	code, _ := errorObj["code"].(string)
+	message, _ := errorObj["message"].(string)
+	param, _ := errorObj["param"].(string)
+	docURL, _ := errorObj["doc_url"].(string)
+	details := errorObj["details"]
+
+	if errType == "" {
+		errType = "api_error"
+	}
+	if code == "" {
+		code = "unknown"
+	}
 
 	if code == "validation_error" {
-		if details, ok := data["details"].([]any); ok {
+		if detailsList, ok := details.([]any); ok {
 			validationErrors := make(map[string][]string)
-			for _, d := range details {
+			for _, d := range detailsList {
 				detail, ok := d.(map[string]any)
 				if !ok {
 					continue
@@ -261,6 +333,10 @@ func (h *httpClient) handleError(statusCode int, data map[string]any) error {
 					Message:    orDefault(message, "Validation failed"),
 					StatusCode: statusCode,
 					Code:       code,
+					Type:       errType,
+					Param:      param,
+					DocURL:     docURL,
+					Details:    details,
 				},
 				ValidationErrors: validationErrors,
 			}
@@ -271,13 +347,16 @@ func (h *httpClient) handleError(statusCode int, data map[string]any) error {
 		Message:    orDefault(message, fmt.Sprintf("Request failed with status %d", statusCode)),
 		StatusCode: statusCode,
 		Code:       code,
-		Details:    data["details"],
+		Type:       errType,
+		Param:      param,
+		DocURL:     docURL,
+		Details:    details,
 	}
 }
 
-func (h *httpClient) wait(attempt int) {
+func (h *httpClient) retryDelay(attempt int) time.Duration {
 	delay := math.Min(1.0*math.Pow(2, float64(attempt-1)), 8.0)
-	time.Sleep(time.Duration(delay * float64(time.Second)))
+	return time.Duration(delay * float64(time.Second))
 }
 
 func toSnake(s string) string {
