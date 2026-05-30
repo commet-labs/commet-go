@@ -43,9 +43,13 @@ type httpClient struct {
 	lastRequestMetrics *requestMetrics
 }
 
-func newHTTPClient(apiKey string, apiVersion string, timeout time.Duration, retries int, telemetry bool, debug bool) *httpClient {
+func newHTTPClient(apiKey string, apiVersion string, timeout time.Duration, retries int, telemetry bool, debug bool, customHTTPClient *http.Client) *httpClient {
+	client := customHTTPClient
+	if client == nil {
+		client = &http.Client{}
+	}
 	return &httpClient{
-		client:           &http.Client{},
+		client:           client,
 		baseURL:          baseURL + "/api/v1",
 		apiKey:           apiKey,
 		apiVersion:       apiVersion,
