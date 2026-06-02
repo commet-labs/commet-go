@@ -2,6 +2,7 @@ package commet
 
 import (
 	"errors"
+	"net/http"
 	"strings"
 	"time"
 )
@@ -15,11 +16,12 @@ type RequestOptions struct {
 type Option func(*clientConfig)
 
 type clientConfig struct {
-	apiVersion string
-	timeout    time.Duration
-	retries    int
-	telemetry  bool
-	debug      bool
+	apiVersion       string
+	timeout          time.Duration
+	retries          int
+	telemetry        bool
+	debug            bool
+	customHTTPClient *http.Client
 }
 
 func WithTimeout(timeout time.Duration) Option {
@@ -49,6 +51,14 @@ func WithApiVersion(version string) Option {
 func WithDebug(enabled bool) Option {
 	return func(c *clientConfig) {
 		c.debug = enabled
+	}
+}
+
+// WithHTTPClient sets a custom *http.Client (e.g. for custom transports, proxies,
+// or intercepting requests in tests). If unset, a default client is used.
+func WithHTTPClient(client *http.Client) Option {
+	return func(c *clientConfig) {
+		c.customHTTPClient = client
 	}
 }
 
@@ -92,7 +102,7 @@ func New(apiKey string, opts ...Option) (*Client, error) {
 		opt(cfg)
 	}
 
-	h := newHTTPClient(apiKey, cfg.apiVersion, cfg.timeout, cfg.retries, cfg.telemetry, cfg.debug)
+	h := newHTTPClient(apiKey, cfg.apiVersion, cfg.timeout, cfg.retries, cfg.telemetry, cfg.debug, cfg.customHTTPClient)
 
 	c := &Client{
 		http: h,

@@ -46,6 +46,7 @@ type CustomersResource struct {
 func (r *CustomersResource) Create(ctx context.Context, params *CreateCustomerParams) (*ApiResponse[Customer], error) {
 	body := buildBody(map[string]any{
 		"billing_email": params.Email,
+		"id":            params.ID,
 		"full_name":     params.FullName,
 		"domain":        params.Domain,
 		"website":       params.Website,
@@ -63,6 +64,7 @@ func (r *CustomersResource) CreateBatch(ctx context.Context, customers []CreateC
 	for i, c := range customers {
 		mapped[i] = buildBody(map[string]any{
 			"billing_email": c.Email,
+			"id":            c.ID,
 			"full_name":     c.FullName,
 			"domain":        c.Domain,
 			"website":       c.Website,
