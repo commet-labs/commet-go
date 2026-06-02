@@ -347,22 +347,23 @@ type SeatBalance struct {
 
 type QuotaEvent struct {
 	ID              string `json:"id"`
-	CustomerID      string `json:"customer_id"`
-	FeatureCode     string `json:"feature_code"`
-	PreviousBalance int    `json:"previous_balance"`
-	NewBalance      int    `json:"new_balance"`
+	CustomerID      string `json:"customerId"`
+	FeatureCode     string `json:"featureCode"`
+	PreviousBalance int    `json:"previousBalance"`
+	NewBalance      int    `json:"newBalance"`
 	Ts              string `json:"ts"`
-	CreatedAt       string `json:"created_at"`
+	CreatedAt       string `json:"createdAt"`
 }
 
 type QuotaAllowance struct {
-	FeatureCode    string  `json:"feature_code"`
+	FeatureCode    string  `json:"featureCode"`
 	Current        int     `json:"current"`
 	Included       int     `json:"included"`
 	Remaining      *int    `json:"remaining"`
+	BilledQuantity *int    `json:"billedQuantity,omitempty"`
 	Unlimited      bool    `json:"unlimited"`
-	OverageEnabled bool    `json:"overage_enabled"`
-	AsOf           *string `json:"as_of"`
+	OverageEnabled bool    `json:"overageEnabled"`
+	AsOf           *string `json:"asOf"`
 }
 
 type UsageEvent struct {

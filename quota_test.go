@@ -5,7 +5,7 @@ import "testing"
 func TestParseQuotaEvent(t *testing.T) {
 	raw := &rawApiResponse{
 		Success: true,
-		Data:    []byte(`{"id":"qe_1","customer_id":"cus_1","feature_code":"tasks","previous_balance":4,"new_balance":5,"ts":"2024-01-01","created_at":"2024-01-01"}`),
+		Data:    []byte(`{"id":"qe_1","customerId":"cus_1","featureCode":"tasks","previousBalance":4,"newBalance":5,"ts":"2024-01-01","createdAt":"2024-01-01"}`),
 	}
 
 	resp, err := parseResponse[QuotaEvent](raw, nil)
@@ -27,7 +27,7 @@ func TestParseQuotaAllowance(t *testing.T) {
 	t.Run("bounded allowance keeps remaining", func(t *testing.T) {
 		raw := &rawApiResponse{
 			Success: true,
-			Data:    []byte(`{"feature_code":"tasks","current":5,"included":10,"remaining":5,"unlimited":false,"overage_enabled":true,"as_of":"2024-01-01"}`),
+			Data:    []byte(`{"featureCode":"tasks","current":5,"included":10,"remaining":5,"billedQuantity":2,"unlimited":false,"overageEnabled":true,"asOf":"2024-01-01"}`),
 		}
 
 		resp, err := parseResponse[QuotaAllowance](raw, nil)
@@ -45,7 +45,7 @@ func TestParseQuotaAllowance(t *testing.T) {
 	t.Run("unlimited allowance has null remaining", func(t *testing.T) {
 		raw := &rawApiResponse{
 			Success: true,
-			Data:    []byte(`{"feature_code":"tasks","current":5,"included":0,"remaining":null,"unlimited":true,"overage_enabled":false,"as_of":null}`),
+			Data:    []byte(`{"featureCode":"tasks","current":5,"included":0,"remaining":null,"unlimited":true,"overageEnabled":false,"asOf":null}`),
 		}
 
 		resp, err := parseResponse[QuotaAllowance](raw, nil)
