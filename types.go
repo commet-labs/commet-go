@@ -95,8 +95,8 @@ type Customer struct {
 }
 
 type BatchResult struct {
-	Successful []Customer        `json:"successful"`
-	Failed     []BatchFailure    `json:"failed"`
+	Successful []Customer     `json:"successful"`
+	Failed     []BatchFailure `json:"failed"`
 }
 
 type BatchFailure struct {
@@ -152,29 +152,29 @@ type CreatedSubscription struct {
 }
 
 type ActiveSubscription struct {
-	ID                string                `json:"id"`
-	Object            string                `json:"object"`
-	Livemode          bool                  `json:"livemode"`
-	CustomerID        string                `json:"customer_id"`
-	Plan              SubscriptionPlan      `json:"plan"`
-	Name              string                `json:"name"`
-	Description       string                `json:"description,omitempty"`
-	Status            SubscriptionStatus    `json:"status"`
-	ConsumptionModel  ConsumptionModel      `json:"consumption_model"`
-	TrialEndsAt       string                `json:"trial_ends_at,omitempty"`
-	CurrentPeriod     SubscriptionPeriod    `json:"current_period"`
-	Features          []FeatureSummary      `json:"features"`
-	Credits           *CreditsSummary       `json:"credits,omitempty"`
-	Balance           *BalanceSummary       `json:"balance,omitempty"`
-	Cancellation      *CancellationSummary  `json:"cancellation,omitempty"`
-	Discount          *DiscountSummary      `json:"discount,omitempty"`
-	StartDate         string                `json:"start_date"`
-	EndDate           string                `json:"end_date,omitempty"`
-	BillingDayOfMonth int                   `json:"billing_day_of_month"`
-	NextBillingDate   string                `json:"next_billing_date"`
-	CheckoutURL       string                `json:"checkout_url,omitempty"`
-	CreatedAt         string                `json:"created_at"`
-	UpdatedAt         string                `json:"updated_at"`
+	ID                string               `json:"id"`
+	Object            string               `json:"object"`
+	Livemode          bool                 `json:"livemode"`
+	CustomerID        string               `json:"customer_id"`
+	Plan              SubscriptionPlan     `json:"plan"`
+	Name              string               `json:"name"`
+	Description       string               `json:"description,omitempty"`
+	Status            SubscriptionStatus   `json:"status"`
+	ConsumptionModel  ConsumptionModel     `json:"consumption_model"`
+	TrialEndsAt       string               `json:"trial_ends_at,omitempty"`
+	CurrentPeriod     SubscriptionPeriod   `json:"current_period"`
+	Features          []FeatureSummary     `json:"features"`
+	Credits           *CreditsSummary      `json:"credits,omitempty"`
+	Balance           *BalanceSummary      `json:"balance,omitempty"`
+	Cancellation      *CancellationSummary `json:"cancellation,omitempty"`
+	Discount          *DiscountSummary     `json:"discount,omitempty"`
+	StartDate         string               `json:"start_date"`
+	EndDate           string               `json:"end_date,omitempty"`
+	BillingDayOfMonth int                  `json:"billing_day_of_month"`
+	NextBillingDate   string               `json:"next_billing_date"`
+	CheckoutURL       string               `json:"checkout_url,omitempty"`
+	CreatedAt         string               `json:"created_at"`
+	UpdatedAt         string               `json:"updated_at"`
 }
 
 type CreditsSummary struct {
@@ -280,7 +280,7 @@ type PlanIntroOffer struct {
 	Enabled        bool         `json:"enabled"`
 	DiscountType   DiscountType `json:"discount_type,omitempty"`
 	DiscountValue  *float64     `json:"discount_value,omitempty"`
-	DurationCycles *int     `json:"duration_cycles,omitempty"`
+	DurationCycles *int         `json:"duration_cycles,omitempty"`
 }
 
 type PlanDetailFeature struct {
@@ -309,14 +309,15 @@ type FeatureAccess struct {
 	Name             string      `json:"name"`
 	Type             FeatureType `json:"type"`
 	Allowed          bool        `json:"allowed"`
-	Enabled          *bool    `json:"enabled,omitempty"`
-	Current          *int     `json:"current,omitempty"`
-	Included         *int     `json:"included,omitempty"`
-	Remaining        *int     `json:"remaining,omitempty"`
-	Overage          *int     `json:"overage,omitempty"`
-	OverageUnitPrice *float64 `json:"overage_unit_price,omitempty"`
-	Unlimited        *bool    `json:"unlimited,omitempty"`
-	OverageEnabled   *bool    `json:"overage_enabled,omitempty"`
+	Enabled          *bool       `json:"enabled,omitempty"`
+	Current          *int        `json:"current,omitempty"`
+	Included         *int        `json:"included,omitempty"`
+	Remaining        *int        `json:"remaining,omitempty"`
+	Overage          *int        `json:"overage,omitempty"`
+	OverageUnitPrice *float64    `json:"overage_unit_price,omitempty"`
+	BilledQuantity   *int        `json:"billed_quantity,omitempty"`
+	Unlimited        *bool       `json:"unlimited,omitempty"`
+	OverageEnabled   *bool       `json:"overage_enabled,omitempty"`
 }
 
 type CanUseResult struct {
@@ -347,36 +348,36 @@ type SeatBalance struct {
 
 type QuotaEvent struct {
 	ID              string `json:"id"`
-	CustomerID      string `json:"customerId"`
-	FeatureCode     string `json:"featureCode"`
-	PreviousBalance int    `json:"previousBalance"`
-	NewBalance      int    `json:"newBalance"`
+	CustomerID      string `json:"customer_id"`
+	FeatureCode     string `json:"feature_code"`
+	PreviousBalance int    `json:"previous_balance"`
+	NewBalance      int    `json:"new_balance"`
 	Ts              string `json:"ts"`
-	CreatedAt       string `json:"createdAt"`
+	CreatedAt       string `json:"created_at"`
 }
 
 type QuotaAllowance struct {
-	FeatureCode    string  `json:"featureCode"`
+	FeatureCode    string  `json:"feature_code"`
 	Current        int     `json:"current"`
 	Included       int     `json:"included"`
 	Remaining      *int    `json:"remaining"`
-	BilledQuantity *int    `json:"billedQuantity,omitempty"`
+	BilledQuantity *int    `json:"billed_quantity,omitempty"`
 	Unlimited      bool    `json:"unlimited"`
-	OverageEnabled bool    `json:"overageEnabled"`
-	AsOf           *string `json:"asOf"`
+	OverageEnabled bool    `json:"overage_enabled"`
+	AsOf           *string `json:"as_of"`
 }
 
 type UsageEvent struct {
-	ID              string                `json:"id"`
-	Object          string                `json:"object"`
-	Livemode        bool                  `json:"livemode"`
-	OrganizationID  string                `json:"organization_id"`
-	CustomerID      string                `json:"customer_id"`
-	Feature         string                `json:"feature"`
-	IdempotencyKey  string                `json:"idempotency_key,omitempty"`
-	Ts              string                `json:"ts"`
-	Properties      []UsageEventProperty  `json:"properties,omitempty"`
-	CreatedAt       string                `json:"created_at"`
+	ID             string               `json:"id"`
+	Object         string               `json:"object"`
+	Livemode       bool                 `json:"livemode"`
+	OrganizationID string               `json:"organization_id"`
+	CustomerID     string               `json:"customer_id"`
+	Feature        string               `json:"feature"`
+	IdempotencyKey string               `json:"idempotency_key,omitempty"`
+	Ts             string               `json:"ts"`
+	Properties     []UsageEventProperty `json:"properties,omitempty"`
+	CreatedAt      string               `json:"created_at"`
 }
 
 type UsageEventProperty struct {
@@ -424,10 +425,10 @@ type CancellationSummary struct {
 }
 
 type DiscountSummary struct {
-	Type  string  `json:"type"`
-	Value float64 `json:"value"`
-	Name  string  `json:"name"`
-	EndsAt string `json:"ends_at"`
+	Type   string  `json:"type"`
+	Value  float64 `json:"value"`
+	Name   string  `json:"name"`
+	EndsAt string  `json:"ends_at"`
 }
 
 type SubscriptionListItem struct {
@@ -499,43 +500,43 @@ type ApiKeyCreated struct {
 }
 
 type InvoiceLineItem struct {
-	LineType        string  `json:"line_type"`
-	FeatureName     string  `json:"feature_name"`
-	Description     string  `json:"description"`
-	Quantity        int     `json:"quantity"`
-	UnitAmount      float64 `json:"unit_amount"`
-	Amount          float64 `json:"amount"`
-	IncludedAmount  *int    `json:"included_amount,omitempty"`
-	UsedAmount      *int    `json:"used_amount,omitempty"`
-	OverageAmount   *int    `json:"overage_amount,omitempty"`
-	DiscountType    string  `json:"discount_type,omitempty"`
-	DiscountValue   *float64 `json:"discount_value,omitempty"`
-	DiscountName    string  `json:"discount_name,omitempty"`
-	ChargeType      string  `json:"charge_type,omitempty"`
+	LineType       string   `json:"line_type"`
+	FeatureName    string   `json:"feature_name"`
+	Description    string   `json:"description"`
+	Quantity       int      `json:"quantity"`
+	UnitAmount     float64  `json:"unit_amount"`
+	Amount         float64  `json:"amount"`
+	IncludedAmount *int     `json:"included_amount,omitempty"`
+	UsedAmount     *int     `json:"used_amount,omitempty"`
+	OverageAmount  *int     `json:"overage_amount,omitempty"`
+	DiscountType   string   `json:"discount_type,omitempty"`
+	DiscountValue  *float64 `json:"discount_value,omitempty"`
+	DiscountName   string   `json:"discount_name,omitempty"`
+	ChargeType     string   `json:"charge_type,omitempty"`
 }
 
 type InvoiceListItem struct {
-	ID              string         `json:"id"`
-	Object          string         `json:"object"`
-	Livemode        bool           `json:"livemode"`
-	CustomerID      string         `json:"customer_id"`
-	SubscriptionID  string         `json:"subscription_id,omitempty"`
-	InvoiceNumber   string         `json:"invoice_number"`
-	Status          string         `json:"status"`
-	InvoiceType     string         `json:"invoice_type"`
-	Currency        string         `json:"currency"`
-	Subtotal        float64        `json:"subtotal"`
-	DiscountAmount  float64        `json:"discount_amount"`
-	TaxAmount       float64        `json:"tax_amount"`
-	Total           float64        `json:"total"`
-	PeriodStart     string         `json:"period_start,omitempty"`
-	PeriodEnd       string         `json:"period_end,omitempty"`
-	IssueDate       string         `json:"issue_date"`
-	DueDate         string         `json:"due_date,omitempty"`
-	Memo            string         `json:"memo,omitempty"`
-	Metadata        map[string]any `json:"metadata,omitempty"`
-	CreatedAt       string         `json:"created_at"`
-	UpdatedAt       string         `json:"updated_at"`
+	ID             string         `json:"id"`
+	Object         string         `json:"object"`
+	Livemode       bool           `json:"livemode"`
+	CustomerID     string         `json:"customer_id"`
+	SubscriptionID string         `json:"subscription_id,omitempty"`
+	InvoiceNumber  string         `json:"invoice_number"`
+	Status         string         `json:"status"`
+	InvoiceType    string         `json:"invoice_type"`
+	Currency       string         `json:"currency"`
+	Subtotal       float64        `json:"subtotal"`
+	DiscountAmount float64        `json:"discount_amount"`
+	TaxAmount      float64        `json:"tax_amount"`
+	Total          float64        `json:"total"`
+	PeriodStart    string         `json:"period_start,omitempty"`
+	PeriodEnd      string         `json:"period_end,omitempty"`
+	IssueDate      string         `json:"issue_date"`
+	DueDate        string         `json:"due_date,omitempty"`
+	Memo           string         `json:"memo,omitempty"`
+	Metadata       map[string]any `json:"metadata,omitempty"`
+	CreatedAt      string         `json:"created_at"`
+	UpdatedAt      string         `json:"updated_at"`
 }
 
 type InvoiceDetail struct {
@@ -711,7 +712,7 @@ type PlanPriceManage struct {
 }
 
 type RegionalPriceResult struct {
-	PriceID   string `json:"price_id"`
+	PriceID   string                  `json:"price_id"`
 	Overrides []RegionalPriceOverride `json:"overrides"`
 }
 
@@ -761,7 +762,6 @@ type Addon struct {
 	UpdatedAt        string   `json:"updated_at"`
 }
 
-
 type WebhookEndpoint struct {
 	ID          string   `json:"id"`
 	Object      string   `json:"object"`
@@ -770,6 +770,7 @@ type WebhookEndpoint struct {
 	Events      []string `json:"events"`
 	Description string   `json:"description,omitempty"`
 	IsActive    bool     `json:"is_active"`
+	ApiVersion  string   `json:"api_version,omitempty"`
 	CreatedAt   string   `json:"created_at"`
 }
 
@@ -780,5 +781,6 @@ type WebhookEndpointCreated struct {
 
 type WebhookTestResult struct {
 	Success     bool   `json:"success"`
+	DeliveryId  string `json:"delivery_id"`
 	DeliveredAt string `json:"delivered_at"`
 }

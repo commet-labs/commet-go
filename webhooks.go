@@ -18,6 +18,15 @@ type CreateWebhookParams struct {
 	URL         string   `json:"url"`
 	Events      []string `json:"events"`
 	Description string   `json:"description,omitempty"`
+	ApiVersion  string   `json:"api_version,omitempty"`
+}
+
+type UpdateWebhookParams struct {
+	URL         string   `json:"url,omitempty"`
+	Events      []string `json:"events,omitempty"`
+	Description string   `json:"description,omitempty"`
+	IsActive    *bool    `json:"is_active,omitempty"`
+	ApiVersion  string   `json:"api_version,omitempty"`
 }
 
 type WebhooksResource struct {
@@ -70,8 +79,26 @@ func (w *WebhooksResource) Create(ctx context.Context, params *CreateWebhookPara
 		"url":         params.URL,
 		"events":      params.Events,
 		"description": params.Description,
+		"api_version": params.ApiVersion,
 	})
 	return parseResponse[WebhookEndpointCreated](w.http.post(ctx, "/webhooks", body, ""))
+}
+
+func (w *WebhooksResource) Get(ctx context.Context, webhookID string) (*ApiResponse[WebhookEndpoint], error) {
+	return parseResponse[WebhookEndpoint](w.http.get(ctx, fmt.Sprintf("/webhooks/%s", webhookID), nil))
+}
+
+func (w *WebhooksResource) Update(ctx context.Context, webhookID string, params *UpdateWebhookParams) (*ApiResponse[WebhookEndpoint], error) {
+	body := buildBody(map[string]any{
+		"url":         params.URL,
+		"events":      params.Events,
+		"description": params.Description,
+		"api_version": params.ApiVersion,
+	})
+	if params.IsActive != nil {
+		body["is_active"] = *params.IsActive
+	}
+	return parseResponse[WebhookEndpoint](w.http.put(ctx, fmt.Sprintf("/webhooks/%s", webhookID), body, ""))
 }
 
 func (w *WebhooksResource) Delete(ctx context.Context, webhookID string) (*ApiResponse[DeleteResult], error) {

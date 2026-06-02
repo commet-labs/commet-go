@@ -100,6 +100,8 @@ type WebhookService interface {
 	VerifyAndParse(rawBody string, signature string, secret string) (map[string]any, error)
 	List(ctx context.Context, params *ListWebhooksParams) (*ApiResponse[[]WebhookEndpoint], error)
 	Create(ctx context.Context, params *CreateWebhookParams) (*ApiResponse[WebhookEndpointCreated], error)
+	Get(ctx context.Context, webhookID string) (*ApiResponse[WebhookEndpoint], error)
+	Update(ctx context.Context, webhookID string, params *UpdateWebhookParams) (*ApiResponse[WebhookEndpoint], error)
 	Delete(ctx context.Context, webhookID string) (*ApiResponse[DeleteResult], error)
 	Test(ctx context.Context, webhookID string) (*ApiResponse[WebhookTestResult], error)
 }
