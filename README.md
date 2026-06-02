@@ -60,6 +60,43 @@ func main() {
 }
 ```
 
+## Quota
+
+Track a durable integer balance (e.g. projects, tasks) that carries across billing periods:
+
+```go
+// Add to the balance (Count defaults to 1)
+client.Quota.Add(ctx, &commet.QuotaParams{
+	CustomerID:  "user_123",
+	FeatureCode: "tasks",
+	Count:       5,
+})
+
+// Set the balance to an exact value
+client.Quota.Set(ctx, &commet.QuotaParams{
+	CustomerID:  "user_123",
+	FeatureCode: "tasks",
+	Count:       10,
+})
+
+// Remove from the balance (Count defaults to 1)
+client.Quota.Remove(ctx, &commet.QuotaParams{
+	CustomerID:  "user_123",
+	FeatureCode: "tasks",
+})
+
+// Read the current allowance (held vs included, remaining)
+client.Quota.Get(ctx, &commet.GetQuotaParams{
+	CustomerID:  "user_123",
+	FeatureCode: "tasks",
+})
+
+// Read every quota allowance for a customer
+client.Quota.GetAll(ctx, &commet.GetAllQuotaParams{
+	CustomerID: "user_123",
+})
+```
+
 ## Customer context
 
 Scope all operations to a customer to avoid repeating `ExternalID`:

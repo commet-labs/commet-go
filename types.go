@@ -6,6 +6,7 @@ const (
 	FeatureTypeBoolean FeatureType = "boolean"
 	FeatureTypeUsage   FeatureType = "usage"
 	FeatureTypeSeats   FeatureType = "seats"
+	FeatureTypeQuota   FeatureType = "quota"
 )
 
 type BillingInterval string
@@ -342,6 +343,26 @@ type SeatEvent struct {
 type SeatBalance struct {
 	Current int    `json:"current"`
 	AsOf    string `json:"as_of"`
+}
+
+type QuotaEvent struct {
+	ID              string `json:"id"`
+	CustomerID      string `json:"customer_id"`
+	FeatureCode     string `json:"feature_code"`
+	PreviousBalance int    `json:"previous_balance"`
+	NewBalance      int    `json:"new_balance"`
+	Ts              string `json:"ts"`
+	CreatedAt       string `json:"created_at"`
+}
+
+type QuotaAllowance struct {
+	FeatureCode    string  `json:"feature_code"`
+	Current        int     `json:"current"`
+	Included       int     `json:"included"`
+	Remaining      *int    `json:"remaining"`
+	Unlimited      bool    `json:"unlimited"`
+	OverageEnabled bool    `json:"overage_enabled"`
+	AsOf           *string `json:"as_of"`
 }
 
 type UsageEvent struct {

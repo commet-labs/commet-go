@@ -40,6 +40,14 @@ type Seats interface {
 	GetAllBalances(ctx context.Context, params *GetAllSeatBalancesParams) (*ApiResponse[map[string]SeatBalance], error)
 }
 
+type Quota interface {
+	Add(ctx context.Context, params *QuotaParams) (*ApiResponse[QuotaEvent], error)
+	Set(ctx context.Context, params *QuotaParams) (*ApiResponse[QuotaEvent], error)
+	Remove(ctx context.Context, params *QuotaParams) (*ApiResponse[QuotaEvent], error)
+	Get(ctx context.Context, params *GetQuotaParams) (*ApiResponse[QuotaAllowance], error)
+	GetAll(ctx context.Context, params *GetAllQuotaParams) (*ApiResponse[[]QuotaAllowance], error)
+}
+
 type Features interface {
 	Get(ctx context.Context, code string, customerID string) (*ApiResponse[FeatureAccess], error)
 	CanUse(ctx context.Context, code string, customerID string) (*ApiResponse[CanUseResult], error)
