@@ -58,6 +58,7 @@ type Client struct {
 	Subscriptions Subscriptions
 	Usage         Usage
 	Seats         Seats
+	Quota         Quota
 	Features      Features
 	Portal        Portal
 	CreditPacks   CreditPacks
@@ -102,6 +103,7 @@ func New(apiKey string, opts ...Option) (*Client, error) {
 	c.Subscriptions = &SubscriptionsResource{http: h}
 	c.Usage = &UsageResource{http: h}
 	c.Seats = &SeatsResource{http: h}
+	c.Quota = &QuotaResource{http: h}
 	c.Features = &FeaturesResource{http: h}
 	c.Portal = &PortalResource{http: h}
 	c.CreditPacks = &CreditPacksResource{http: h}
