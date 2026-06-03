@@ -28,6 +28,7 @@ type ChangePlanParams struct {
 	SubscriptionID     string `json:"-"`
 	NewPlanID          string `json:"new_plan_id,omitempty"`
 	NewBillingInterval string `json:"new_billing_interval,omitempty"`
+	SuccessURL         string `json:"success_url,omitempty"`
 	IdempotencyKey     string `json:"-"`
 }
 
@@ -139,6 +140,7 @@ func (r *SubscriptionsResource) ChangePlan(ctx context.Context, params *ChangePl
 	body := buildBody(map[string]any{
 		"new_plan_id":          params.NewPlanID,
 		"new_billing_interval": params.NewBillingInterval,
+		"success_url":          params.SuccessURL,
 	})
 	return parseResponse[ChangePlanResult](r.http.post(ctx, fmt.Sprintf("/subscriptions/%s/change-plan", params.SubscriptionID), body, params.IdempotencyKey))
 }
