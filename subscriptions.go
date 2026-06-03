@@ -5,17 +5,24 @@ import (
 	"fmt"
 )
 
+type CustomIntroOffer struct {
+	DiscountType   string `json:"discount_type"`
+	DiscountValue  int    `json:"discount_value"`
+	DurationCycles int    `json:"duration_cycles"`
+}
+
 type CreateSubscriptionParams struct {
-	CustomerID      string         `json:"customer_id,omitempty"`
-	PlanCode        string         `json:"plan_code,omitempty"`
-	PlanID          string         `json:"plan_id,omitempty"`
-	BillingInterval string         `json:"billing_interval,omitempty"`
-	InitialSeats    map[string]int `json:"initial_seats,omitempty"`
-	SkipTrial       *bool          `json:"skip_trial,omitempty"`
-	Name            string         `json:"name,omitempty"`
-	StartDate       string         `json:"start_date,omitempty"`
-	SuccessURL      string         `json:"success_url,omitempty"`
-	IdempotencyKey  string         `json:"-"`
+	CustomerID       string            `json:"customer_id,omitempty"`
+	PlanCode         string            `json:"plan_code,omitempty"`
+	PlanID           string            `json:"plan_id,omitempty"`
+	BillingInterval  string            `json:"billing_interval,omitempty"`
+	InitialSeats     map[string]int    `json:"initial_seats,omitempty"`
+	SkipTrial        *bool             `json:"skip_trial,omitempty"`
+	Name             string            `json:"name,omitempty"`
+	StartDate        string            `json:"start_date,omitempty"`
+	SuccessURL       string            `json:"success_url,omitempty"`
+	CustomIntroOffer *CustomIntroOffer `json:"custom_intro_offer,omitempty"`
+	IdempotencyKey   string            `json:"-"`
 }
 
 type CancelSubscriptionParams struct {
@@ -106,7 +113,7 @@ type SubscriptionsResource struct {
 }
 
 func (r *SubscriptionsResource) Create(ctx context.Context, params *CreateSubscriptionParams) (*ApiResponse[Subscription], error) {
-	body := buildBody(map[string]any{
+	fields := map[string]any{
 		"customer_id":      params.CustomerID,
 		"plan_code":        params.PlanCode,
 		"plan_id":          params.PlanID,
@@ -116,7 +123,15 @@ func (r *SubscriptionsResource) Create(ctx context.Context, params *CreateSubscr
 		"name":             params.Name,
 		"start_date":       params.StartDate,
 		"success_url":      params.SuccessURL,
-	})
+	}
+	if params.CustomIntroOffer != nil {
+		fields["custom_intro_offer"] = map[string]any{
+			"discount_type":   params.CustomIntroOffer.DiscountType,
+			"discount_value":  params.CustomIntroOffer.DiscountValue,
+			"duration_cycles": params.CustomIntroOffer.DurationCycles,
+		}
+	}
+	body := buildBody(fields)
 	return parseResponse[Subscription](r.http.post(ctx, "/subscriptions", body, params.IdempotencyKey))
 }
 
