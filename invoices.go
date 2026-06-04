@@ -6,11 +6,11 @@ import (
 )
 
 type ListInvoicesParams struct {
-	CustomerID     string `json:"customer_id,omitempty"`
-	Status         string `json:"status,omitempty"`
-	SubscriptionID string `json:"subscription_id,omitempty"`
-	Limit          *int   `json:"limit,omitempty"`
-	Cursor         string `json:"cursor,omitempty"`
+	CustomerID     string        `json:"customer_id,omitempty"`
+	Status         InvoiceStatus `json:"status,omitempty"`
+	SubscriptionID string        `json:"subscription_id,omitempty"`
+	Limit          *int          `json:"limit,omitempty"`
+	Cursor         string        `json:"cursor,omitempty"`
 }
 
 type CreateAdjustmentParams struct {
@@ -21,7 +21,9 @@ type CreateAdjustmentParams struct {
 }
 
 type UpdateInvoiceStatusParams struct {
-	Status string `json:"status"`
+	// Status must be InvoiceStatusPaid or InvoiceStatusVoid; only outstanding
+	// invoices can be changed.
+	Status InvoiceStatus `json:"status"`
 }
 
 type InvoicesResource struct {
@@ -35,7 +37,7 @@ func (r *InvoicesResource) List(ctx context.Context, params *ListInvoicesParams)
 			queryParams["customer_id"] = params.CustomerID
 		}
 		if params.Status != "" {
-			queryParams["status"] = params.Status
+			queryParams["status"] = string(params.Status)
 		}
 		if params.SubscriptionID != "" {
 			queryParams["subscription_id"] = params.SubscriptionID
@@ -74,7 +76,7 @@ func (r *InvoicesResource) Send(ctx context.Context, invoiceID string) (*ApiResp
 
 func (r *InvoicesResource) UpdateStatus(ctx context.Context, invoiceID string, params *UpdateInvoiceStatusParams) (*ApiResponse[InvoiceStatusResult], error) {
 	body := buildBody(map[string]any{
-		"status": params.Status,
+		"status": string(params.Status),
 	})
 	return parseResponse[InvoiceStatusResult](r.http.put(ctx, fmt.Sprintf("/invoices/%s/status", invoiceID), body, ""))
 }

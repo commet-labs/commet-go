@@ -46,39 +46,39 @@ type ChangePlanPlanInfo struct {
 }
 
 type ChangePlanBilling struct {
-	Credit                float64 `json:"credit"`
-	CreditsApplied        float64 `json:"credits_applied"`
-	Charge                float64 `json:"charge"`
-	TaxAmount             float64 `json:"tax_amount"`
-	NetAmount             float64 `json:"net_amount"`
-	TotalCharged          float64 `json:"total_charged"`
+	Credit                 float64 `json:"credit"`
+	CreditsApplied         float64 `json:"credits_applied"`
+	Charge                 float64 `json:"charge"`
+	TaxAmount              float64 `json:"tax_amount"`
+	NetAmount              float64 `json:"net_amount"`
+	TotalCharged           float64 `json:"total_charged"`
 	RemainingCreditBalance float64 `json:"remaining_credit_balance"`
 }
 
 type ChangePlanResult struct {
-	ID               string              `json:"id"`
-	Scheduled        bool                `json:"scheduled"`
-	CustomerID       string              `json:"customer_id,omitempty"`
-	PreviousPlan     *ChangePlanPlanInfo `json:"previous_plan,omitempty"`
-	CurrentPlan      *ChangePlanPlanInfo `json:"current_plan,omitempty"`
-	BillingInterval  string              `json:"billing_interval,omitempty"`
-	Billing          *ChangePlanBilling  `json:"billing,omitempty"`
-	InvoiceID        string              `json:"invoice_id,omitempty"`
-	ScheduledFor     string              `json:"scheduled_for,omitempty"`
-	ChangeType       string              `json:"change_type,omitempty"`
-	EventID          string              `json:"event_id,omitempty"`
-	NewPlanID        string              `json:"new_plan_id,omitempty"`
-	NewPlanName      string              `json:"new_plan_name,omitempty"`
-	NewBillingInterval string            `json:"new_billing_interval,omitempty"`
-	RequiresCheckout bool                `json:"requires_checkout,omitempty"`
-	CheckoutURL      string              `json:"checkout_url,omitempty"`
+	ID                 string              `json:"id"`
+	Scheduled          bool                `json:"scheduled"`
+	CustomerID         string              `json:"customer_id,omitempty"`
+	PreviousPlan       *ChangePlanPlanInfo `json:"previous_plan,omitempty"`
+	CurrentPlan        *ChangePlanPlanInfo `json:"current_plan,omitempty"`
+	BillingInterval    string              `json:"billing_interval,omitempty"`
+	Billing            *ChangePlanBilling  `json:"billing,omitempty"`
+	InvoiceID          string              `json:"invoice_id,omitempty"`
+	ScheduledFor       string              `json:"scheduled_for,omitempty"`
+	ChangeType         string              `json:"change_type,omitempty"`
+	EventID            string              `json:"event_id,omitempty"`
+	NewPlanID          string              `json:"new_plan_id,omitempty"`
+	NewPlanName        string              `json:"new_plan_name,omitempty"`
+	NewBillingInterval string              `json:"new_billing_interval,omitempty"`
+	RequiresCheckout   bool                `json:"requires_checkout,omitempty"`
+	CheckoutURL        string              `json:"checkout_url,omitempty"`
 }
 
 type ListSubscriptionsParams struct {
-	CustomerID string `json:"customer_id,omitempty"`
-	Status     string `json:"status,omitempty"`
-	Limit      *int   `json:"limit,omitempty"`
-	Cursor     string `json:"cursor,omitempty"`
+	CustomerID string             `json:"customer_id,omitempty"`
+	Status     SubscriptionStatus `json:"status,omitempty"`
+	Limit      *int               `json:"limit,omitempty"`
+	Cursor     string             `json:"cursor,omitempty"`
 }
 
 type PreviewChangeParams struct {
@@ -167,7 +167,7 @@ func (r *SubscriptionsResource) List(ctx context.Context, params *ListSubscripti
 			queryParams["customer_id"] = params.CustomerID
 		}
 		if params.Status != "" {
-			queryParams["status"] = params.Status
+			queryParams["status"] = string(params.Status)
 		}
 		if params.Limit != nil {
 			queryParams["limit"] = fmt.Sprintf("%d", *params.Limit)

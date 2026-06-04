@@ -6,10 +6,10 @@ import (
 )
 
 type ListTransactionsParams struct {
-	Status        string `json:"status,omitempty"`
-	CustomerEmail string `json:"customer_email,omitempty"`
-	Limit         *int   `json:"limit,omitempty"`
-	Cursor        string `json:"cursor,omitempty"`
+	Status        TransactionStatus `json:"status,omitempty"`
+	CustomerEmail string            `json:"customer_email,omitempty"`
+	Limit         *int              `json:"limit,omitempty"`
+	Cursor        string            `json:"cursor,omitempty"`
 }
 
 type TransactionsResource struct {
@@ -20,7 +20,7 @@ func (r *TransactionsResource) List(ctx context.Context, params *ListTransaction
 	queryParams := map[string]string{}
 	if params != nil {
 		if params.Status != "" {
-			queryParams["status"] = params.Status
+			queryParams["status"] = string(params.Status)
 		}
 		if params.CustomerEmail != "" {
 			queryParams["customer_email"] = params.CustomerEmail

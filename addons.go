@@ -6,16 +6,16 @@ import (
 )
 
 type ActiveAddon struct {
-	Object           string `json:"object"`
-	Livemode         bool   `json:"livemode"`
-	Slug             string `json:"slug"`
-	Name             string `json:"name"`
-	BasePrice        int    `json:"base_price"`
-	FeatureCode      string `json:"feature_code"`
-	FeatureName      string `json:"feature_name"`
-	FeatureType      string `json:"feature_type"`
-	ConsumptionModel string `json:"consumption_model,omitempty"`
-	ActivatedAt      string `json:"activated_at"`
+	Object           string                `json:"object"`
+	Livemode         bool                  `json:"livemode"`
+	Slug             string                `json:"slug"`
+	Name             string                `json:"name"`
+	BasePrice        int                   `json:"base_price"`
+	FeatureCode      string                `json:"feature_code"`
+	FeatureName      string                `json:"feature_name"`
+	FeatureType      FeatureType           `json:"feature_type"`
+	ConsumptionModel AddonConsumptionModel `json:"consumption_model,omitempty"`
+	ActivatedAt      string                `json:"activated_at"`
 }
 
 type ListAddonsParams struct {

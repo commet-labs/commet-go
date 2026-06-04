@@ -47,6 +47,76 @@ const (
 	DiscountTypeAmount     DiscountType = "amount"
 )
 
+type AddonConsumptionModel string
+
+const (
+	AddonConsumptionModelBoolean AddonConsumptionModel = "boolean"
+	AddonConsumptionModelMetered AddonConsumptionModel = "metered"
+	AddonConsumptionModelCredits AddonConsumptionModel = "credits"
+	AddonConsumptionModelBalance AddonConsumptionModel = "balance"
+)
+
+type InvoiceStatus string
+
+const (
+	InvoiceStatusDraft         InvoiceStatus = "draft"
+	InvoiceStatusUpcoming      InvoiceStatus = "upcoming"
+	InvoiceStatusOutstanding   InvoiceStatus = "outstanding"
+	InvoiceStatusPaid          InvoiceStatus = "paid"
+	InvoiceStatusVoid          InvoiceStatus = "void"
+	InvoiceStatusUncollectible InvoiceStatus = "uncollectible"
+)
+
+type InvoiceType string
+
+const (
+	InvoiceTypeRecurring       InvoiceType = "recurring"
+	InvoiceTypeOverage         InvoiceType = "overage"
+	InvoiceTypePlanChange      InvoiceType = "plan_change"
+	InvoiceTypeAdjustment      InvoiceType = "adjustment"
+	InvoiceTypeCreditPurchase  InvoiceType = "credit_purchase"
+	InvoiceTypeBalanceTopup    InvoiceType = "balance_topup"
+	InvoiceTypeAddonActivation InvoiceType = "addon_activation"
+)
+
+type InvoiceLineType string
+
+const (
+	InvoiceLineTypePlanBase       InvoiceLineType = "plan_base"
+	InvoiceLineTypeFeatureOverage InvoiceLineType = "feature_overage"
+	InvoiceLineTypeFeatureSeats   InvoiceLineType = "feature_seats"
+	InvoiceLineTypeFeatureQuota   InvoiceLineType = "feature_quota"
+	InvoiceLineTypeDiscount       InvoiceLineType = "discount"
+	InvoiceLineTypeCredit         InvoiceLineType = "credit"
+	InvoiceLineTypeAddonBase      InvoiceLineType = "addon_base"
+)
+
+type ChargeType string
+
+const (
+	ChargeTypeStandard ChargeType = "standard"
+	ChargeTypeAdvance  ChargeType = "advance"
+	ChargeTypeTrueUp   ChargeType = "true_up"
+)
+
+type TransactionStatus string
+
+const (
+	TransactionStatusPending   TransactionStatus = "pending"
+	TransactionStatusSucceeded TransactionStatus = "succeeded"
+	TransactionStatusFailed    TransactionStatus = "failed"
+	TransactionStatusRefunded  TransactionStatus = "refunded"
+	TransactionStatusDisputed  TransactionStatus = "disputed"
+)
+
+type UsageCheckDenialReason string
+
+const (
+	UsageCheckDenialReasonIncludedLimitReached UsageCheckDenialReason = "included_limit_reached"
+	UsageCheckDenialReasonInsufficientCredits  UsageCheckDenialReason = "insufficient_credits"
+	UsageCheckDenialReasonInsufficientBalance  UsageCheckDenialReason = "insufficient_balance"
+)
+
 type SeatEventType string
 
 const (
@@ -59,6 +129,13 @@ type OverageModel string
 
 const (
 	OverageModelPerUnit OverageModel = "per_unit"
+)
+
+type PricingMode string
+
+const (
+	PricingModeFixed   PricingMode = "fixed"
+	PricingModeAiModel PricingMode = "ai_model"
 )
 
 type Currency string
@@ -425,10 +502,10 @@ type CancellationSummary struct {
 }
 
 type DiscountSummary struct {
-	Type   string  `json:"type"`
-	Value  float64 `json:"value"`
-	Name   string  `json:"name"`
-	EndsAt string  `json:"ends_at"`
+	Type   DiscountType `json:"type"`
+	Value  float64      `json:"value"`
+	Name   string       `json:"name"`
+	EndsAt string       `json:"ends_at"`
 }
 
 type SubscriptionListItem struct {
@@ -500,19 +577,19 @@ type ApiKeyCreated struct {
 }
 
 type InvoiceLineItem struct {
-	LineType       string   `json:"line_type"`
-	FeatureName    string   `json:"feature_name"`
-	Description    string   `json:"description"`
-	Quantity       int      `json:"quantity"`
-	UnitAmount     float64  `json:"unit_amount"`
-	Amount         float64  `json:"amount"`
-	IncludedAmount *int     `json:"included_amount,omitempty"`
-	UsedAmount     *int     `json:"used_amount,omitempty"`
-	OverageAmount  *int     `json:"overage_amount,omitempty"`
-	DiscountType   string   `json:"discount_type,omitempty"`
-	DiscountValue  *float64 `json:"discount_value,omitempty"`
-	DiscountName   string   `json:"discount_name,omitempty"`
-	ChargeType     string   `json:"charge_type,omitempty"`
+	LineType       InvoiceLineType `json:"line_type"`
+	FeatureName    string          `json:"feature_name"`
+	Description    string          `json:"description"`
+	Quantity       int             `json:"quantity"`
+	UnitAmount     float64         `json:"unit_amount"`
+	Amount         float64         `json:"amount"`
+	IncludedAmount *int            `json:"included_amount,omitempty"`
+	UsedAmount     *int            `json:"used_amount,omitempty"`
+	OverageAmount  *int            `json:"overage_amount,omitempty"`
+	DiscountType   *DiscountType   `json:"discount_type,omitempty"`
+	DiscountValue  *float64        `json:"discount_value,omitempty"`
+	DiscountName   string          `json:"discount_name,omitempty"`
+	ChargeType     ChargeType      `json:"charge_type,omitempty"`
 }
 
 type InvoiceListItem struct {
@@ -522,8 +599,8 @@ type InvoiceListItem struct {
 	CustomerID     string         `json:"customer_id"`
 	SubscriptionID string         `json:"subscription_id,omitempty"`
 	InvoiceNumber  string         `json:"invoice_number"`
-	Status         string         `json:"status"`
-	InvoiceType    string         `json:"invoice_type"`
+	Status         InvoiceStatus  `json:"status"`
+	InvoiceType    InvoiceType    `json:"invoice_type"`
 	Currency       string         `json:"currency"`
 	Subtotal       float64        `json:"subtotal"`
 	DiscountAmount float64        `json:"discount_amount"`
@@ -559,46 +636,48 @@ type InvoiceSendResult struct {
 }
 
 type InvoiceStatusResult struct {
-	ID        string `json:"id"`
-	Status    string `json:"status"`
-	UpdatedAt string `json:"updated_at"`
+	ID string `json:"id"`
+	// Status is restricted to InvoiceStatusPaid or InvoiceStatusVoid.
+	Status    InvoiceStatus `json:"status"`
+	UpdatedAt string        `json:"updated_at"`
 }
 
 type CreateAdjustmentResult struct {
-	ID            string         `json:"id"`
-	Object        string         `json:"object"`
-	Livemode      bool           `json:"livemode"`
-	CustomerID    string         `json:"customer_id"`
-	InvoiceNumber string         `json:"invoice_number"`
-	Status        string         `json:"status"`
-	InvoiceType   string         `json:"invoice_type"`
-	Currency      string         `json:"currency"`
-	Subtotal      float64        `json:"subtotal"`
-	TaxAmount     float64        `json:"tax_amount"`
-	Total         float64        `json:"total"`
-	IssueDate     string         `json:"issue_date"`
-	DueDate       string         `json:"due_date,omitempty"`
-	Memo          string         `json:"memo,omitempty"`
-	Metadata      map[string]any `json:"metadata,omitempty"`
-	CreatedAt     string         `json:"created_at"`
-	UpdatedAt     string         `json:"updated_at"`
+	ID            string `json:"id"`
+	Object        string `json:"object"`
+	Livemode      bool   `json:"livemode"`
+	CustomerID    string `json:"customer_id"`
+	InvoiceNumber string `json:"invoice_number"`
+	// Status is restricted to InvoiceStatusOutstanding or InvoiceStatusPaid.
+	Status      InvoiceStatus  `json:"status"`
+	InvoiceType InvoiceType    `json:"invoice_type"`
+	Currency    string         `json:"currency"`
+	Subtotal    float64        `json:"subtotal"`
+	TaxAmount   float64        `json:"tax_amount"`
+	Total       float64        `json:"total"`
+	IssueDate   string         `json:"issue_date"`
+	DueDate     string         `json:"due_date,omitempty"`
+	Memo        string         `json:"memo,omitempty"`
+	Metadata    map[string]any `json:"metadata,omitempty"`
+	CreatedAt   string         `json:"created_at"`
+	UpdatedAt   string         `json:"updated_at"`
 }
 
 type TransactionListItem struct {
-	ID            string  `json:"id"`
-	Object        string  `json:"object"`
-	Livemode      bool    `json:"livemode"`
-	InvoiceID     string  `json:"invoice_id"`
-	GrossAmount   float64 `json:"gross_amount"`
-	Subtotal      float64 `json:"subtotal"`
-	TaxAmount     float64 `json:"tax_amount"`
-	Currency      string  `json:"currency"`
-	Status        string  `json:"status"`
-	CustomerEmail string  `json:"customer_email"`
-	CustomerName  string  `json:"customer_name,omitempty"`
-	PaidAt        string  `json:"paid_at,omitempty"`
-	CreatedAt     string  `json:"created_at"`
-	UpdatedAt     string  `json:"updated_at"`
+	ID            string            `json:"id"`
+	Object        string            `json:"object"`
+	Livemode      bool              `json:"livemode"`
+	InvoiceID     string            `json:"invoice_id"`
+	GrossAmount   float64           `json:"gross_amount"`
+	Subtotal      float64           `json:"subtotal"`
+	TaxAmount     float64           `json:"tax_amount"`
+	Currency      string            `json:"currency"`
+	Status        TransactionStatus `json:"status"`
+	CustomerEmail string            `json:"customer_email"`
+	CustomerName  string            `json:"customer_name,omitempty"`
+	PaidAt        string            `json:"paid_at,omitempty"`
+	CreatedAt     string            `json:"created_at"`
+	UpdatedAt     string            `json:"updated_at"`
 }
 
 type TransactionDetail struct {
@@ -607,29 +686,32 @@ type TransactionDetail struct {
 }
 
 type TransactionRefundResult struct {
-	ID     string `json:"id"`
-	Status string `json:"status"`
+	ID string `json:"id"`
+	// Status is always TransactionStatusRefunded.
+	Status TransactionStatus `json:"status"`
 }
 
 type TransactionRetryResult struct {
-	ID                 string `json:"id"`
+	ID string `json:"id"`
+	// Status is always "processing" (not a TransactionStatus value; a retry
+	// creates a new invoice and starts a fresh payment attempt).
 	Status             string `json:"status"`
 	RetryInvoiceNumber string `json:"retry_invoice_number"`
 }
 
 type PromoCode struct {
-	ID              string  `json:"id"`
-	Object          string  `json:"object"`
-	Livemode        bool    `json:"livemode"`
-	Code            string  `json:"code"`
-	DiscountType    string  `json:"discount_type"`
-	DiscountValue   float64 `json:"discount_value"`
-	DurationCycles  *int    `json:"duration_cycles,omitempty"`
-	MaxRedemptions  *int    `json:"max_redemptions,omitempty"`
-	ExpiresAt       string  `json:"expires_at,omitempty"`
-	Active          bool    `json:"active"`
-	RedemptionCount int     `json:"redemption_count"`
-	CreatedAt       string  `json:"created_at"`
+	ID              string       `json:"id"`
+	Object          string       `json:"object"`
+	Livemode        bool         `json:"livemode"`
+	Code            string       `json:"code"`
+	DiscountType    DiscountType `json:"discount_type"`
+	DiscountValue   float64      `json:"discount_value"`
+	DurationCycles  *int         `json:"duration_cycles,omitempty"`
+	MaxRedemptions  *int         `json:"max_redemptions,omitempty"`
+	ExpiresAt       string       `json:"expires_at,omitempty"`
+	Active          bool         `json:"active"`
+	RedemptionCount int          `json:"redemption_count"`
+	CreatedAt       string       `json:"created_at"`
 }
 
 type PromoCodeDetail struct {
@@ -661,35 +743,35 @@ type PlanGroupDetail struct {
 }
 
 type PlanManage struct {
-	ID                string         `json:"id"`
-	Object            string         `json:"object"`
-	Livemode          bool           `json:"livemode"`
-	Name              string         `json:"name"`
-	Code              string         `json:"code"`
-	Description       string         `json:"description,omitempty"`
-	ConsumptionModel  string         `json:"consumption_model,omitempty"`
-	IsPublic          bool           `json:"is_public"`
-	IsDefault         bool           `json:"is_default"`
-	IsFree            bool           `json:"is_free"`
-	BlockOnExhaustion bool           `json:"block_on_exhaustion"`
-	SortOrder         int            `json:"sort_order"`
-	PlanGroupID       string         `json:"plan_group_id,omitempty"`
-	Metadata          map[string]any `json:"metadata,omitempty"`
-	CreatedAt         string         `json:"created_at"`
-	UpdatedAt         string         `json:"updated_at"`
+	ID                string           `json:"id"`
+	Object            string           `json:"object"`
+	Livemode          bool             `json:"livemode"`
+	Name              string           `json:"name"`
+	Code              string           `json:"code"`
+	Description       string           `json:"description,omitempty"`
+	ConsumptionModel  ConsumptionModel `json:"consumption_model,omitempty"`
+	IsPublic          bool             `json:"is_public"`
+	IsDefault         bool             `json:"is_default"`
+	IsFree            bool             `json:"is_free"`
+	BlockOnExhaustion bool             `json:"block_on_exhaustion"`
+	SortOrder         int              `json:"sort_order"`
+	PlanGroupID       string           `json:"plan_group_id,omitempty"`
+	Metadata          map[string]any   `json:"metadata,omitempty"`
+	CreatedAt         string           `json:"created_at"`
+	UpdatedAt         string           `json:"updated_at"`
 }
 
 type PlanFeatureManage struct {
-	PlanID           string   `json:"plan_id"`
-	FeatureID        string   `json:"feature_id"`
-	Enabled          bool     `json:"enabled"`
-	IncludedAmount   *int     `json:"included_amount,omitempty"`
-	Unlimited        bool     `json:"unlimited"`
-	OverageEnabled   bool     `json:"overage_enabled"`
-	CreditsPerUnit   *int     `json:"credits_per_unit,omitempty"`
-	PricingMode      string   `json:"pricing_mode"`
-	OverageUnitPrice *float64 `json:"overage_unit_price,omitempty"`
-	Margin           *float64 `json:"margin,omitempty"`
+	PlanID           string      `json:"plan_id"`
+	FeatureID        string      `json:"feature_id"`
+	Enabled          bool        `json:"enabled"`
+	IncludedAmount   *int        `json:"included_amount,omitempty"`
+	Unlimited        bool        `json:"unlimited"`
+	OverageEnabled   bool        `json:"overage_enabled"`
+	CreditsPerUnit   *int        `json:"credits_per_unit,omitempty"`
+	PricingMode      PricingMode `json:"pricing_mode"`
+	OverageUnitPrice *float64    `json:"overage_unit_price,omitempty"`
+	Margin           *float64    `json:"margin,omitempty"`
 }
 
 type PlanPriceManage struct {
@@ -704,7 +786,7 @@ type PlanPriceManage struct {
 	IncludedBalance          *int            `json:"included_balance,omitempty"`
 	IncludedCredits          *int            `json:"included_credits,omitempty"`
 	IntroOfferEnabled        bool            `json:"intro_offer_enabled"`
-	IntroOfferDiscountType   string          `json:"intro_offer_discount_type,omitempty"`
+	IntroOfferDiscountType   DiscountType    `json:"intro_offer_discount_type,omitempty"`
 	IntroOfferDiscountValue  *float64        `json:"intro_offer_discount_value,omitempty"`
 	IntroOfferDurationCycles *int            `json:"intro_offer_duration_cycles,omitempty"`
 	CreatedAt                string          `json:"created_at"`
@@ -745,21 +827,21 @@ type Feature struct {
 }
 
 type Addon struct {
-	ID               string   `json:"id"`
-	Object           string   `json:"object"`
-	Livemode         bool     `json:"livemode"`
-	Name             string   `json:"name"`
-	Slug             string   `json:"slug"`
-	Description      string   `json:"description,omitempty"`
-	BasePrice        int      `json:"base_price"`
-	FeatureCode      string   `json:"feature_code"`
-	FeatureName      string   `json:"feature_name"`
-	ConsumptionModel string   `json:"consumption_model"`
-	IncludedUnits    *int     `json:"included_units,omitempty"`
-	OverageRate      *float64 `json:"overage_rate,omitempty"`
-	CreditCost       *int     `json:"credit_cost,omitempty"`
-	CreatedAt        string   `json:"created_at"`
-	UpdatedAt        string   `json:"updated_at"`
+	ID               string                `json:"id"`
+	Object           string                `json:"object"`
+	Livemode         bool                  `json:"livemode"`
+	Name             string                `json:"name"`
+	Slug             string                `json:"slug"`
+	Description      string                `json:"description,omitempty"`
+	BasePrice        int                   `json:"base_price"`
+	FeatureCode      string                `json:"feature_code"`
+	FeatureName      string                `json:"feature_name"`
+	ConsumptionModel AddonConsumptionModel `json:"consumption_model"`
+	IncludedUnits    *int                  `json:"included_units,omitempty"`
+	OverageRate      *float64              `json:"overage_rate,omitempty"`
+	CreditCost       *int                  `json:"credit_cost,omitempty"`
+	CreatedAt        string                `json:"created_at"`
+	UpdatedAt        string                `json:"updated_at"`
 }
 
 type WebhookEndpoint struct {

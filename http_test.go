@@ -63,10 +63,10 @@ func TestToCamel(t *testing.T) {
 func TestConvertKeys(t *testing.T) {
 	t.Run("nested map conversion", func(t *testing.T) {
 		input := map[string]any{
-			"customerId": "cust_123",
+			"customerId":   "cust_123",
 			"billingEmail": "test@example.com",
 			"address": map[string]any{
-				"postalCode": "12345",
+				"postalCode":  "12345",
 				"countryCode": "US",
 			},
 		}

@@ -148,15 +148,15 @@ func (r *PlansResource) SetVisibility(ctx context.Context, planID string, params
 
 func (r *PlansResource) AddFeature(ctx context.Context, planID string, params *AddPlanFeatureParams) (*ApiResponse[PlanFeatureManage], error) {
 	body := buildBody(map[string]any{
-		"feature_id":        params.FeatureID,
-		"enabled":           params.Enabled,
-		"included_amount":   params.IncludedAmount,
-		"unlimited":         params.Unlimited,
-		"overage_enabled":   params.OverageEnabled,
-		"credits_per_unit":  params.CreditsPerUnit,
-		"pricing_mode":      params.PricingMode,
+		"feature_id":         params.FeatureID,
+		"enabled":            params.Enabled,
+		"included_amount":    params.IncludedAmount,
+		"unlimited":          params.Unlimited,
+		"overage_enabled":    params.OverageEnabled,
+		"credits_per_unit":   params.CreditsPerUnit,
+		"pricing_mode":       params.PricingMode,
 		"overage_unit_price": params.OverageUnitPrice,
-		"margin":            params.Margin,
+		"margin":             params.Margin,
 	})
 	return parseResponse[PlanFeatureManage](r.http.post(ctx, fmt.Sprintf("/plans/%s/features", planID), body, ""))
 }
