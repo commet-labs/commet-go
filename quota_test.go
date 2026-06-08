@@ -11,11 +11,11 @@ import (
 // The mock-based tests skip convertKeys, so this guards against json tags drifting
 // out of snake_case (which silently empties every field).
 func TestQuotaWireRoundTrip(t *testing.T) {
-	t.Run("QuotaAllowance survives camel wire", func(t *testing.T) {
+	t.Run("UsageQuota survives camel wire", func(t *testing.T) {
 		wire := `{"featureCode":"tasks","current":5,"included":10,"remaining":5,"billedQuantity":2,"unlimited":false,"overageEnabled":true,"asOf":"2024-01-01"}`
 
 		data := simulateWireResponse(t, wire)
-		resp, err := parseResponse[QuotaAllowance](&rawApiResponse{Success: true, Data: data}, nil)
+		resp, err := parseResponse[UsageQuota](&rawApiResponse{Success: true, Data: data}, nil)
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
@@ -23,15 +23,15 @@ func TestQuotaWireRoundTrip(t *testing.T) {
 			t.Errorf("FeatureCode = %q, want tasks (snake tags broken)", resp.Data.FeatureCode)
 		}
 		if resp.Data.Current != 5 {
-			t.Errorf("Current = %d, want 5", resp.Data.Current)
+			t.Errorf("Current = %v, want 5", resp.Data.Current)
 		}
 		if resp.Data.Included != 10 {
-			t.Errorf("Included = %d, want 10", resp.Data.Included)
+			t.Errorf("Included = %v, want 10", resp.Data.Included)
 		}
 		if resp.Data.Remaining == nil || *resp.Data.Remaining != 5 {
 			t.Errorf("Remaining = %v, want 5", resp.Data.Remaining)
 		}
-		if resp.Data.BilledQuantity == nil || *resp.Data.BilledQuantity != 2 {
+		if resp.Data.BilledQuantity != 2 {
 			t.Errorf("BilledQuantity = %v, want 2", resp.Data.BilledQuantity)
 		}
 		if !resp.Data.OverageEnabled {
@@ -42,11 +42,11 @@ func TestQuotaWireRoundTrip(t *testing.T) {
 		}
 	})
 
-	t.Run("QuotaEvent survives camel wire", func(t *testing.T) {
+	t.Run("UsageQuotaEvent survives camel wire", func(t *testing.T) {
 		wire := `{"id":"qe_1","customerId":"cus_1","featureCode":"tasks","previousBalance":4,"newBalance":5,"ts":"2024-01-01","createdAt":"2024-01-01"}`
 
 		data := simulateWireResponse(t, wire)
-		resp, err := parseResponse[QuotaEvent](&rawApiResponse{Success: true, Data: data}, nil)
+		resp, err := parseResponse[UsageQuotaEvent](&rawApiResponse{Success: true, Data: data}, nil)
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
@@ -84,13 +84,13 @@ func simulateWireResponse(t *testing.T, wireBody string) []byte {
 	return data
 }
 
-func TestParseQuotaEvent(t *testing.T) {
+func TestParseUsageQuotaEvent(t *testing.T) {
 	raw := &rawApiResponse{
 		Success: true,
 		Data:    []byte(`{"id":"qe_1","customer_id":"cus_1","feature_code":"tasks","previous_balance":4,"new_balance":5,"ts":"2024-01-01","created_at":"2024-01-01"}`),
 	}
 
-	resp, err := parseResponse[QuotaEvent](raw, nil)
+	resp, err := parseResponse[UsageQuotaEvent](raw, nil)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -105,14 +105,14 @@ func TestParseQuotaEvent(t *testing.T) {
 	}
 }
 
-func TestParseQuotaAllowance(t *testing.T) {
+func TestParseUsageQuota(t *testing.T) {
 	t.Run("bounded allowance keeps remaining", func(t *testing.T) {
 		raw := &rawApiResponse{
 			Success: true,
 			Data:    []byte(`{"feature_code":"tasks","current":5,"included":10,"remaining":5,"billed_quantity":2,"unlimited":false,"overage_enabled":true,"as_of":"2024-01-01"}`),
 		}
 
-		resp, err := parseResponse[QuotaAllowance](raw, nil)
+		resp, err := parseResponse[UsageQuota](raw, nil)
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
@@ -130,7 +130,7 @@ func TestParseQuotaAllowance(t *testing.T) {
 			Data:    []byte(`{"feature_code":"tasks","current":5,"included":0,"remaining":null,"unlimited":true,"overage_enabled":false,"as_of":null}`),
 		}
 
-		resp, err := parseResponse[QuotaAllowance](raw, nil)
+		resp, err := parseResponse[UsageQuota](raw, nil)
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}

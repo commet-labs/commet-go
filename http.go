@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"reflect"
 	"strings"
 	"time"
 	"unicode"
@@ -20,7 +21,7 @@ const version = "5.5.0"
 
 const baseURL = "https://commet.co"
 
-const APIVersion = "2026-05-25"
+const APIVersion = "2026-06-07"
 
 var retryableStatusCodes = map[int]bool{
 	408: true,
@@ -124,8 +125,11 @@ func (h *httpClient) request(ctx context.Context, method string, endpoint string
 
 	var jsonBody []byte
 	if body != nil {
-		converted := convertKeys(body, toCamel)
-		var err error
+		generic, err := genericize(body)
+		if err != nil {
+			return nil, fmt.Errorf("commet: failed to normalize request body: %w", err)
+		}
+		converted := convertKeys(generic, toCamel)
 		jsonBody, err = json.Marshal(converted)
 		if err != nil {
 			return nil, fmt.Errorf("commet: failed to marshal request body: %w", err)
@@ -428,12 +432,41 @@ func buildBody(fields map[string]any) map[string]any {
 		if v == nil {
 			continue
 		}
+		// A typed nil pointer (e.g. (*string)(nil)) boxed into `any` is not == nil,
+		// so unset optional fields would otherwise leak as JSON null. Skip them.
+		if isNilValue(v) {
+			continue
+		}
 		if s, ok := v.(string); ok && s == "" {
 			continue
 		}
 		body[k] = v
 	}
 	return body
+}
+
+// isNilValue reports whether v wraps a nil pointer. The plain `v == nil` check
+// only catches an untyped nil; a typed nil pointer boxed into `any` is not equal
+// to nil, so it needs reflection.
+func isNilValue(v any) bool {
+	rv := reflect.ValueOf(v)
+	return rv.Kind() == reflect.Ptr && rv.IsNil()
+}
+
+// genericize round-trips a value through JSON so typed nested structs/slices lose
+// their snake_case json-tag identity and become plain map[string]any / []any.
+// Without this, convertKeys(toCamel) only re-keys the top-level map and nested
+// typed values keep their snake_case keys on the wire.
+func genericize(v any) (any, error) {
+	encoded, err := json.Marshal(v)
+	if err != nil {
+		return nil, err
+	}
+	var generic any
+	if err := json.Unmarshal(encoded, &generic); err != nil {
+		return nil, err
+	}
+	return generic, nil
 }
 
 func orDefault(value, fallback string) string {

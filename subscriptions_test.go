@@ -35,10 +35,9 @@ func TestChangePlanSendsSuccessURLAsCamelCase(t *testing.T) {
 	client.http.baseURL = server.URL + "/api/v1"
 
 	const wantSuccessURL = "https://app.example.com/billing/success"
-	_, err = client.Subscriptions.ChangePlan(context.Background(), &ChangePlanParams{
-		SubscriptionID: "sub_123",
-		NewPlanID:      "plan_pro",
-		SuccessURL:     wantSuccessURL,
+	_, err = client.Subscriptions.ChangePlan(context.Background(), "sub_123", &ChangePlanParams{
+		NewPlanID:  strPtr("plan_pro"),
+		SuccessURL: strPtr(wantSuccessURL),
 	})
 	if err != nil {
 		t.Fatalf("ChangePlan: %v", err)
@@ -62,14 +61,15 @@ func TestChangePlanSendsSuccessURLAsCamelCase(t *testing.T) {
 	}
 }
 
-// TestCreateSendsCustomIntroOfferAsNestedCamelCase verifies that Create, when given
-// a CustomIntroOffer, emits it on the wire as a nested object under the camelCase key
-// "customIntroOffer" with camelCase inner keys "discountType", "discountValue" and
-// "durationCycles". The nested object is passed as a map[string]any with snake_case
-// keys so http.go's convertKeys(body, toCamel) recurses into it; this guards both that
-// the field is wired into the request and that the snake->camel conversion reached the
-// nested level (no leftover snake_case keys).
-func TestCreateSendsCustomIntroOfferAsNestedCamelCase(t *testing.T) {
+// TestCreateSendsIntroOfferAsNestedCamelCase verifies that Create, when given an
+// IntroOffer, emits it on the wire as a nested object under the camelCase key
+// "introOffer" with camelCase inner keys "discountType", "discountValue" and
+// "durationCycles". The nested object is a typed struct with snake_case json tags;
+// http.go genericizes the body (JSON round-trip) before convertKeys(body, toCamel)
+// so the nested keys re-key correctly. This guards both that the field is wired into
+// the request and that the snake->camel conversion reached the nested level (no
+// leftover snake_case keys).
+func TestCreateSendsIntroOfferAsNestedCamelCase(t *testing.T) {
 	var capturedBody []byte
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		capturedBody, _ = io.ReadAll(r.Body)
@@ -87,9 +87,9 @@ func TestCreateSendsCustomIntroOfferAsNestedCamelCase(t *testing.T) {
 
 	_, err = client.Subscriptions.Create(context.Background(), &CreateSubscriptionParams{
 		CustomerID: "cus_123",
-		PlanCode:   "pro",
-		CustomIntroOffer: &CustomIntroOffer{
-			DiscountType:   "percentage",
+		PlanCode:   strPtr("pro"),
+		IntroOffer: &CreateSubscriptionParamsIntroOffer{
+			DiscountType:   DiscountTypePercentage,
 			DiscountValue:  2000,
 			DurationCycles: 3,
 		},
@@ -103,13 +103,13 @@ func TestCreateSendsCustomIntroOfferAsNestedCamelCase(t *testing.T) {
 		t.Fatalf("unmarshal request body: %v (raw: %s)", err, capturedBody)
 	}
 
-	if _, exists := body["custom_intro_offer"]; exists {
-		t.Errorf("expected no snake_case \"custom_intro_offer\" key on the wire (conversion to camelCase did not happen), raw: %s", capturedBody)
+	if _, exists := body["intro_offer"]; exists {
+		t.Errorf("expected no snake_case \"intro_offer\" key on the wire (conversion to camelCase did not happen), raw: %s", capturedBody)
 	}
 
-	offer, ok := body["customIntroOffer"].(map[string]any)
+	offer, ok := body["introOffer"].(map[string]any)
 	if !ok {
-		t.Fatalf("body[\"customIntroOffer\"] = %v, want nested object (raw: %s)", body["customIntroOffer"], capturedBody)
+		t.Fatalf("body[\"introOffer\"] = %v, want nested object (raw: %s)", body["introOffer"], capturedBody)
 	}
 
 	if offer["discountType"] != "percentage" {

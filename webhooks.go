@@ -9,6 +9,32 @@ import (
 	"fmt"
 )
 
+// WebhookEndpoint, WebhookEndpointCreated, and WebhookTestResult are preserved
+// here: webhook endpoint management keeps its hand-written HMAC verification and
+// signing logic, so the generator does not emit these response models.
+type WebhookEndpoint struct {
+	ID          string   `json:"id"`
+	Object      string   `json:"object"`
+	Livemode    bool     `json:"livemode"`
+	URL         string   `json:"url"`
+	Events      []string `json:"events"`
+	Description string   `json:"description,omitempty"`
+	IsActive    bool     `json:"is_active"`
+	ApiVersion  string   `json:"api_version,omitempty"`
+	CreatedAt   string   `json:"created_at"`
+}
+
+type WebhookEndpointCreated struct {
+	WebhookEndpoint
+	SecretKey string `json:"secret_key"`
+}
+
+type WebhookTestResult struct {
+	Success     bool   `json:"success"`
+	DeliveryId  string `json:"delivery_id"`
+	DeliveredAt string `json:"delivered_at"`
+}
+
 type ListWebhooksParams struct {
 	Limit  *int   `json:"limit,omitempty"`
 	Cursor string `json:"cursor,omitempty"`
@@ -101,8 +127,8 @@ func (w *WebhooksResource) Update(ctx context.Context, webhookID string, params 
 	return parseResponse[WebhookEndpoint](w.http.put(ctx, fmt.Sprintf("/webhooks/%s", webhookID), body, ""))
 }
 
-func (w *WebhooksResource) Delete(ctx context.Context, webhookID string) (*ApiResponse[DeleteResult], error) {
-	return parseResponse[DeleteResult](w.http.delete(ctx, fmt.Sprintf("/webhooks/%s", webhookID), nil, ""))
+func (w *WebhooksResource) Delete(ctx context.Context, webhookID string) (*ApiResponse[DeletedObject], error) {
+	return parseResponse[DeletedObject](w.http.delete(ctx, fmt.Sprintf("/webhooks/%s", webhookID), nil, ""))
 }
 
 func (w *WebhooksResource) Test(ctx context.Context, webhookID string) (*ApiResponse[WebhookTestResult], error) {

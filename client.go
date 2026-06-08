@@ -63,22 +63,22 @@ func WithHTTPClient(client *http.Client) Option {
 }
 
 type Client struct {
-	Customers     Customers
-	Plans         Plans
-	Subscriptions Subscriptions
-	Usage         Usage
-	Seats         Seats
-	Quota         Quota
-	Features      Features
-	Portal        Portal
-	CreditPacks   CreditPacks
-	Addons        Addons
-	Webhooks      WebhookService
-	ApiKeys       ApiKeys
-	Invoices      Invoices
-	Transactions  Transactions
-	PromoCodes    PromoCodes
-	PlanGroups    PlanGroups
+	Customers     *CustomersResource
+	Plans         *PlansResource
+	Subscriptions *SubscriptionsResource
+	Usage         *UsageResource
+	Seats         *SeatsResource
+	Quota         *QuotaResource
+	Features      *FeaturesResource
+	Portal        *PortalResource
+	CreditPacks   *CreditPacksResource
+	Addons        *AddonsResource
+	Webhooks      *WebhooksResource
+	ApiKeys       *ApiKeysResource
+	Invoices      *InvoicesResource
+	Transactions  *TransactionsResource
+	PromoCodes    *PromoCodesResource
+	PlanGroups    *PlanGroupsResource
 
 	http *httpClient
 }

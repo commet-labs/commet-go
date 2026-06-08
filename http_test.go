@@ -169,7 +169,7 @@ func TestParseResponse(t *testing.T) {
 	t.Run("parses typed data from raw response", func(t *testing.T) {
 		raw := &rawApiResponse{
 			Success: true,
-			Data:    []byte(`{"id":"cust_123","billing_email":"test@example.com","created_at":"2024-01-01","updated_at":"2024-01-01"}`),
+			Data:    []byte(`{"id":"cust_123","email":"test@example.com","created_at":"2024-01-01","updated_at":"2024-01-01"}`),
 			Code:    "ok",
 			Message: "Customer created",
 		}
@@ -184,15 +184,15 @@ func TestParseResponse(t *testing.T) {
 		if resp.Data.ID != "cust_123" {
 			t.Errorf("ID = %v, want cust_123", resp.Data.ID)
 		}
-		if resp.Data.BillingEmail != "test@example.com" {
-			t.Errorf("BillingEmail = %v, want test@example.com", resp.Data.BillingEmail)
+		if resp.Data.Email != "test@example.com" {
+			t.Errorf("Email = %v, want test@example.com", resp.Data.Email)
 		}
 	})
 
 	t.Run("parses list data", func(t *testing.T) {
 		raw := &rawApiResponse{
 			Success:    true,
-			Data:       []byte(`[{"id":"cust_1","billing_email":"a@b.com","created_at":"2024-01-01","updated_at":"2024-01-01"},{"id":"cust_2","billing_email":"c@d.com","created_at":"2024-01-01","updated_at":"2024-01-01"}]`),
+			Data:       []byte(`[{"id":"cust_1","email":"a@b.com","created_at":"2024-01-01","updated_at":"2024-01-01"},{"id":"cust_2","email":"c@d.com","created_at":"2024-01-01","updated_at":"2024-01-01"}]`),
 			HasMore:    true,
 			NextCursor: "cursor_abc",
 		}

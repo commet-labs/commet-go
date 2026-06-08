@@ -5,6 +5,38 @@ import (
 	"time"
 )
 
+// UsageEvent and UsageEventProperty are preserved here: the usage track methods
+// keep their hand-written batching/token logic, so the generator does not emit
+// these response models.
+type UsageEvent struct {
+	ID             string               `json:"id"`
+	Object         string               `json:"object"`
+	Livemode       bool                 `json:"livemode"`
+	OrganizationID string               `json:"organization_id"`
+	CustomerID     string               `json:"customer_id"`
+	Feature        string               `json:"feature"`
+	IdempotencyKey string               `json:"idempotency_key,omitempty"`
+	Ts             string               `json:"ts"`
+	Properties     []UsageEventProperty `json:"properties,omitempty"`
+	CreatedAt      string               `json:"created_at"`
+}
+
+type UsageEventProperty struct {
+	ID           string `json:"id"`
+	UsageEventID string `json:"usage_event_id"`
+	Property     string `json:"property"`
+	Value        string `json:"value"`
+	CreatedAt    string `json:"created_at"`
+}
+
+type UsageCheckDenialReason string
+
+const (
+	UsageCheckDenialReasonIncludedLimitReached UsageCheckDenialReason = "included_limit_reached"
+	UsageCheckDenialReasonInsufficientCredits  UsageCheckDenialReason = "insufficient_credits"
+	UsageCheckDenialReasonInsufficientBalance  UsageCheckDenialReason = "insufficient_balance"
+)
+
 type TrackUsageParams struct {
 	Feature          string            `json:"feature"`
 	CustomerID       string            `json:"customer_id"`
