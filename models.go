@@ -119,6 +119,55 @@ type CanceledSubscription struct {
 	Livemode                  bool               `json:"livemode"`
 }
 
+type CompletePayoutVerificationParamsBank struct {
+	AccountNumber     string  `json:"account_number"`
+	AccountHolderName string  `json:"account_holder_name"`
+	RoutingNumber     *string `json:"routing_number,omitempty"`
+	AccountType       *string `json:"account_type,omitempty"`
+}
+
+type CompletePayoutVerificationParamsCompany struct {
+	Name           string                                                `json:"name"`
+	TaxID          string                                                `json:"tax_id"`
+	Address        CompletePayoutVerificationParamsCompanyAddress        `json:"address"`
+	Representative CompletePayoutVerificationParamsCompanyRepresentative `json:"representative"`
+}
+
+type CompletePayoutVerificationParamsCompanyAddress struct {
+	Line1      string  `json:"line1"`
+	Line2      *string `json:"line2,omitempty"`
+	City       string  `json:"city"`
+	State      *string `json:"state,omitempty"`
+	PostalCode string  `json:"postal_code"`
+	Country    string  `json:"country"`
+}
+
+type CompletePayoutVerificationParamsCompanyRepresentative struct {
+	FirstName string  `json:"first_name"`
+	LastName  string  `json:"last_name"`
+	Phone     *string `json:"phone,omitempty"`
+	Email     *string `json:"email,omitempty"`
+}
+
+type CompletePayoutVerificationParamsIndividual struct {
+	FirstName   string                                            `json:"first_name"`
+	LastName    string                                            `json:"last_name"`
+	Phone       string                                            `json:"phone"`
+	DateOfBirth string                                            `json:"date_of_birth"`
+	SsnLast4    *string                                           `json:"ssn_last4,omitempty"`
+	IDNumber    *string                                           `json:"id_number,omitempty"`
+	Address     CompletePayoutVerificationParamsIndividualAddress `json:"address"`
+}
+
+type CompletePayoutVerificationParamsIndividualAddress struct {
+	Line1      string  `json:"line1"`
+	Line2      *string `json:"line2,omitempty"`
+	City       string  `json:"city"`
+	State      *string `json:"state,omitempty"`
+	PostalCode string  `json:"postal_code"`
+	Country    string  `json:"country"`
+}
+
 type CreateCustomerParamsAddress struct {
 	Line1      string  `json:"line1"`
 	Line2      *string `json:"line2,omitempty"`
@@ -375,6 +424,47 @@ type InvoiceStatus struct {
 	UpdatedAt string `json:"updated_at"`
 	Object    string `json:"object"`
 	Livemode  bool   `json:"livemode"`
+}
+
+type Payout struct {
+	ID                 string  `json:"id"`
+	Status             string  `json:"status"`
+	Amount             int     `json:"amount"`
+	Fee                int     `json:"fee"`
+	NetAmount          int     `json:"net_amount"`
+	Currency           string  `json:"currency"`
+	Description        *string `json:"description"`
+	ProviderTransferID string  `json:"provider_transfer_id"`
+	CreatedAt          string  `json:"created_at"`
+	Object             string  `json:"object"`
+	Livemode           bool    `json:"livemode"`
+}
+
+type PayoutBankAccount struct {
+	ID                        string  `json:"id"`
+	ProviderExternalAccountID *string `json:"provider_external_account_id"`
+	HolderName                string  `json:"holder_name"`
+	Last4                     string  `json:"last4"`
+	BankName                  *string `json:"bank_name"`
+	Country                   string  `json:"country"`
+	Currency                  string  `json:"currency"`
+	AccountType               *string `json:"account_type"`
+	IsDefault                 bool    `json:"is_default"`
+	Status                    string  `json:"status"`
+	CreatedAt                 string  `json:"created_at"`
+	Object                    string  `json:"object"`
+	Livemode                  bool    `json:"livemode"`
+}
+
+type PayoutVerification struct {
+	ProviderAccountID string  `json:"provider_account_id"`
+	Status            string  `json:"status"`
+	TransfersEnabled  bool    `json:"transfers_enabled"`
+	AlreadyExists     *bool   `json:"already_exists,omitempty"`
+	BusinessType      *string `json:"business_type,omitempty"`
+	Country           *string `json:"country,omitempty"`
+	Object            string  `json:"object"`
+	Livemode          bool    `json:"livemode"`
 }
 
 type Plan struct {
@@ -778,6 +868,22 @@ type SubscriptionPlan struct {
 
 type SubscriptionsGetActiveResult struct {
 	Value Subscription `json:"value"`
+}
+
+type TestClock struct {
+	SimulatedTime *string `json:"simulated_time"`
+	IsActive      bool    `json:"is_active"`
+	Now           string  `json:"now"`
+	Object        string  `json:"object"`
+	Livemode      bool    `json:"livemode"`
+}
+
+type TestClockBilling struct {
+	CustomersFound int    `json:"customers_found"`
+	Enqueued       int    `json:"enqueued"`
+	Failed         int    `json:"failed"`
+	Object         string `json:"object"`
+	Livemode       bool   `json:"livemode"`
 }
 
 type Transaction struct {

@@ -79,6 +79,8 @@ type Client struct {
 	Transactions  *TransactionsResource
 	PromoCodes    *PromoCodesResource
 	PlanGroups    *PlanGroupsResource
+	Payouts       *PayoutsResource
+	TestClock     *TestClockResource
 
 	http *httpClient
 }
@@ -124,6 +126,8 @@ func New(apiKey string, opts ...Option) (*Client, error) {
 	c.Transactions = &TransactionsResource{http: h}
 	c.PromoCodes = &PromoCodesResource{http: h}
 	c.PlanGroups = &PlanGroupsResource{http: h}
+	c.Payouts = &PayoutsResource{http: h}
+	c.TestClock = &TestClockResource{http: h}
 
 	return c, nil
 }
