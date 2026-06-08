@@ -66,8 +66,7 @@ func decodeBody(t *testing.T, raw []byte) map[string]any {
 	return body
 }
 
-func intPtr(i int) *int           { return &i }
-func boolPtr(b bool) *bool        { return &b }
-func floatPtr(f float64) *float64 { return &f }
+func intPtr(i int) *int    { return &i }
+func boolPtr(b bool) *bool { return &b }
 
 var _ = context.Background
