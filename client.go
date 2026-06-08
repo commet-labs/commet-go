@@ -63,24 +63,11 @@ func WithHTTPClient(client *http.Client) Option {
 }
 
 type Client struct {
-	Customers     *CustomersResource
-	Plans         *PlansResource
-	Subscriptions *SubscriptionsResource
-	Usage         *UsageResource
-	Seats         *SeatsResource
-	Quota         *QuotaResource
-	Features      *FeaturesResource
-	Portal        *PortalResource
-	CreditPacks   *CreditPacksResource
-	Addons        *AddonsResource
-	Webhooks      *WebhooksResource
-	ApiKeys       *ApiKeysResource
-	Invoices      *InvoicesResource
-	Transactions  *TransactionsResource
-	PromoCodes    *PromoCodesResource
-	PlanGroups    *PlanGroupsResource
-	Payouts       *PayoutsResource
-	TestClock     *TestClockResource
+	generatedResources
+
+	// Preserved hand-written resources (not in the generated registry).
+	Usage    *UsageResource
+	Webhooks *WebhooksResource
 
 	http *httpClient
 }
@@ -110,24 +97,10 @@ func New(apiKey string, opts ...Option) (*Client, error) {
 		http: h,
 	}
 
-	c.Customers = &CustomersResource{http: h}
-	c.Plans = &PlansResource{http: h}
-	c.Subscriptions = &SubscriptionsResource{http: h}
+	c.wireResources(h)
+
 	c.Usage = &UsageResource{http: h}
-	c.Seats = &SeatsResource{http: h}
-	c.Quota = &QuotaResource{http: h}
-	c.Features = &FeaturesResource{http: h}
-	c.Portal = &PortalResource{http: h}
-	c.CreditPacks = &CreditPacksResource{http: h}
-	c.Addons = &AddonsResource{http: h}
 	c.Webhooks = &WebhooksResource{http: h}
-	c.ApiKeys = &ApiKeysResource{http: h}
-	c.Invoices = &InvoicesResource{http: h}
-	c.Transactions = &TransactionsResource{http: h}
-	c.PromoCodes = &PromoCodesResource{http: h}
-	c.PlanGroups = &PlanGroupsResource{http: h}
-	c.Payouts = &PayoutsResource{http: h}
-	c.TestClock = &TestClockResource{http: h}
 
 	return c, nil
 }
