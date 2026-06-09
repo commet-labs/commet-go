@@ -39,7 +39,7 @@ func TestCreateSendsID(t *testing.T) {
 
 	_, _ = client.Customers.Create(context.Background(), &CreateCustomerParams{
 		Email: "a@b.com",
-		ID:    "ext_123",
+		ID:    strPtr("ext_123"),
 	})
 
 	var body map[string]any
@@ -68,10 +68,12 @@ func TestCreateOmitsEmptyID(t *testing.T) {
 func TestCreateBatchSendsID(t *testing.T) {
 	client, rt := newCapturingClient(t)
 
-	_, _ = client.Customers.CreateBatch(context.Background(), []CreateCustomerParams{
-		{Email: "a@b.com", ID: "ext_a"},
-		{Email: "b@b.com"},
-	}, "")
+	_, _ = client.Customers.CreateBatch(context.Background(), &BatchCreateCustomersParams{
+		Customers: []BatchCreateCustomersParamsCustomersItem{
+			{Email: "a@b.com", ID: strPtr("ext_a")},
+			{Email: "b@b.com"},
+		},
+	})
 
 	var body struct {
 		Customers []map[string]any `json:"customers"`
@@ -88,4 +90,8 @@ func TestCreateBatchSendsID(t *testing.T) {
 	if _, ok := body.Customers[1]["id"]; ok {
 		t.Errorf("expected no id in customers[1], got %v", body.Customers[1])
 	}
+}
+
+func strPtr(s string) *string {
+	return &s
 }

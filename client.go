@@ -63,22 +63,11 @@ func WithHTTPClient(client *http.Client) Option {
 }
 
 type Client struct {
-	Customers     Customers
-	Plans         Plans
-	Subscriptions Subscriptions
-	Usage         Usage
-	Seats         Seats
-	Quota         Quota
-	Features      Features
-	Portal        Portal
-	CreditPacks   CreditPacks
-	Addons        Addons
-	Webhooks      WebhookService
-	ApiKeys       ApiKeys
-	Invoices      Invoices
-	Transactions  Transactions
-	PromoCodes    PromoCodes
-	PlanGroups    PlanGroups
+	generatedResources
+
+	// Preserved hand-written resources (not in the generated registry).
+	Usage    *UsageResource
+	Webhooks *WebhooksResource
 
 	http *httpClient
 }
@@ -89,7 +78,7 @@ func New(apiKey string, opts ...Option) (*Client, error) {
 	}
 
 	if !strings.HasPrefix(apiKey, "ck_") {
-		return nil, errors.New("commet: invalid API key format, expected format: ck_xxx...")
+		return nil, errors.New("commet: invalid API key format, expected prefix ck_")
 	}
 
 	cfg := &clientConfig{
@@ -108,22 +97,10 @@ func New(apiKey string, opts ...Option) (*Client, error) {
 		http: h,
 	}
 
-	c.Customers = &CustomersResource{http: h}
-	c.Plans = &PlansResource{http: h}
-	c.Subscriptions = &SubscriptionsResource{http: h}
+	c.wireResources(h)
+
 	c.Usage = &UsageResource{http: h}
-	c.Seats = &SeatsResource{http: h}
-	c.Quota = &QuotaResource{http: h}
-	c.Features = &FeaturesResource{http: h}
-	c.Portal = &PortalResource{http: h}
-	c.CreditPacks = &CreditPacksResource{http: h}
-	c.Addons = &AddonsResource{http: h}
 	c.Webhooks = &WebhooksResource{http: h}
-	c.ApiKeys = &ApiKeysResource{http: h}
-	c.Invoices = &InvoicesResource{http: h}
-	c.Transactions = &TransactionsResource{http: h}
-	c.PromoCodes = &PromoCodesResource{http: h}
-	c.PlanGroups = &PlanGroupsResource{http: h}
 
 	return c, nil
 }

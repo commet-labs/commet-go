@@ -20,7 +20,7 @@ func TestNewClient(t *testing.T) {
 		{
 			name:    "invalid API key format",
 			apiKey:  "sk_invalid_key",
-			wantErr: "commet: invalid API key format, expected format: ck_xxx...",
+			wantErr: "commet: invalid API key format, expected prefix ck_",
 		},
 	}
 

@@ -2,19 +2,36 @@ package commet
 
 import "context"
 
-type QuotaParams struct {
-	FeatureCode    string `json:"feature_code"`
-	Count          int    `json:"count"`
-	CustomerID     string `json:"customer_id"`
-	IdempotencyKey string `json:"-"`
+type AddQuotaParams struct {
+	CustomerID     *string `json:"customer_id,omitempty"`
+	ExternalID     *string `json:"external_id,omitempty"`
+	FeatureCode    string  `json:"feature_code"`
+	Count          *int    `json:"count,omitempty"`
+	IdempotencyKey string  `json:"-"`
 }
 
-type GetQuotaParams struct {
-	FeatureCode string `json:"feature_code"`
+type SetQuotaParams struct {
+	CustomerID     *string `json:"customer_id,omitempty"`
+	ExternalID     *string `json:"external_id,omitempty"`
+	FeatureCode    string  `json:"feature_code"`
+	Count          int     `json:"count"`
+	IdempotencyKey string  `json:"-"`
+}
+
+type RemoveQuotaParams struct {
+	CustomerID     *string `json:"customer_id,omitempty"`
+	ExternalID     *string `json:"external_id,omitempty"`
+	FeatureCode    string  `json:"feature_code"`
+	Count          *int    `json:"count,omitempty"`
+	IdempotencyKey string  `json:"-"`
+}
+
+type GetQuotaAllowanceParams struct {
 	CustomerID  string `json:"customer_id"`
+	FeatureCode string `json:"feature_code"`
 }
 
-type GetAllQuotaParams struct {
+type GetAllQuotaAllowancesParams struct {
 	CustomerID string `json:"customer_id"`
 }
 
@@ -22,55 +39,56 @@ type QuotaResource struct {
 	http *httpClient
 }
 
-func (r *QuotaResource) Add(ctx context.Context, params *QuotaParams) (*ApiResponse[QuotaEvent], error) {
-	count := params.Count
-	if count == 0 {
-		count = 1
-	}
+// Add to a customer's quota allowance for a feature. Defaults to 1 if count is omitted.
+func (r *QuotaResource) Add(ctx context.Context, params *AddQuotaParams) (*ApiResponse[UsageQuotaEvent], error) {
 	body := buildBody(map[string]any{
 		"customer_id":  params.CustomerID,
-		"feature_code": params.FeatureCode,
-		"count":        count,
-	})
-	return parseResponse[QuotaEvent](r.http.post(ctx, "/usage/quota", body, params.IdempotencyKey))
-}
-
-func (r *QuotaResource) Set(ctx context.Context, params *QuotaParams) (*ApiResponse[QuotaEvent], error) {
-	body := buildBody(map[string]any{
-		"customer_id":  params.CustomerID,
+		"external_id":  params.ExternalID,
 		"feature_code": params.FeatureCode,
 		"count":        params.Count,
 	})
-	return parseResponse[QuotaEvent](r.http.put(ctx, "/usage/quota", body, params.IdempotencyKey))
+	return parseResponse[UsageQuotaEvent](r.http.post(ctx, "/usage/quota", body, params.IdempotencyKey))
 }
 
-func (r *QuotaResource) Remove(ctx context.Context, params *QuotaParams) (*ApiResponse[QuotaEvent], error) {
-	count := params.Count
-	if count == 0 {
-		count = 1
-	}
+// Set a customer's quota allowance for a feature to an exact value.
+func (r *QuotaResource) Set(ctx context.Context, params *SetQuotaParams) (*ApiResponse[UsageQuotaEvent], error) {
 	body := buildBody(map[string]any{
 		"customer_id":  params.CustomerID,
+		"external_id":  params.ExternalID,
 		"feature_code": params.FeatureCode,
-		"count":        count,
+		"count":        params.Count,
 	})
-	return parseResponse[QuotaEvent](r.http.delete(ctx, "/usage/quota", body, params.IdempotencyKey))
+	return parseResponse[UsageQuotaEvent](r.http.put(ctx, "/usage/quota", body, params.IdempotencyKey))
 }
 
-func (r *QuotaResource) Get(ctx context.Context, params *GetQuotaParams) (*ApiResponse[QuotaAllowance], error) {
-	queryParams := map[string]string{
+// Remove from a customer's quota allowance for a feature. Defaults to 1 if count is omitted. Returns 400 insufficient_balance if the balance would go negative.
+func (r *QuotaResource) Remove(ctx context.Context, params *RemoveQuotaParams) (*ApiResponse[UsageQuotaEvent], error) {
+	body := buildBody(map[string]any{
+		"customer_id":  params.CustomerID,
+		"external_id":  params.ExternalID,
 		"feature_code": params.FeatureCode,
-	}
-	if params.CustomerID != "" {
-		queryParams["customer_id"] = params.CustomerID
-	}
-	return parseResponse[QuotaAllowance](r.http.get(ctx, "/usage/quota", queryParams))
+		"count":        params.Count,
+	})
+	return parseResponse[UsageQuotaEvent](r.http.delete(ctx, "/usage/quota", body, params.IdempotencyKey))
 }
 
-func (r *QuotaResource) GetAll(ctx context.Context, params *GetAllQuotaParams) (*ApiResponse[[]QuotaAllowance], error) {
-	queryParams := map[string]string{}
-	if params != nil && params.CustomerID != "" {
-		queryParams["customer_id"] = params.CustomerID
+// Get the current quota allowance (used vs included) for a specific feature.
+func (r *QuotaResource) Get(ctx context.Context, params *GetQuotaAllowanceParams) (*ApiResponse[UsageQuota], error) {
+	query := map[string]string{}
+	if params.CustomerID != "" {
+		query["customer_id"] = params.CustomerID
 	}
-	return parseResponse[[]QuotaAllowance](r.http.get(ctx, "/usage/quota/all", queryParams))
+	if params.FeatureCode != "" {
+		query["feature_code"] = params.FeatureCode
+	}
+	return parseResponse[UsageQuota](r.http.get(ctx, "/usage/quota", query))
+}
+
+// Get all quota allowances for a customer across every quota feature in their plan.
+func (r *QuotaResource) GetAll(ctx context.Context, params *GetAllQuotaAllowancesParams) (*ApiResponse[[]UsageQuota], error) {
+	query := map[string]string{}
+	if params.CustomerID != "" {
+		query["customer_id"] = params.CustomerID
+	}
+	return parseResponse[[]UsageQuota](r.http.get(ctx, "/usage/quota/all", query))
 }
