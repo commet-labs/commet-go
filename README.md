@@ -5,7 +5,7 @@ Billing and usage tracking for SaaS applications.
 ## Installation
 
 ```bash
-go get github.com/commet-labs/commet-go/v6
+go get github.com/commet-labs/commet-go/v7
 ```
 
 ## Quick start
@@ -17,7 +17,7 @@ import (
 	"context"
 	"log"
 
-	commet "github.com/commet-labs/commet-go/v6"
+	commet "github.com/commet-labs/commet-go/v7"
 )
 
 func main() {

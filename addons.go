@@ -6,7 +6,7 @@ import (
 )
 
 type ListActiveAddonsParams struct {
-	CustomerID *string `json:"customer_id,omitempty"`
+	CustomerID string `json:"customer_id"`
 }
 
 type ListAddonsParams struct {
@@ -42,10 +42,10 @@ type AddonsResource struct {
 // List all active add-ons for a customer's subscription.
 func (r *AddonsResource) ListActive(ctx context.Context, params *ListActiveAddonsParams) (*ApiResponse[[]ActiveAddon], error) {
 	query := map[string]string{}
-	if params.CustomerID != nil {
-		query["customer_id"] = *params.CustomerID
+	if params.CustomerID != "" {
+		query["customer_id"] = params.CustomerID
 	}
-	return parseResponse[[]ActiveAddon](r.http.get(ctx, "/addons/active", query))
+	return parseResponse[[]ActiveAddon](r.http.get(ctx, "/active-addons", query))
 }
 
 // List all add-ons with cursor-based pagination.

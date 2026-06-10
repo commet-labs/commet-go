@@ -5,19 +5,6 @@ import (
 	"fmt"
 )
 
-type ListFeaturesParams struct {
-	CustomerID string `json:"customer_id"`
-}
-
-type GetFeatureAccessParams struct {
-	CustomerID string  `json:"customer_id"`
-	Action     *string `json:"action,omitempty"`
-}
-
-type CanUseFeatureParams struct {
-	CustomerID string `json:"customer_id"`
-}
-
 type CreateFeatureParams struct {
 	Name           string      `json:"name"`
 	Code           string      `json:"code"`
@@ -38,35 +25,14 @@ type FeaturesResource struct {
 	http *httpClient
 }
 
-// List all features for a customer's active subscription.
-func (r *FeaturesResource) List(ctx context.Context, params *ListFeaturesParams) (*ApiResponse[[]FeatureAccess], error) {
-	query := map[string]string{}
-	if params.CustomerID != "" {
-		query["customer_id"] = params.CustomerID
-	}
-	return parseResponse[[]FeatureAccess](r.http.get(ctx, "/features", query))
+// List every feature defined in the organization. This is the organization's feature catalog (definitions), not a customer's feature access.
+func (r *FeaturesResource) List(ctx context.Context) (*ApiResponse[[]Feature], error) {
+	return parseResponse[[]Feature](r.http.get(ctx, "/features", nil))
 }
 
-// Get feature access details. Use action=canUse to check if customer can consume one more unit.
-func (r *FeaturesResource) Get(ctx context.Context, code string, params *GetFeatureAccessParams) (*ApiResponse[FeatureLookup], error) {
-	query := map[string]string{}
-	if params.CustomerID != "" {
-		query["customer_id"] = params.CustomerID
-	}
-	if params.Action != nil {
-		query["action"] = *params.Action
-	}
-	return parseResponse[FeatureLookup](r.http.get(ctx, fmt.Sprintf("/features/%s", code), query))
-}
-
-// Get feature access details. Use action=canUse to check if customer can consume one more unit.
-func (r *FeaturesResource) CanUse(ctx context.Context, code string, params *CanUseFeatureParams) (*ApiResponse[FeatureLookup], error) {
-	query := map[string]string{}
-	query["action"] = "canUse"
-	if params.CustomerID != "" {
-		query["customer_id"] = params.CustomerID
-	}
-	return parseResponse[FeatureLookup](r.http.get(ctx, fmt.Sprintf("/features/%s", code), query))
+// Get a single feature definition by code from the organization's feature catalog.
+func (r *FeaturesResource) Get(ctx context.Context, code string) (*ApiResponse[Feature], error) {
+	return parseResponse[Feature](r.http.get(ctx, fmt.Sprintf("/features/%s", code), nil))
 }
 
 // Create a new feature. Code must be lowercase alphanumeric with underscores.

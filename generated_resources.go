@@ -5,6 +5,7 @@ type generatedResources struct {
 	ApiKeys       *ApiKeysResource
 	CreditPacks   *CreditPacksResource
 	Customers     *CustomersResource
+	FeatureAccess *FeatureAccessResource
 	Features      *FeaturesResource
 	Invoices      *InvoicesResource
 	Payouts       *PayoutsResource
@@ -24,6 +25,7 @@ func (r *generatedResources) wireResources(h *httpClient) {
 	r.ApiKeys = &ApiKeysResource{http: h}
 	r.CreditPacks = &CreditPacksResource{http: h}
 	r.Customers = &CustomersResource{http: h}
+	r.FeatureAccess = &FeatureAccessResource{http: h}
 	r.Features = &FeaturesResource{http: h}
 	r.Invoices = &InvoicesResource{http: h}
 	r.Payouts = &PayoutsResource{http: h}

@@ -777,31 +777,32 @@ type SetPlanRegionalPricingParamsPricesItem struct {
 }
 
 type Subscription struct {
-	ID                string                     `json:"id"`
-	CustomerID        string                     `json:"customer_id"`
-	Plan              SubscriptionPlan           `json:"plan"`
-	Name              string                     `json:"name"`
-	Description       *string                    `json:"description"`
-	Status            SubscriptionStatus         `json:"status"`
-	BillingInterval   *BillingInterval           `json:"billing_interval"`
-	ConsumptionModel  *ConsumptionModel          `json:"consumption_model,omitempty"`
-	TrialEndsAt       *string                    `json:"trial_ends_at"`
-	CurrentPeriod     *SubscriptionCurrentPeriod `json:"current_period"`
-	Features          []SubscriptionFeaturesItem `json:"features,omitempty"`
-	Credits           *SubscriptionCredits       `json:"credits,omitempty"`
-	Balance           *SubscriptionBalance       `json:"balance,omitempty"`
-	Cancellation      *SubscriptionCancellation  `json:"cancellation"`
-	CancelAtPeriodEnd bool                       `json:"cancel_at_period_end"`
-	Discount          *SubscriptionDiscount      `json:"discount"`
-	StartDate         string                     `json:"start_date"`
-	EndDate           *string                    `json:"end_date"`
-	BillingDayOfMonth *int                       `json:"billing_day_of_month"`
-	NextBillingDate   *string                    `json:"next_billing_date"`
-	CheckoutURL       *string                    `json:"checkout_url"`
-	CreatedAt         string                     `json:"created_at"`
-	UpdatedAt         string                     `json:"updated_at"`
-	Object            string                     `json:"object"`
-	Livemode          bool                       `json:"livemode"`
+	ID                  string                           `json:"id"`
+	CustomerID          string                           `json:"customer_id"`
+	Plan                SubscriptionPlan                 `json:"plan"`
+	Name                string                           `json:"name"`
+	Description         *string                          `json:"description"`
+	Status              SubscriptionStatus               `json:"status"`
+	BillingInterval     *BillingInterval                 `json:"billing_interval"`
+	ConsumptionModel    *ConsumptionModel                `json:"consumption_model,omitempty"`
+	TrialEndsAt         *string                          `json:"trial_ends_at"`
+	CurrentPeriod       *SubscriptionCurrentPeriod       `json:"current_period"`
+	Features            []SubscriptionFeaturesItem       `json:"features,omitempty"`
+	Credits             *SubscriptionCredits             `json:"credits,omitempty"`
+	Balance             *SubscriptionBalance             `json:"balance,omitempty"`
+	Cancellation        *SubscriptionCancellation        `json:"cancellation"`
+	CancelAtPeriodEnd   bool                             `json:"cancel_at_period_end"`
+	ScheduledPlanChange *SubscriptionScheduledPlanChange `json:"scheduled_plan_change"`
+	Discount            *SubscriptionDiscount            `json:"discount"`
+	StartDate           string                           `json:"start_date"`
+	EndDate             *string                          `json:"end_date"`
+	BillingDayOfMonth   *int                             `json:"billing_day_of_month"`
+	NextBillingDate     *string                          `json:"next_billing_date"`
+	CheckoutURL         *string                          `json:"checkout_url"`
+	CreatedAt           string                           `json:"created_at"`
+	UpdatedAt           string                           `json:"updated_at"`
+	Object              string                           `json:"object"`
+	Livemode            bool                             `json:"livemode"`
 }
 
 type SubscriptionAddon struct {
@@ -862,6 +863,14 @@ type SubscriptionPlan struct {
 	ID        string   `json:"id"`
 	Name      string   `json:"name"`
 	BasePrice *float64 `json:"base_price,omitempty"`
+}
+
+type SubscriptionScheduledPlanChange struct {
+	ChangeType         string  `json:"change_type"`
+	NewPlanID          *string `json:"new_plan_id"`
+	NewPlanName        *string `json:"new_plan_name"`
+	NewBillingInterval *string `json:"new_billing_interval"`
+	ScheduledFor       string  `json:"scheduled_for"`
 }
 
 type SubscriptionsGetActiveResult struct {
