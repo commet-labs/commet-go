@@ -132,3 +132,61 @@ func TestCreateSendsIntroOfferAsNestedCamelCase(t *testing.T) {
 		t.Errorf("expected no snake_case \"duration_cycles\" key inside customIntroOffer (nested conversion did not happen), raw: %s", capturedBody)
 	}
 }
+
+// TestGetActiveDeserializesRawSubscription verifies that GetActive hydrates the
+// real wire shape — a raw camelCase Subscription object under "data", never a
+// {"value": ...} wrapper — into a non-nil *Subscription with its fields mapped.
+func TestGetActiveDeserializesRawSubscription(t *testing.T) {
+	client, captured := newWireServer(t, http.StatusOK,
+		`{"success":true,"data":{"id":"sub_123","customerId":"cus_456","name":"Pro","status":"active","cancelAtPeriodEnd":false,"startDate":"2026-01-01"}}`)
+
+	resp, err := client.Subscriptions.GetActive(context.Background(), &GetActiveSubscriptionParams{
+		CustomerID: "cus_456",
+	})
+	if err != nil {
+		t.Fatalf("GetActive: %v", err)
+	}
+
+	if captured.Path != "/api/v1/subscriptions/active" {
+		t.Errorf("path = %q, want /api/v1/subscriptions/active", captured.Path)
+	}
+	if !resp.Success {
+		t.Errorf("resp.Success = false, want true")
+	}
+	if resp.Data == nil {
+		t.Fatalf("resp.Data = nil, want the deserialized subscription")
+	}
+	if resp.Data.ID != "sub_123" {
+		t.Errorf("resp.Data.ID = %q, want sub_123", resp.Data.ID)
+	}
+	if resp.Data.CustomerID != "cus_456" {
+		t.Errorf("resp.Data.CustomerID = %q, want cus_456", resp.Data.CustomerID)
+	}
+	if resp.Data.Status != SubscriptionStatusActive {
+		t.Errorf("resp.Data.Status = %q, want active", resp.Data.Status)
+	}
+	if resp.Data.Name != "Pro" {
+		t.Errorf("resp.Data.Name = %q, want Pro", resp.Data.Name)
+	}
+}
+
+// TestGetActiveDeserializesNullData verifies that a "data": null response (no
+// active subscription) parses into a nil Data pointer instead of failing or
+// fabricating a zero-value subscription.
+func TestGetActiveDeserializesNullData(t *testing.T) {
+	client, _ := newWireServer(t, http.StatusOK, `{"success":true,"data":null}`)
+
+	resp, err := client.Subscriptions.GetActive(context.Background(), &GetActiveSubscriptionParams{
+		CustomerID: "cus_456",
+	})
+	if err != nil {
+		t.Fatalf("GetActive: %v", err)
+	}
+
+	if !resp.Success {
+		t.Errorf("resp.Success = false, want true")
+	}
+	if resp.Data != nil {
+		t.Errorf("resp.Data = %+v, want nil for a null data response", resp.Data)
+	}
+}

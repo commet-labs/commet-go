@@ -112,12 +112,12 @@ func (r *SubscriptionsResource) Get(ctx context.Context, id string) (*ApiRespons
 }
 
 // Get the active subscription for a customer. Returns null if none.
-func (r *SubscriptionsResource) GetActive(ctx context.Context, params *GetActiveSubscriptionParams) (*ApiResponse[SubscriptionsGetActiveResult], error) {
+func (r *SubscriptionsResource) GetActive(ctx context.Context, params *GetActiveSubscriptionParams) (*ApiResponse[*Subscription], error) {
 	query := map[string]string{}
 	if params.CustomerID != "" {
 		query["customer_id"] = params.CustomerID
 	}
-	return parseResponse[SubscriptionsGetActiveResult](r.http.get(ctx, "/subscriptions/active", query))
+	return parseResponse[*Subscription](r.http.get(ctx, "/subscriptions/active", query))
 }
 
 // Cancel immediately or at period end.

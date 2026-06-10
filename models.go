@@ -873,10 +873,6 @@ type SubscriptionScheduledPlanChange struct {
 	ScheduledFor       string  `json:"scheduled_for"`
 }
 
-type SubscriptionsGetActiveResult struct {
-	Value Subscription `json:"value"`
-}
-
 type TestClock struct {
 	SimulatedTime *string `json:"simulated_time"`
 	IsActive      bool    `json:"is_active"`
