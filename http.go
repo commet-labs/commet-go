@@ -12,12 +12,13 @@ import (
 	"net/url"
 	"os"
 	"reflect"
+	"strconv"
 	"strings"
 	"time"
 	"unicode"
 )
 
-const version = "7.0.1"
+const version = "7.1.0"
 
 const baseURL = "https://commet.co"
 
@@ -205,12 +206,13 @@ func (h *httpClient) execute(ctx context.Context, method string, endpoint string
 	}
 
 	if retryableStatusCodes[resp.StatusCode] && attempt <= h.maxRetries {
-		delay := h.retryDelay(attempt)
-		if h.debug {
-			fmt.Fprintf(os.Stderr, "[Commet SDK] Retrying in %v (attempt %d/%d)\n", delay, attempt, h.maxRetries)
+		if delay, retryable := h.statusRetryDelay(resp, attempt); retryable {
+			if h.debug {
+				fmt.Fprintf(os.Stderr, "[Commet SDK] Retrying in %v (attempt %d/%d)\n", delay, attempt, h.maxRetries)
+			}
+			time.Sleep(delay)
+			return h.execute(ctx, method, endpoint, jsonBody, params, headers, opts, attempt+1)
 		}
-		time.Sleep(delay)
-		return h.execute(ctx, method, endpoint, jsonBody, params, headers, opts, attempt+1)
 	}
 
 	respBody, err := io.ReadAll(resp.Body)
@@ -365,6 +367,23 @@ func (h *httpClient) handleError(statusCode int, data map[string]any) error {
 func (h *httpClient) retryDelay(attempt int) time.Duration {
 	delay := math.Min(1.0*math.Pow(2, float64(attempt-1)), 8.0)
 	return time.Duration(delay * float64(time.Second))
+}
+
+const retryAfterCap = 30 * time.Second
+
+// 429 retries wait exactly what the rate limiter reports in Retry-After
+// (seconds until the window resets); a 429 without the header did not come
+// from the rate limiter, so it is not retried. Exponential backoff only
+// applies to statuses that carry no server-provided wait.
+func (h *httpClient) statusRetryDelay(resp *http.Response, attempt int) (time.Duration, bool) {
+	if resp.StatusCode != http.StatusTooManyRequests {
+		return h.retryDelay(attempt), true
+	}
+	seconds, err := strconv.ParseFloat(resp.Header.Get("Retry-After"), 64)
+	if err != nil || seconds <= 0 {
+		return 0, false
+	}
+	return min(time.Duration(seconds*float64(time.Second)), retryAfterCap), true
 }
 
 func toSnake(s string) string {
