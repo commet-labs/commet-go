@@ -68,7 +68,7 @@ func (w *WebhooksResource) Verify(payload string, signature string, secret strin
 	return hmac.Equal([]byte(signature), []byte(expected))
 }
 
-func (w *WebhooksResource) VerifyAndParse(rawBody string, signature string, secret string) (map[string]any, error) {
+func (w *WebhooksResource) VerifyAndParse(rawBody string, signature string, secret string) (*WebhookEvent, error) {
 	if !w.Verify(rawBody, signature, secret) {
 		return nil, &CommetError{
 			Message: "Invalid webhook signature",
@@ -76,15 +76,15 @@ func (w *WebhooksResource) VerifyAndParse(rawBody string, signature string, secr
 		}
 	}
 
-	var result map[string]any
-	if err := json.Unmarshal([]byte(rawBody), &result); err != nil {
+	var event WebhookEvent
+	if err := json.Unmarshal([]byte(rawBody), &event); err != nil {
 		return nil, &CommetError{
 			Message: "Failed to parse webhook payload",
 			Code:    "INVALID_JSON",
 		}
 	}
 
-	return result, nil
+	return &event, nil
 }
 
 func (w *WebhooksResource) List(ctx context.Context, params *ListWebhooksParams) (*ApiResponse[[]WebhookEndpoint], error) {

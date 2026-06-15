@@ -91,23 +91,26 @@ func TestWebhooksVerifyAndParse(t *testing.T) {
 	w := &WebhooksResource{}
 	secret := "whsec_test_secret_456"
 
-	t.Run("valid signature parses JSON", func(t *testing.T) {
-		payload := `{"event":"customer.created","data":{"id":"cust_123","email":"test@example.com"}}`
+	t.Run("valid signature parses a typed event", func(t *testing.T) {
+		payload := `{"event":"subscription.created","organizationId":"org_1","data":{"subscriptionId":"sub_123","customerId":"cust_1","planId":"plan_1","planName":"Pro","status":"pending_payment","startDate":null,"name":null}}`
 		signature := computeSignature(payload, secret)
 
 		result, err := w.VerifyAndParse(payload, signature, secret)
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
-		if result["event"] != "customer.created" {
-			t.Errorf("event = %v, want customer.created", result["event"])
+		if result.Event != EventSubscriptionCreated {
+			t.Errorf("event = %v, want subscription.created", result.Event)
 		}
-		data, ok := result["data"].(map[string]any)
-		if !ok {
-			t.Fatal("data is not a map")
+		data, err := result.AsSubscriptionCreated()
+		if err != nil {
+			t.Fatalf("AsSubscriptionCreated: %v", err)
 		}
-		if data["id"] != "cust_123" {
-			t.Errorf("data.id = %v, want cust_123", data["id"])
+		if data.SubscriptionID != "sub_123" {
+			t.Errorf("subscriptionId = %v, want sub_123", data.SubscriptionID)
+		}
+		if data.CustomerID != "cust_1" {
+			t.Errorf("customerId = %v, want cust_1", data.CustomerID)
 		}
 	})
 
