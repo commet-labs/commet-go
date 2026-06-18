@@ -38,6 +38,19 @@ type UncancelSubscriptionParams struct {
 	IdempotencyKey string `json:"-"`
 }
 
+type ReactivateSubscriptionParams struct {
+	IdempotencyKey string `json:"-"`
+}
+
+type CreateSubscriptionRecoveryLinkParams struct {
+	IdempotencyKey string `json:"-"`
+}
+
+type UpdatePaymentMethodParams struct {
+	SuccessURL     *string `json:"success_url,omitempty"`
+	IdempotencyKey string  `json:"-"`
+}
+
 type ChangePlanParams struct {
 	NewPlanID          *string `json:"new_plan_id,omitempty"`
 	NewBillingInterval *string `json:"new_billing_interval,omitempty"`
@@ -132,6 +145,24 @@ func (r *SubscriptionsResource) Cancel(ctx context.Context, id string, params *C
 // Revert a scheduled cancellation. Only works when canceledAt is set but status is not yet 'canceled'.
 func (r *SubscriptionsResource) Uncancel(ctx context.Context, id string, params *UncancelSubscriptionParams) (*ApiResponse[UncanceledSubscription], error) {
 	return parseResponse[UncanceledSubscription](r.http.post(ctx, fmt.Sprintf("/subscriptions/%s/uncancel", id), map[string]any{}, params.IdempotencyKey))
+}
+
+// Retries the outstanding renewal charge for a past_due subscription. On a successful charge the subscription recovers to active and a payment.recovered webhook is delivered; a declined charge returns an error and the subscription stays past_due.
+func (r *SubscriptionsResource) Reactivate(ctx context.Context, id string, params *ReactivateSubscriptionParams) (*ApiResponse[ReactivatedSubscription], error) {
+	return parseResponse[ReactivatedSubscription](r.http.post(ctx, fmt.Sprintf("/subscriptions/%s/reactivate", id), map[string]any{}, params.IdempotencyKey))
+}
+
+// Generates a hosted, signed recovery link that lets the customer pay the outstanding renewal charge for a past_due subscription. Unlike reactivate, which charges server-to-server, this returns a link the merchant can deliver through their own email, SMS, or dashboard. The link carries a self-contained signed token and stays valid until the charge is paid or the subscription is no longer past due.
+func (r *SubscriptionsResource) CreateRecoveryLink(ctx context.Context, id string, params *CreateSubscriptionRecoveryLinkParams) (*ApiResponse[RecoveryLink], error) {
+	return parseResponse[RecoveryLink](r.http.post(ctx, fmt.Sprintf("/subscriptions/%s/recovery-link", id), map[string]any{}, params.IdempotencyKey))
+}
+
+// Creates a hosted checkout session for the customer to update the subscription's default payment method.
+func (r *SubscriptionsResource) UpdatePaymentMethod(ctx context.Context, id string, params *UpdatePaymentMethodParams) (*ApiResponse[PaymentMethodUpdateCheckout], error) {
+	body := buildBody(map[string]any{
+		"success_url": params.SuccessURL,
+	})
+	return parseResponse[PaymentMethodUpdateCheckout](r.http.post(ctx, fmt.Sprintf("/subscriptions/%s/payment-method/update", id), body, params.IdempotencyKey))
 }
 
 // Upgrade, downgrade, or change billing interval.

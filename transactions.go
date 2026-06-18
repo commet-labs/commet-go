@@ -52,7 +52,7 @@ func (r *TransactionsResource) Refund(ctx context.Context, id string, params *Re
 	return parseResponse[TransactionRefund](r.http.post(ctx, fmt.Sprintf("/transactions/%s/refund", id), map[string]any{}, params.IdempotencyKey))
 }
 
-// Retry a failed payment transaction. Creates a new invoice and initiates a new payment attempt.
+// Retry a failed subscription renewal. Re-charges the outstanding renewal invoice through the recovery engine.
 func (r *TransactionsResource) Retry(ctx context.Context, id string, params *RetryTransactionParams) (*ApiResponse[TransactionRetry], error) {
 	return parseResponse[TransactionRetry](r.http.post(ctx, fmt.Sprintf("/transactions/%s/retry", id), map[string]any{}, params.IdempotencyKey))
 }

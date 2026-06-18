@@ -424,6 +424,32 @@ type InvoiceStatus struct {
 	Livemode  bool   `json:"livemode"`
 }
 
+type Payment struct {
+	ID             string         `json:"id"`
+	CustomerID     *string        `json:"customer_id"`
+	Kind           string         `json:"kind"`
+	Status         string         `json:"status"`
+	Provider       string         `json:"provider"`
+	AmountSubtotal int            `json:"amount_subtotal"`
+	TaxAmount      int            `json:"tax_amount"`
+	AmountTotal    int            `json:"amount_total"`
+	Currency       string         `json:"currency"`
+	Description    string         `json:"description"`
+	Metadata       map[string]any `json:"metadata"`
+	URL            *string        `json:"url"`
+	ExpiresAt      *string        `json:"expires_at"`
+	CreatedAt      string         `json:"created_at"`
+	UpdatedAt      string         `json:"updated_at"`
+	Object         string         `json:"object"`
+	Livemode       bool           `json:"livemode"`
+}
+
+type PaymentMethodUpdateCheckout struct {
+	CheckoutURL string `json:"checkout_url"`
+	Object      string `json:"object"`
+	Livemode    bool   `json:"livemode"`
+}
+
 type Payout struct {
 	ID                 string  `json:"id"`
 	Status             string  `json:"status"`
@@ -488,23 +514,24 @@ type Plan struct {
 }
 
 type PlanChange struct {
-	RequiresCheckout   *bool                   `json:"requires_checkout,omitempty"`
-	CheckoutURL        *string                 `json:"checkout_url,omitempty"`
-	ID                 *string                 `json:"id,omitempty"`
-	Scheduled          *bool                   `json:"scheduled,omitempty"`
-	ScheduledFor       *string                 `json:"scheduled_for,omitempty"`
-	ChangeType         *string                 `json:"change_type,omitempty"`
-	CustomerID         *string                 `json:"customer_id,omitempty"`
-	NewPlanID          *string                 `json:"new_plan_id,omitempty"`
-	NewPlanName        *string                 `json:"new_plan_name,omitempty"`
-	NewBillingInterval *string                 `json:"new_billing_interval,omitempty"`
-	PreviousPlan       *PlanChangePreviousPlan `json:"previous_plan,omitempty"`
-	CurrentPlan        *PlanChangeCurrentPlan  `json:"current_plan,omitempty"`
-	BillingInterval    *string                 `json:"billing_interval,omitempty"`
-	Billing            *PlanChangeBilling      `json:"billing,omitempty"`
-	InvoiceID          *string                 `json:"invoice_id,omitempty"`
-	Object             string                  `json:"object"`
-	Livemode           bool                    `json:"livemode"`
+	RequiresCheckout   *bool                       `json:"requires_checkout,omitempty"`
+	CheckoutURL        *string                     `json:"checkout_url,omitempty"`
+	ID                 *string                     `json:"id,omitempty"`
+	Scheduled          *bool                       `json:"scheduled,omitempty"`
+	ScheduledFor       *string                     `json:"scheduled_for,omitempty"`
+	ChangeType         *string                     `json:"change_type,omitempty"`
+	CustomerID         *string                     `json:"customer_id,omitempty"`
+	NewPlanID          *string                     `json:"new_plan_id,omitempty"`
+	NewPlanName        *string                     `json:"new_plan_name,omitempty"`
+	NewBillingInterval *string                     `json:"new_billing_interval,omitempty"`
+	PreviousPlan       *PlanChangePreviousPlan     `json:"previous_plan,omitempty"`
+	CurrentPlan        *PlanChangeCurrentPlan      `json:"current_plan,omitempty"`
+	BillingInterval    *string                     `json:"billing_interval,omitempty"`
+	Billing            *PlanChangeBilling          `json:"billing,omitempty"`
+	InvoiceID          *string                     `json:"invoice_id,omitempty"`
+	SeatLimitWarning   *PlanChangeSeatLimitWarning `json:"seat_limit_warning,omitempty"`
+	Object             string                      `json:"object"`
+	Livemode           bool                        `json:"livemode"`
 }
 
 type PlanChangeBilling struct {
@@ -526,6 +553,15 @@ type PlanChangeCurrentPlan struct {
 type PlanChangePreviousPlan struct {
 	ID   string `json:"id"`
 	Name string `json:"name"`
+}
+
+type PlanChangeSeatLimitWarning struct {
+	FeatureCode   string `json:"feature_code"`
+	FeatureName   string `json:"feature_name"`
+	CurrentSeats  int    `json:"current_seats"`
+	Included      int    `json:"included"`
+	NewPlanName   string `json:"new_plan_name"`
+	EffectiveDate string `json:"effective_date"`
 }
 
 type PlanExchangeRatesItem struct {
@@ -705,6 +741,20 @@ type PromoCode struct {
 	UpdatedAt       string       `json:"updated_at"`
 	Object          string       `json:"object"`
 	Livemode        bool         `json:"livemode"`
+}
+
+type ReactivatedSubscription struct {
+	ID             string `json:"id"`
+	RetryInitiated bool   `json:"retry_initiated"`
+	Object         string `json:"object"`
+	Livemode       bool   `json:"livemode"`
+}
+
+type RecoveryLink struct {
+	URL      string `json:"url"`
+	Token    string `json:"token"`
+	Object   string `json:"object"`
+	Livemode bool   `json:"livemode"`
 }
 
 type RemovedPlanFeature struct {
@@ -915,11 +965,10 @@ type TransactionRefund struct {
 }
 
 type TransactionRetry struct {
-	ID                 string `json:"id"`
-	Status             string `json:"status"`
-	RetryInvoiceNumber string `json:"retry_invoice_number"`
-	Object             string `json:"object"`
-	Livemode           bool   `json:"livemode"`
+	ID       string `json:"id"`
+	Status   string `json:"status"`
+	Object   string `json:"object"`
+	Livemode bool   `json:"livemode"`
 }
 
 type UncanceledSubscription struct {

@@ -8,6 +8,7 @@ type generatedResources struct {
 	FeatureAccess *FeatureAccessResource
 	Features      *FeaturesResource
 	Invoices      *InvoicesResource
+	Payments      *PaymentsResource
 	Payouts       *PayoutsResource
 	PlanGroups    *PlanGroupsResource
 	Plans         *PlansResource
@@ -28,6 +29,7 @@ func (r *generatedResources) wireResources(h *httpClient) {
 	r.FeatureAccess = &FeatureAccessResource{http: h}
 	r.Features = &FeaturesResource{http: h}
 	r.Invoices = &InvoicesResource{http: h}
+	r.Payments = &PaymentsResource{http: h}
 	r.Payouts = &PayoutsResource{http: h}
 	r.PlanGroups = &PlanGroupsResource{http: h}
 	r.Plans = &PlansResource{http: h}
