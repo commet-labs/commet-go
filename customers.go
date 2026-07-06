@@ -15,6 +15,7 @@ type CreateCustomerParams struct {
 	ID             *string                      `json:"id,omitempty"`
 	ExternalID     *string                      `json:"external_id,omitempty"`
 	FullName       *string                      `json:"full_name,omitempty"`
+	TaxDocument    *string                      `json:"tax_document,omitempty"`
 	Address        *CreateCustomerParamsAddress `json:"address,omitempty"`
 	AddressID      *string                      `json:"address_id,omitempty"`
 	Email          string                       `json:"email"`
@@ -26,6 +27,7 @@ type CreateCustomerParams struct {
 type UpdateCustomerParams struct {
 	Email          *string                      `json:"email,omitempty"`
 	FullName       *string                      `json:"full_name,omitempty"`
+	TaxDocument    *string                      `json:"tax_document,omitempty"`
 	ExternalID     *string                      `json:"external_id,omitempty"`
 	Timezone       *Timezone                    `json:"timezone,omitempty"`
 	Metadata       map[string]any               `json:"metadata,omitempty"`
@@ -60,14 +62,15 @@ func (r *CustomersResource) List(ctx context.Context, params *ListCustomersParam
 // Create a new customer. Idempotent when customerId is provided.
 func (r *CustomersResource) Create(ctx context.Context, params *CreateCustomerParams) (*ApiResponse[Customer], error) {
 	body := buildBody(map[string]any{
-		"id":          params.ID,
-		"external_id": params.ExternalID,
-		"full_name":   params.FullName,
-		"address":     params.Address,
-		"address_id":  params.AddressID,
-		"email":       params.Email,
-		"timezone":    params.Timezone,
-		"metadata":    params.Metadata,
+		"id":           params.ID,
+		"external_id":  params.ExternalID,
+		"full_name":    params.FullName,
+		"tax_document": params.TaxDocument,
+		"address":      params.Address,
+		"address_id":   params.AddressID,
+		"email":        params.Email,
+		"timezone":     params.Timezone,
+		"metadata":     params.Metadata,
 	})
 	return parseResponse[Customer](r.http.post(ctx, "/customers", body, params.IdempotencyKey))
 }
@@ -80,12 +83,13 @@ func (r *CustomersResource) Get(ctx context.Context, id string) (*ApiResponse[Cu
 // Update a customer's name, external ID, or metadata.
 func (r *CustomersResource) Update(ctx context.Context, id string, params *UpdateCustomerParams) (*ApiResponse[Customer], error) {
 	body := buildBody(map[string]any{
-		"email":       params.Email,
-		"full_name":   params.FullName,
-		"external_id": params.ExternalID,
-		"timezone":    params.Timezone,
-		"metadata":    params.Metadata,
-		"address":     params.Address,
+		"email":        params.Email,
+		"full_name":    params.FullName,
+		"tax_document": params.TaxDocument,
+		"external_id":  params.ExternalID,
+		"timezone":     params.Timezone,
+		"metadata":     params.Metadata,
+		"address":      params.Address,
 	})
 	return parseResponse[Customer](r.http.put(ctx, fmt.Sprintf("/customers/%s", id), body, params.IdempotencyKey))
 }

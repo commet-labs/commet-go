@@ -81,8 +81,8 @@ func TestListTransactionsSendsEnumStatusAsQueryParam(t *testing.T) {
 	if txn.CustomerName != nil {
 		t.Errorf("CustomerName = %v, want nil for wire null", *txn.CustomerName)
 	}
-	if txn.GrossAmount != 1000 || txn.TaxAmount != 100 {
-		t.Errorf("amounts = (%d,%d), want (1000,100)", txn.GrossAmount, txn.TaxAmount)
+	if txn.GrossAmount != 1000 || txn.TaxAmount == nil || *txn.TaxAmount != 100 {
+		t.Errorf("amounts = (%d,%v), want (1000,100)", txn.GrossAmount, txn.TaxAmount)
 	}
 }
 
