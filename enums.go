@@ -40,6 +40,7 @@ const (
 	InvoiceTypeBalanceTopup    InvoiceType = "balance_topup"
 	InvoiceTypeAddonActivation InvoiceType = "addon_activation"
 	InvoiceTypeOneTimePayment  InvoiceType = "one_time_payment"
+	InvoiceTypeReactivation    InvoiceType = "reactivation"
 )
 
 type TransactionStatus string

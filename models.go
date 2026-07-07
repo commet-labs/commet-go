@@ -75,13 +75,14 @@ type BalanceTopup struct {
 }
 
 type BatchCreateCustomersParamsCustomersItem struct {
-	Email      string                                          `json:"email"`
-	ID         *string                                         `json:"id,omitempty"`
-	ExternalID *string                                         `json:"external_id,omitempty"`
-	FullName   *string                                         `json:"full_name,omitempty"`
-	Timezone   *Timezone                                       `json:"timezone,omitempty"`
-	Metadata   map[string]any                                  `json:"metadata,omitempty"`
-	Address    *BatchCreateCustomersParamsCustomersItemAddress `json:"address,omitempty"`
+	Email       string                                          `json:"email"`
+	ID          *string                                         `json:"id,omitempty"`
+	ExternalID  *string                                         `json:"external_id,omitempty"`
+	FullName    *string                                         `json:"full_name,omitempty"`
+	TaxDocument *string                                         `json:"tax_document,omitempty"`
+	Timezone    *Timezone                                       `json:"timezone,omitempty"`
+	Metadata    map[string]any                                  `json:"metadata,omitempty"`
+	Address     *BatchCreateCustomersParamsCustomersItemAddress `json:"address,omitempty"`
 }
 
 type BatchCreateCustomersParamsCustomersItemAddress struct {
@@ -234,16 +235,18 @@ type CreditPack struct {
 }
 
 type Customer struct {
-	ID         string         `json:"id"`
-	ExternalID *string        `json:"external_id"`
-	FullName   *string        `json:"full_name"`
-	Email      string         `json:"email"`
-	Timezone   *string        `json:"timezone"`
-	Metadata   map[string]any `json:"metadata"`
-	CreatedAt  string         `json:"created_at"`
-	UpdatedAt  string         `json:"updated_at"`
-	Object     string         `json:"object"`
-	Livemode   bool           `json:"livemode"`
+	ID           string         `json:"id"`
+	ExternalID   *string        `json:"external_id"`
+	FullName     *string        `json:"full_name"`
+	Email        string         `json:"email"`
+	TaxDocument  *string        `json:"tax_document"`
+	DocumentType *string        `json:"document_type"`
+	Timezone     *string        `json:"timezone"`
+	Metadata     map[string]any `json:"metadata"`
+	CreatedAt    string         `json:"created_at"`
+	UpdatedAt    string         `json:"updated_at"`
+	Object       string         `json:"object"`
+	Livemode     bool           `json:"livemode"`
 }
 
 type CustomerBatch struct {
@@ -260,13 +263,14 @@ type CustomerBatchFailedItem struct {
 }
 
 type CustomerBatchFailedItemData struct {
-	ID         *string                             `json:"id,omitempty"`
-	ExternalID *string                             `json:"external_id,omitempty"`
-	Email      string                              `json:"email"`
-	FullName   *string                             `json:"full_name,omitempty"`
-	Timezone   *string                             `json:"timezone,omitempty"`
-	Metadata   map[string]any                      `json:"metadata,omitempty"`
-	Address    *CustomerBatchFailedItemDataAddress `json:"address,omitempty"`
+	ID          *string                             `json:"id,omitempty"`
+	ExternalID  *string                             `json:"external_id,omitempty"`
+	Email       string                              `json:"email"`
+	FullName    *string                             `json:"full_name,omitempty"`
+	TaxDocument *string                             `json:"tax_document,omitempty"`
+	Timezone    *string                             `json:"timezone,omitempty"`
+	Metadata    map[string]any                      `json:"metadata,omitempty"`
+	Address     *CustomerBatchFailedItemDataAddress `json:"address,omitempty"`
 }
 
 type CustomerBatchFailedItemDataAddress struct {
@@ -944,7 +948,7 @@ type Transaction struct {
 	InvoiceID     *string           `json:"invoice_id"`
 	GrossAmount   int               `json:"gross_amount"`
 	Subtotal      int               `json:"subtotal"`
-	TaxAmount     int               `json:"tax_amount"`
+	TaxAmount     *int              `json:"tax_amount"`
 	Currency      string            `json:"currency"`
 	Status        TransactionStatus `json:"status"`
 	CustomerEmail *string           `json:"customer_email"`
@@ -1031,4 +1035,60 @@ type UsageQuotaEvent struct {
 	CreatedAt       string `json:"created_at"`
 	Object          string `json:"object"`
 	Livemode        bool   `json:"livemode"`
+}
+
+type WebhookAddonRef struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
+}
+
+type WebhookBalance struct {
+	CurrentBalance float64 `json:"current_balance"`
+}
+
+type WebhookBankRef struct {
+	BankName *string `json:"bank_name"`
+	Last4    string  `json:"last4"`
+}
+
+type WebhookCardInfo struct {
+	Brand    string  `json:"brand"`
+	Last4    string  `json:"last4"`
+	ExpMonth float64 `json:"exp_month"`
+	ExpYear  float64 `json:"exp_year"`
+}
+
+type WebhookCreditsBalance struct {
+	PlanCredits      float64 `json:"plan_credits"`
+	PurchasedCredits float64 `json:"purchased_credits"`
+	TotalCredits     float64 `json:"total_credits"`
+}
+
+type WebhookFeatureAccess struct {
+	Code             string   `json:"code"`
+	Name             string   `json:"name"`
+	Type             string   `json:"type"`
+	Allowed          bool     `json:"allowed"`
+	Enabled          *bool    `json:"enabled"`
+	Current          *float64 `json:"current"`
+	Included         *float64 `json:"included"`
+	Remaining        *float64 `json:"remaining"`
+	OverageQuantity  *float64 `json:"overage_quantity"`
+	OverageUnitPrice *float64 `json:"overage_unit_price"`
+	Unlimited        *bool    `json:"unlimited"`
+	OverageEnabled   *bool    `json:"overage_enabled"`
+	BilledQuantity   *float64 `json:"billed_quantity"`
+}
+
+type WebhookPlanRef struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
+}
+
+type WebhookSeatSummary struct {
+	Code      string   `json:"code"`
+	Current   *float64 `json:"current"`
+	Included  *float64 `json:"included"`
+	Remaining *float64 `json:"remaining"`
+	Unlimited *bool    `json:"unlimited"`
 }

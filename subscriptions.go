@@ -147,7 +147,7 @@ func (r *SubscriptionsResource) Uncancel(ctx context.Context, id string, params 
 	return parseResponse[UncanceledSubscription](r.http.post(ctx, fmt.Sprintf("/subscriptions/%s/uncancel", id), map[string]any{}, params.IdempotencyKey))
 }
 
-// Retries the outstanding renewal charge for a past_due subscription. On a successful charge the subscription recovers to active and a payment.recovered webhook is delivered; a declined charge returns an error and the subscription stays past_due.
+// Reactivates a subscription. A past_due subscription retries its outstanding renewal charge (recovering to active on success). A canceled subscription generates a fresh invoice, charges the saved card, and resets the billing period. On a successful charge the subscription becomes active; a declined charge returns an error with a recoveryUrl in the error details that can be sent to the customer to update their card.
 func (r *SubscriptionsResource) Reactivate(ctx context.Context, id string, params *ReactivateSubscriptionParams) (*ApiResponse[ReactivatedSubscription], error) {
 	return parseResponse[ReactivatedSubscription](r.http.post(ctx, fmt.Sprintf("/subscriptions/%s/reactivate", id), map[string]any{}, params.IdempotencyKey))
 }
