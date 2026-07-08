@@ -5,6 +5,7 @@ import "context"
 type RequestPortalAccessParams struct {
 	Email          *string `json:"email,omitempty"`
 	CustomerID     *string `json:"customer_id,omitempty"`
+	ReturnURL      *string `json:"return_url,omitempty"`
 	IdempotencyKey string  `json:"-"`
 }
 
@@ -17,6 +18,7 @@ func (r *PortalResource) GetURL(ctx context.Context, params *RequestPortalAccess
 	body := buildBody(map[string]any{
 		"email":       params.Email,
 		"customer_id": params.CustomerID,
+		"return_url":  params.ReturnURL,
 	})
 	return parseResponse[PortalAccess](r.http.post(ctx, "/portal/request-access", body, params.IdempotencyKey))
 }
