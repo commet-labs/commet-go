@@ -76,30 +76,32 @@ type SubscriptionCreatedData struct {
 
 // Fired once, when the subscription's first charge succeeds and it becomes active — this is where you grant access. Never re-fired on renewals; use payment.received for per-charge notifications.
 type SubscriptionActivatedData struct {
-	SubscriptionID     string  `json:"subscriptionId"`
-	CustomerID         string  `json:"customerId"`
-	Status             string  `json:"status"`
-	CurrentPeriodStart string  `json:"currentPeriodStart"`
-	CurrentPeriodEnd   string  `json:"currentPeriodEnd"`
-	Name               *string `json:"name"`
-	InvoiceID          string  `json:"invoiceId"`
-	InvoiceNumber      string  `json:"invoiceNumber"`
-	InvoiceTotal       float64 `json:"invoiceTotal"`
-	InvoiceCurrency    string  `json:"invoiceCurrency"`
+	SubscriptionID     string           `json:"subscriptionId"`
+	CustomerID         string           `json:"customerId"`
+	Status             string           `json:"status"`
+	CurrentPeriodStart string           `json:"currentPeriodStart"`
+	CurrentPeriodEnd   string           `json:"currentPeriodEnd"`
+	Name               *string          `json:"name"`
+	InvoiceID          string           `json:"invoiceId"`
+	InvoiceNumber      string           `json:"invoiceNumber"`
+	InvoiceTotal       float64          `json:"invoiceTotal"`
+	InvoiceCurrency    string           `json:"invoiceCurrency"`
+	Provider           *PaymentProvider `json:"provider"`
 }
 
 // Fired when a canceled subscription is reactivated and its reactivation charge succeeds. The subscription returns to active with a fresh invoice and a billing period anchored to the reactivation date. Distinct from subscription.activated (first activation) and payment.recovered (past_due recovery, which keeps the original anchor).
 type SubscriptionReactivatedData struct {
-	SubscriptionID     string  `json:"subscriptionId"`
-	CustomerID         string  `json:"customerId"`
-	Status             string  `json:"status"`
-	CurrentPeriodStart string  `json:"currentPeriodStart"`
-	CurrentPeriodEnd   string  `json:"currentPeriodEnd"`
-	Name               *string `json:"name"`
-	InvoiceID          string  `json:"invoiceId"`
-	InvoiceNumber      string  `json:"invoiceNumber"`
-	InvoiceTotal       float64 `json:"invoiceTotal"`
-	InvoiceCurrency    string  `json:"invoiceCurrency"`
+	SubscriptionID     string          `json:"subscriptionId"`
+	CustomerID         string          `json:"customerId"`
+	Status             string          `json:"status"`
+	CurrentPeriodStart string          `json:"currentPeriodStart"`
+	CurrentPeriodEnd   string          `json:"currentPeriodEnd"`
+	Name               *string         `json:"name"`
+	InvoiceID          string          `json:"invoiceId"`
+	InvoiceNumber      string          `json:"invoiceNumber"`
+	InvoiceTotal       float64         `json:"invoiceTotal"`
+	InvoiceCurrency    string          `json:"invoiceCurrency"`
+	Provider           PaymentProvider `json:"provider"`
 }
 
 // Fired when a subscription is actually terminated at the end of the billing period. The status is now canceled and access should be revoked. This event is NOT fired when cancellation is scheduled — that triggers subscription.updated instead. See the cancellation lifecycle below.
