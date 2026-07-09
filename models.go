@@ -429,23 +429,23 @@ type InvoiceStatus struct {
 }
 
 type Payment struct {
-	ID             string         `json:"id"`
-	CustomerID     *string        `json:"customer_id"`
-	Kind           string         `json:"kind"`
-	Status         string         `json:"status"`
-	Provider       string         `json:"provider"`
-	AmountSubtotal int            `json:"amount_subtotal"`
-	TaxAmount      int            `json:"tax_amount"`
-	AmountTotal    int            `json:"amount_total"`
-	Currency       string         `json:"currency"`
-	Description    string         `json:"description"`
-	Metadata       map[string]any `json:"metadata"`
-	URL            *string        `json:"url"`
-	ExpiresAt      *string        `json:"expires_at"`
-	CreatedAt      string         `json:"created_at"`
-	UpdatedAt      string         `json:"updated_at"`
-	Object         string         `json:"object"`
-	Livemode       bool           `json:"livemode"`
+	ID             string          `json:"id"`
+	CustomerID     *string         `json:"customer_id"`
+	Kind           string          `json:"kind"`
+	Status         string          `json:"status"`
+	Provider       PaymentProvider `json:"provider"`
+	AmountSubtotal int             `json:"amount_subtotal"`
+	TaxAmount      int             `json:"tax_amount"`
+	AmountTotal    int             `json:"amount_total"`
+	Currency       string          `json:"currency"`
+	Description    string          `json:"description"`
+	Metadata       map[string]any  `json:"metadata"`
+	URL            *string         `json:"url"`
+	ExpiresAt      *string         `json:"expires_at"`
+	CreatedAt      string          `json:"created_at"`
+	UpdatedAt      string          `json:"updated_at"`
+	Object         string          `json:"object"`
+	Livemode       bool            `json:"livemode"`
 }
 
 type PaymentMethodUpdateCheckout struct {
@@ -950,6 +950,7 @@ type Transaction struct {
 	Subtotal      int               `json:"subtotal"`
 	TaxAmount     *int              `json:"tax_amount"`
 	Currency      string            `json:"currency"`
+	Provider      PaymentProvider   `json:"provider"`
 	Status        TransactionStatus `json:"status"`
 	CustomerEmail *string           `json:"customer_email"`
 	CustomerName  *string           `json:"customer_name"`

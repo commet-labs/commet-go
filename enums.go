@@ -53,6 +53,14 @@ const (
 	TransactionStatusDisputed  TransactionStatus = "disputed"
 )
 
+type PaymentProvider string
+
+const (
+	PaymentProviderStripe PaymentProvider = "stripe"
+	PaymentProviderCommet PaymentProvider = "commet"
+	PaymentProviderDlocal PaymentProvider = "dlocal"
+)
+
 type FeatureType string
 
 const (
