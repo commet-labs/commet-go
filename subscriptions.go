@@ -17,6 +17,7 @@ type CreateSubscriptionParams struct {
 	BillingInterval *BillingInterval                    `json:"billing_interval,omitempty"`
 	InitialSeats    map[string]int                      `json:"initial_seats,omitempty"`
 	SkipTrial       *bool                               `json:"skip_trial,omitempty"`
+	CustomTrialDays *int                                `json:"custom_trial_days,omitempty"`
 	IntroOffer      *CreateSubscriptionParamsIntroOffer `json:"intro_offer,omitempty"`
 	Name            *string                             `json:"name,omitempty"`
 	StartDate       *string                             `json:"start_date,omitempty"`
@@ -105,16 +106,17 @@ func (r *SubscriptionsResource) List(ctx context.Context, params *ListSubscripti
 // Create a subscription for a customer. Requires planId or planCode plus customerId.
 func (r *SubscriptionsResource) Create(ctx context.Context, params *CreateSubscriptionParams) (*ApiResponse[Subscription], error) {
 	body := buildBody(map[string]any{
-		"plan_id":          params.PlanID,
-		"plan_code":        params.PlanCode,
-		"customer_id":      params.CustomerID,
-		"billing_interval": params.BillingInterval,
-		"initial_seats":    params.InitialSeats,
-		"skip_trial":       params.SkipTrial,
-		"intro_offer":      params.IntroOffer,
-		"name":             params.Name,
-		"start_date":       params.StartDate,
-		"success_url":      params.SuccessURL,
+		"plan_id":           params.PlanID,
+		"plan_code":         params.PlanCode,
+		"customer_id":       params.CustomerID,
+		"billing_interval":  params.BillingInterval,
+		"initial_seats":     params.InitialSeats,
+		"skip_trial":        params.SkipTrial,
+		"custom_trial_days": params.CustomTrialDays,
+		"intro_offer":       params.IntroOffer,
+		"name":              params.Name,
+		"start_date":        params.StartDate,
+		"success_url":       params.SuccessURL,
 	})
 	return parseResponse[Subscription](r.http.post(ctx, "/subscriptions", body, params.IdempotencyKey))
 }
