@@ -944,22 +944,23 @@ type TestClockBilling struct {
 }
 
 type Transaction struct {
-	ID            string            `json:"id"`
-	InvoiceID     *string           `json:"invoice_id"`
-	GrossAmount   int               `json:"gross_amount"`
-	Subtotal      int               `json:"subtotal"`
-	TaxAmount     *int              `json:"tax_amount"`
-	Currency      string            `json:"currency"`
-	Provider      PaymentProvider   `json:"provider"`
-	Status        TransactionStatus `json:"status"`
-	CustomerEmail *string           `json:"customer_email"`
-	CustomerName  *string           `json:"customer_name"`
-	PaidAt        *string           `json:"paid_at"`
-	CreatedAt     string            `json:"created_at"`
-	UpdatedAt     string            `json:"updated_at"`
-	AvailableAt   *string           `json:"available_at,omitempty"`
-	Object        string            `json:"object"`
-	Livemode      bool              `json:"livemode"`
+	ID                string            `json:"id"`
+	InvoiceID         *string           `json:"invoice_id"`
+	GrossAmount       *int              `json:"gross_amount"`
+	Subtotal          *int              `json:"subtotal"`
+	TaxAmount         *int              `json:"tax_amount"`
+	PresentmentAmount *int              `json:"presentment_amount"`
+	Currency          string            `json:"currency"`
+	Provider          PaymentProvider   `json:"provider"`
+	Status            TransactionStatus `json:"status"`
+	CustomerEmail     *string           `json:"customer_email"`
+	CustomerName      *string           `json:"customer_name"`
+	PaidAt            *string           `json:"paid_at"`
+	CreatedAt         string            `json:"created_at"`
+	UpdatedAt         string            `json:"updated_at"`
+	AvailableAt       *string           `json:"available_at,omitempty"`
+	Object            string            `json:"object"`
+	Livemode          bool              `json:"livemode"`
 }
 
 type TransactionRefund struct {

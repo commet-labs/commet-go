@@ -17,6 +17,7 @@ type CreateSubscriptionParams struct {
 	BillingInterval *BillingInterval                    `json:"billing_interval,omitempty"`
 	InitialSeats    map[string]int                      `json:"initial_seats,omitempty"`
 	SkipTrial       *bool                               `json:"skip_trial,omitempty"`
+	CustomTrialDays *int                                `json:"custom_trial_days,omitempty"`
 	IntroOffer      *CreateSubscriptionParamsIntroOffer `json:"intro_offer,omitempty"`
 	Name            *string                             `json:"name,omitempty"`
 	StartDate       *string                             `json:"start_date,omitempty"`
@@ -105,16 +106,17 @@ func (r *SubscriptionsResource) List(ctx context.Context, params *ListSubscripti
 // Create a subscription for a customer. Requires planId or planCode plus customerId.
 func (r *SubscriptionsResource) Create(ctx context.Context, params *CreateSubscriptionParams) (*ApiResponse[Subscription], error) {
 	body := buildBody(map[string]any{
-		"plan_id":          params.PlanID,
-		"plan_code":        params.PlanCode,
-		"customer_id":      params.CustomerID,
-		"billing_interval": params.BillingInterval,
-		"initial_seats":    params.InitialSeats,
-		"skip_trial":       params.SkipTrial,
-		"intro_offer":      params.IntroOffer,
-		"name":             params.Name,
-		"start_date":       params.StartDate,
-		"success_url":      params.SuccessURL,
+		"plan_id":           params.PlanID,
+		"plan_code":         params.PlanCode,
+		"customer_id":       params.CustomerID,
+		"billing_interval":  params.BillingInterval,
+		"initial_seats":     params.InitialSeats,
+		"skip_trial":        params.SkipTrial,
+		"custom_trial_days": params.CustomTrialDays,
+		"intro_offer":       params.IntroOffer,
+		"name":              params.Name,
+		"start_date":        params.StartDate,
+		"success_url":       params.SuccessURL,
 	})
 	return parseResponse[Subscription](r.http.post(ctx, "/subscriptions", body, params.IdempotencyKey))
 }
@@ -175,7 +177,7 @@ func (r *SubscriptionsResource) ChangePlan(ctx context.Context, id string, param
 	return parseResponse[PlanChange](r.http.post(ctx, fmt.Sprintf("/subscriptions/%s/change-plan", id), body, params.IdempotencyKey))
 }
 
-// Preview proration details for an immediate plan change (an upgrade or a longer interval) without applying it. Returns credit, charge, and net amount. Downgrades — a cheaper plan in the same group, or a shorter interval — are scheduled for the end of the current period instead of being prorated, so they return a 400 with code `plan_change_scheduled`; apply those via the change-plan endpoint.
+// Preview proration details for an immediate plan change (an upgrade or a longer interval) without applying it. Returns credit, charge, and net amount. The target plan must belong to the same plan group as the current plan, otherwise a 400 with code `plans_not_in_same_group` is returned. A change between two free plans has nothing to prorate and returns a zero-amount estimate. Downgrades — a cheaper plan in the same group, or a shorter interval — are scheduled for the end of the current period instead of being prorated, so they return a 400 with code `plan_change_scheduled`; apply those via the change-plan endpoint.
 func (r *SubscriptionsResource) PreviewChange(ctx context.Context, id string, params *PreviewChangePlanParams) (*ApiResponse[PreviewChange], error) {
 	body := buildBody(map[string]any{
 		"plan_id":          params.PlanID,
