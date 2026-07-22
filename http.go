@@ -18,7 +18,7 @@ import (
 	"unicode"
 )
 
-const version = "7.7.0"
+const version = "7.9.0"
 
 const baseURL = "https://commet.co"
 
