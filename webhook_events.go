@@ -104,7 +104,7 @@ type SubscriptionReactivatedData struct {
 	Provider           PaymentProvider `json:"provider"`
 }
 
-// Fired when a subscription is actually terminated at the end of the billing period. The status is now canceled and access should be revoked. This event is NOT fired when cancellation is scheduled — that triggers subscription.updated instead. See the cancellation lifecycle below.
+// Fired when a subscription is actually terminated. A scheduled cancellation fires it at the end of the billing period; immediate cancellations, full refunds (cancelReason refund), and exhausted dunning retries (cancelReason dunning_exhausted) fire it right away. The status is now canceled and access should be revoked. This event is NOT fired when cancellation is scheduled — that triggers subscription.updated instead. See the cancellation lifecycle below.
 type SubscriptionCanceledData struct {
 	SubscriptionID string  `json:"subscriptionId"`
 	CustomerID     string  `json:"customerId"`

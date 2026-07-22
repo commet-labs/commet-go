@@ -230,7 +230,7 @@ func (r *PlansResource) SetRegionalPrices(ctx context.Context, id string, priceI
 	return parseResponse[PlanRegionalPricing](r.http.put(ctx, fmt.Sprintf("/plans/%s/prices/%s/regional", id, priceID), body, params.IdempotencyKey))
 }
 
-// Configure a plan's regional pricing for one currency. Sending only currency and exchangeRate derives every regional value (base price, included balance, feature overage, intro offer) from the USD value at that rate. Optional per-price and per-feature overrides are stored as manual values.
+// Configure a plan's regional pricing for one currency. USD configures the United States variant; exchangeRate acts as its price multiplier. Sending only currency and exchangeRate derives every regional value (base price, included balance, feature overage, intro offer) from the default USD value. Optional per-price and per-feature overrides are stored as manual values.
 func (r *PlansResource) SetRegionalPricing(ctx context.Context, id string, params *SetPlanRegionalPricingParams) (*ApiResponse[PlanRegionalPricingResult], error) {
 	body := buildBody(map[string]any{
 		"currency":      params.Currency,

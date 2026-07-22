@@ -14,6 +14,7 @@ type generatedResources struct {
 	Plans         *PlansResource
 	Portal        *PortalResource
 	PromoCodes    *PromoCodesResource
+	Provisioning  *ProvisioningResource
 	Quota         *QuotaResource
 	Seats         *SeatsResource
 	Subscriptions *SubscriptionsResource
@@ -35,6 +36,7 @@ func (r *generatedResources) wireResources(h *httpClient) {
 	r.Plans = &PlansResource{http: h}
 	r.Portal = &PortalResource{http: h}
 	r.PromoCodes = &PromoCodesResource{http: h}
+	r.Provisioning = &ProvisioningResource{http: h}
 	r.Quota = &QuotaResource{http: h}
 	r.Seats = &SeatsResource{http: h}
 	r.Subscriptions = &SubscriptionsResource{http: h}

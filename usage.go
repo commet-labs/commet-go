@@ -57,6 +57,29 @@ type CheckUsageParams struct {
 	Quantity    int    `json:"quantity"`
 }
 
+type SetUsageParams struct {
+	CustomerID     string `json:"customer_id"`
+	Feature        string `json:"feature"`
+	Value          int    `json:"value"`
+	IdempotencyKey string `json:"idempotency_key,omitempty"`
+	Reason         string `json:"reason,omitempty"`
+}
+
+type UsageAdjustment struct {
+	ID             string  `json:"id"`
+	Feature        string  `json:"feature"`
+	Value          int     `json:"value"`
+	PreviousValue  int     `json:"previous_value"`
+	Adjustment     int     `json:"adjustment"`
+	CustomerID     string  `json:"customer_id"`
+	IdempotencyKey *string `json:"idempotency_key"`
+	Reason         *string `json:"reason"`
+	Ts             string  `json:"ts"`
+	CreatedAt      string  `json:"created_at"`
+	Object         string  `json:"object"`
+	Livemode       bool    `json:"livemode"`
+}
+
 type UsageCheckResult struct {
 	Allowed           bool                   `json:"allowed"`
 	ConsumptionModel  ConsumptionModel       `json:"consumption_model"`
@@ -98,6 +121,17 @@ func (r *UsageResource) Check(ctx context.Context, params *CheckUsageParams) (*A
 		"quantity":     params.Quantity,
 	})
 	return parseResponse[UsageCheckResult](r.http.post(ctx, "/usage/check", body, ""))
+}
+
+func (r *UsageResource) Set(ctx context.Context, params *SetUsageParams) (*ApiResponse[UsageAdjustment], error) {
+	body := buildBody(map[string]any{
+		"customer_id":     params.CustomerID,
+		"feature":         params.Feature,
+		"value":           params.Value,
+		"idempotency_key": params.IdempotencyKey,
+		"reason":          params.Reason,
+	})
+	return parseResponse[UsageAdjustment](r.http.put(ctx, "/usage", body, params.IdempotencyKey))
 }
 
 type TrackModelTokensParams struct {

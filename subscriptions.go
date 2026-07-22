@@ -19,6 +19,7 @@ type CreateSubscriptionParams struct {
 	SkipTrial       *bool                               `json:"skip_trial,omitempty"`
 	CustomTrialDays *int                                `json:"custom_trial_days,omitempty"`
 	IntroOffer      *CreateSubscriptionParamsIntroOffer `json:"intro_offer,omitempty"`
+	PromoCode       *string                             `json:"promo_code,omitempty"`
 	Name            *string                             `json:"name,omitempty"`
 	StartDate       *string                             `json:"start_date,omitempty"`
 	SuccessURL      *string                             `json:"success_url,omitempty"`
@@ -114,6 +115,7 @@ func (r *SubscriptionsResource) Create(ctx context.Context, params *CreateSubscr
 		"skip_trial":        params.SkipTrial,
 		"custom_trial_days": params.CustomTrialDays,
 		"intro_offer":       params.IntroOffer,
+		"promo_code":        params.PromoCode,
 		"name":              params.Name,
 		"start_date":        params.StartDate,
 		"success_url":       params.SuccessURL,

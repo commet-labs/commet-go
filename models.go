@@ -118,6 +118,13 @@ type CanceledSubscription struct {
 	Livemode                  bool               `json:"livemode"`
 }
 
+type ClaimLink struct {
+	URL       string `json:"url"`
+	ExpiresAt string `json:"expires_at"`
+	Object    string `json:"object"`
+	Livemode  bool   `json:"livemode"`
+}
+
 type CompletePayoutVerificationParamsBank struct {
 	AccountNumber     string  `json:"account_number"`
 	AccountHolderName string  `json:"account_holder_name"`
@@ -732,19 +739,20 @@ type PreviewChange struct {
 }
 
 type PromoCode struct {
-	ID              string       `json:"id"`
-	Code            string       `json:"code"`
-	DiscountType    DiscountType `json:"discount_type"`
-	DiscountValue   int          `json:"discount_value"`
-	DurationCycles  *int         `json:"duration_cycles"`
-	MaxRedemptions  *int         `json:"max_redemptions"`
-	ExpiresAt       *string      `json:"expires_at"`
-	IsActive        bool         `json:"is_active"`
-	RedemptionCount int          `json:"redemption_count"`
-	CreatedAt       string       `json:"created_at"`
-	UpdatedAt       string       `json:"updated_at"`
-	Object          string       `json:"object"`
-	Livemode        bool         `json:"livemode"`
+	ID              string           `json:"id"`
+	Code            string           `json:"code"`
+	DiscountType    DiscountType     `json:"discount_type"`
+	DiscountValue   int              `json:"discount_value"`
+	DurationCycles  *int             `json:"duration_cycles"`
+	BillingInterval *BillingInterval `json:"billing_interval"`
+	MaxRedemptions  *int             `json:"max_redemptions"`
+	ExpiresAt       *string          `json:"expires_at"`
+	IsActive        bool             `json:"is_active"`
+	RedemptionCount int              `json:"redemption_count"`
+	CreatedAt       string           `json:"created_at"`
+	UpdatedAt       string           `json:"updated_at"`
+	Object          string           `json:"object"`
+	Livemode        bool             `json:"livemode"`
 }
 
 type ReactivatedSubscription struct {
@@ -853,6 +861,7 @@ type Subscription struct {
 	BillingDayOfMonth   *int                             `json:"billing_day_of_month"`
 	NextBillingDate     *string                          `json:"next_billing_date"`
 	CheckoutURL         *string                          `json:"checkout_url"`
+	CheckoutProvider    *PaymentProvider                 `json:"checkout_provider,omitempty"`
 	CreatedAt           string                           `json:"created_at"`
 	UpdatedAt           string                           `json:"updated_at"`
 	Object              string                           `json:"object"`
@@ -939,6 +948,8 @@ type TestClockBilling struct {
 	CustomersFound int    `json:"customers_found"`
 	Enqueued       int    `json:"enqueued"`
 	Failed         int    `json:"failed"`
+	DunningRetried int    `json:"dunning_retried"`
+	DunningFailed  int    `json:"dunning_failed"`
 	Object         string `json:"object"`
 	Livemode       bool   `json:"livemode"`
 }
