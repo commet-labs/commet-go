@@ -18,11 +18,11 @@ import (
 	"unicode"
 )
 
-const version = "7.10.0"
+const version = "8.0.0"
 
 const baseURL = "https://commet.co"
 
-const APIVersion = "2026-07-11"
+const APIVersion = "2026-07-24"
 
 var retryableStatusCodes = map[int]bool{
 	408: true,
@@ -105,6 +105,10 @@ func (h *httpClient) post(ctx context.Context, endpoint string, body map[string]
 
 func (h *httpClient) put(ctx context.Context, endpoint string, body map[string]any, idempotencyKey string) (*rawApiResponse, error) {
 	return h.request(ctx, http.MethodPut, endpoint, body, nil, idempotencyKey, nil)
+}
+
+func (h *httpClient) patch(ctx context.Context, endpoint string, body map[string]any, idempotencyKey string) (*rawApiResponse, error) {
+	return h.request(ctx, http.MethodPatch, endpoint, body, nil, idempotencyKey, nil)
 }
 
 func (h *httpClient) delete(ctx context.Context, endpoint string, body map[string]any, idempotencyKey string) (*rawApiResponse, error) {
@@ -228,6 +232,10 @@ func (h *httpClient) execute(ctx context.Context, method string, endpoint string
 		}
 	}
 
+	if resp.StatusCode < 400 && bytes.Equal(bytes.TrimSpace(respBody), []byte("null")) {
+		return &rawApiResponse{Success: true, Data: []byte("null")}, nil
+	}
+
 	var rawData map[string]any
 	if err := json.Unmarshal(respBody, &rawData); err != nil {
 		return nil, &CommetError{
@@ -244,11 +252,18 @@ func (h *httpClient) execute(ctx context.Context, method string, endpoint string
 	converted := convertKeys(rawData, toSnake).(map[string]any)
 
 	apiResp := &rawApiResponse{Success: true}
-	if v, ok := converted["success"].(bool); ok {
-		apiResp.Success = v
+	success, hasSuccess := converted["success"].(bool)
+	data, hasData := converted["data"]
+	isEnvelope := hasSuccess && hasData
+	if isEnvelope {
+		apiResp.Success = success
 	}
-	if v, ok := converted["data"]; ok {
-		dataBytes, err := json.Marshal(v)
+	if !isEnvelope {
+		data = converted
+		hasData = true
+	}
+	if hasData {
+		dataBytes, err := json.Marshal(data)
 		if err != nil {
 			return nil, fmt.Errorf("commet: failed to re-marshal data: %w", err)
 		}
@@ -301,6 +316,17 @@ func parseResponse[T any](raw *rawApiResponse, err error) (*ApiResponse[T], erro
 	}
 
 	return result, nil
+}
+
+func parseDirectResponse[T any](raw *rawApiResponse, err error) (*T, error) {
+	if err == nil && bytes.Equal(bytes.TrimSpace(raw.Data), []byte("null")) {
+		return nil, nil
+	}
+	response, err := parseResponse[T](raw, err)
+	if err != nil {
+		return nil, err
+	}
+	return &response.Data, nil
 }
 
 func (h *httpClient) handleError(statusCode int, data map[string]any) error {

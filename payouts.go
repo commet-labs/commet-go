@@ -19,10 +19,10 @@ type RequestPayoutParams struct {
 
 type CompletePayoutVerificationParams struct {
 	Email          string                                      `json:"email"`
-	BusinessType   string                                      `json:"business_type"`
 	BusinessURL    string                                      `json:"business_url"`
 	DocumentURL    string                                      `json:"document_url"`
 	Bank           CompletePayoutVerificationParamsBank        `json:"bank"`
+	BusinessType   string                                      `json:"business_type"`
 	Individual     *CompletePayoutVerificationParamsIndividual `json:"individual,omitempty"`
 	Company        *CompletePayoutVerificationParamsCompany    `json:"company,omitempty"`
 	IdempotencyKey string                                      `json:"-"`
@@ -33,7 +33,7 @@ type PayoutsResource struct {
 }
 
 // Add an additional destination bank account to the organization's existing payout account. Country and currency are resolved from the organization. The full account number is never returned — only `last4`.
-func (r *PayoutsResource) AddBankAccount(ctx context.Context, params *AddPayoutBankAccountParams) (*ApiResponse[PayoutBankAccount], error) {
+func (r *PayoutsResource) AddBankAccount(ctx context.Context, params *AddPayoutBankAccountParams) (*PayoutBankAccount, error) {
 	body := buildBody(map[string]any{
 		"account_number":      params.AccountNumber,
 		"account_holder_name": params.AccountHolderName,
@@ -41,28 +41,28 @@ func (r *PayoutsResource) AddBankAccount(ctx context.Context, params *AddPayoutB
 		"account_type":        params.AccountType,
 		"set_default":         params.SetDefault,
 	})
-	return parseResponse[PayoutBankAccount](r.http.post(ctx, "/payouts/bank-accounts", body, params.IdempotencyKey))
+	return parseDirectResponse[PayoutBankAccount](r.http.post(ctx, "/payouts/bank-accounts", body, params.IdempotencyKey))
 }
 
 // Withdraw available balance to the organization's verified payout account. `amount` is in cents (USD, minimum 1000 = $10). The payout is created in `pending` and settles to `paid` asynchronously as provider webhooks arrive.
-func (r *PayoutsResource) Request(ctx context.Context, params *RequestPayoutParams) (*ApiResponse[Payout], error) {
+func (r *PayoutsResource) Request(ctx context.Context, params *RequestPayoutParams) (*Payout, error) {
 	body := buildBody(map[string]any{
 		"amount":      params.Amount,
 		"description": params.Description,
 	})
-	return parseResponse[Payout](r.http.post(ctx, "/payouts", body, params.IdempotencyKey))
+	return parseDirectResponse[Payout](r.http.post(ctx, "/payouts", body, params.IdempotencyKey))
 }
 
 // Provision the organization's payout account in a single call with the full KYC + bank payload. Uploads the identity document, persists the destination bank, and creates the connected account through the org's payout provider. The account starts `pending_verification` and flips to `verified` via the provider's webhook. Idempotent: returns the existing account if the org already has one.
-func (r *PayoutsResource) CompleteVerification(ctx context.Context, params *CompletePayoutVerificationParams) (*ApiResponse[PayoutVerification], error) {
+func (r *PayoutsResource) CompleteVerification(ctx context.Context, params *CompletePayoutVerificationParams) (*PayoutVerification, error) {
 	body := buildBody(map[string]any{
 		"email":         params.Email,
-		"business_type": params.BusinessType,
 		"business_url":  params.BusinessURL,
 		"document_url":  params.DocumentURL,
 		"bank":          params.Bank,
+		"business_type": params.BusinessType,
 		"individual":    params.Individual,
 		"company":       params.Company,
 	})
-	return parseResponse[PayoutVerification](r.http.post(ctx, "/payouts/verification", body, params.IdempotencyKey))
+	return parseDirectResponse[PayoutVerification](r.http.post(ctx, "/payouts/verification", body, params.IdempotencyKey))
 }

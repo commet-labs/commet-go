@@ -8,11 +8,13 @@ type generatedResources struct {
 	FeatureAccess *FeatureAccessResource
 	Features      *FeaturesResource
 	Invoices      *InvoicesResource
+	Offers        *OffersResource
 	Payments      *PaymentsResource
 	Payouts       *PayoutsResource
 	PlanGroups    *PlanGroupsResource
 	Plans         *PlansResource
 	Portal        *PortalResource
+	Pricing       *PricingResource
 	PromoCodes    *PromoCodesResource
 	Provisioning  *ProvisioningResource
 	Quota         *QuotaResource
@@ -20,6 +22,7 @@ type generatedResources struct {
 	Subscriptions *SubscriptionsResource
 	TestClock     *TestClockResource
 	Transactions  *TransactionsResource
+	Usage         *UsageResource
 }
 
 func (r *generatedResources) wireResources(h *httpClient) {
@@ -30,11 +33,13 @@ func (r *generatedResources) wireResources(h *httpClient) {
 	r.FeatureAccess = &FeatureAccessResource{http: h}
 	r.Features = &FeaturesResource{http: h}
 	r.Invoices = &InvoicesResource{http: h}
+	r.Offers = &OffersResource{http: h}
 	r.Payments = &PaymentsResource{http: h}
 	r.Payouts = &PayoutsResource{http: h}
 	r.PlanGroups = &PlanGroupsResource{http: h}
 	r.Plans = &PlansResource{http: h}
 	r.Portal = &PortalResource{http: h}
+	r.Pricing = &PricingResource{http: h}
 	r.PromoCodes = &PromoCodesResource{http: h}
 	r.Provisioning = &ProvisioningResource{http: h}
 	r.Quota = &QuotaResource{http: h}
@@ -42,4 +47,5 @@ func (r *generatedResources) wireResources(h *httpClient) {
 	r.Subscriptions = &SubscriptionsResource{http: h}
 	r.TestClock = &TestClockResource{http: h}
 	r.Transactions = &TransactionsResource{http: h}
+	r.Usage = &UsageResource{http: h}
 }

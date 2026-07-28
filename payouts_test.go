@@ -170,7 +170,7 @@ func TestCompleteVerificationCamelizesDeeplyNestedTypedStructs(t *testing.T) {
 // response unmarshals into the typed Payout struct, including a wire null mapping
 // to a nil *string Description, and integer amount fields decoding correctly.
 func TestRequestPayoutUnmarshalsNullableResponse(t *testing.T) {
-	client, captured := newWireServer(t, 200, `{"data":{
+	client, captured := newWireServer(t, 200, `{
 		"id":"po_1",
 		"status":"pending",
 		"amount":10000,
@@ -182,7 +182,7 @@ func TestRequestPayoutUnmarshalsNullableResponse(t *testing.T) {
 		"createdAt":"2026-06-08T00:00:00Z",
 		"object":"payout",
 		"livemode":true
-	}}`)
+	}`)
 
 	resp, err := client.Payouts.Request(context.Background(), &RequestPayoutParams{Amount: 10000})
 	if err != nil {
@@ -195,7 +195,7 @@ func TestRequestPayoutUnmarshalsNullableResponse(t *testing.T) {
 		t.Errorf("request amount = %v, want 10000 (raw: %s)", body["amount"], captured.Body)
 	}
 
-	p := resp.Data
+	p := resp
 	if p.ID != "po_1" {
 		t.Errorf("ID = %q, want po_1", p.ID)
 	}

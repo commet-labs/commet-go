@@ -1,16 +1,5 @@
 package commet
 
-type SubscriptionStatus string
-
-const (
-	SubscriptionStatusDraft          SubscriptionStatus = "draft"
-	SubscriptionStatusPendingPayment SubscriptionStatus = "pending_payment"
-	SubscriptionStatusTrialing       SubscriptionStatus = "trialing"
-	SubscriptionStatusActive         SubscriptionStatus = "active"
-	SubscriptionStatusPastDue        SubscriptionStatus = "past_due"
-	SubscriptionStatusCanceled       SubscriptionStatus = "canceled"
-)
-
 type BillingInterval string
 
 const (
@@ -29,6 +18,15 @@ const (
 	ConsumptionModelBalance ConsumptionModel = "balance"
 )
 
+type FeatureType string
+
+const (
+	FeatureTypeBoolean FeatureType = "boolean"
+	FeatureTypeUsage   FeatureType = "usage"
+	FeatureTypeSeats   FeatureType = "seats"
+	FeatureTypeQuota   FeatureType = "quota"
+)
+
 type InvoiceType string
 
 const (
@@ -43,16 +41,6 @@ const (
 	InvoiceTypeReactivation    InvoiceType = "reactivation"
 )
 
-type TransactionStatus string
-
-const (
-	TransactionStatusPending   TransactionStatus = "pending"
-	TransactionStatusSucceeded TransactionStatus = "succeeded"
-	TransactionStatusFailed    TransactionStatus = "failed"
-	TransactionStatusRefunded  TransactionStatus = "refunded"
-	TransactionStatusDisputed  TransactionStatus = "disputed"
-)
-
 type PaymentProvider string
 
 const (
@@ -61,20 +49,15 @@ const (
 	PaymentProviderDlocal PaymentProvider = "dlocal"
 )
 
-type FeatureType string
+type SubscriptionStatus string
 
 const (
-	FeatureTypeBoolean FeatureType = "boolean"
-	FeatureTypeUsage   FeatureType = "usage"
-	FeatureTypeSeats   FeatureType = "seats"
-	FeatureTypeQuota   FeatureType = "quota"
-)
-
-type DiscountType string
-
-const (
-	DiscountTypePercentage DiscountType = "percentage"
-	DiscountTypeAmount     DiscountType = "amount"
+	SubscriptionStatusDraft          SubscriptionStatus = "draft"
+	SubscriptionStatusPendingPayment SubscriptionStatus = "pending_payment"
+	SubscriptionStatusTrialing       SubscriptionStatus = "trialing"
+	SubscriptionStatusActive         SubscriptionStatus = "active"
+	SubscriptionStatusPastDue        SubscriptionStatus = "past_due"
+	SubscriptionStatusCanceled       SubscriptionStatus = "canceled"
 )
 
 type Timezone string
@@ -101,4 +84,14 @@ const (
 	TimezoneAsiaSingapore      Timezone = "Asia/Singapore"
 	TimezoneAsiaDubai          Timezone = "Asia/Dubai"
 	TimezoneAustraliaSydney    Timezone = "Australia/Sydney"
+)
+
+type TransactionStatus string
+
+const (
+	TransactionStatusPending   TransactionStatus = "pending"
+	TransactionStatusSucceeded TransactionStatus = "succeeded"
+	TransactionStatusFailed    TransactionStatus = "failed"
+	TransactionStatusRefunded  TransactionStatus = "refunded"
+	TransactionStatusDisputed  TransactionStatus = "disputed"
 )

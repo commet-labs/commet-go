@@ -76,32 +76,32 @@ type SubscriptionCreatedData struct {
 
 // Fired once, when the subscription's first charge succeeds and it becomes active — this is where you grant access. Never re-fired on renewals; use payment.received for per-charge notifications.
 type SubscriptionActivatedData struct {
-	SubscriptionID     string           `json:"subscriptionId"`
-	CustomerID         string           `json:"customerId"`
-	Status             string           `json:"status"`
-	CurrentPeriodStart string           `json:"currentPeriodStart"`
-	CurrentPeriodEnd   string           `json:"currentPeriodEnd"`
-	Name               *string          `json:"name"`
-	InvoiceID          string           `json:"invoiceId"`
-	InvoiceNumber      string           `json:"invoiceNumber"`
-	InvoiceTotal       float64          `json:"invoiceTotal"`
-	InvoiceCurrency    string           `json:"invoiceCurrency"`
-	Provider           *PaymentProvider `json:"provider"`
+	SubscriptionID     string  `json:"subscriptionId"`
+	CustomerID         string  `json:"customerId"`
+	Status             string  `json:"status"`
+	CurrentPeriodStart string  `json:"currentPeriodStart"`
+	CurrentPeriodEnd   string  `json:"currentPeriodEnd"`
+	Name               *string `json:"name"`
+	InvoiceID          string  `json:"invoiceId"`
+	InvoiceNumber      string  `json:"invoiceNumber"`
+	InvoiceTotal       float64 `json:"invoiceTotal"`
+	InvoiceCurrency    string  `json:"invoiceCurrency"`
+	Provider           *string `json:"provider"`
 }
 
 // Fired when a canceled subscription is reactivated and its reactivation charge succeeds. The subscription returns to active with a fresh invoice and a billing period anchored to the reactivation date. Distinct from subscription.activated (first activation) and payment.recovered (past_due recovery, which keeps the original anchor).
 type SubscriptionReactivatedData struct {
-	SubscriptionID     string          `json:"subscriptionId"`
-	CustomerID         string          `json:"customerId"`
-	Status             string          `json:"status"`
-	CurrentPeriodStart string          `json:"currentPeriodStart"`
-	CurrentPeriodEnd   string          `json:"currentPeriodEnd"`
-	Name               *string         `json:"name"`
-	InvoiceID          string          `json:"invoiceId"`
-	InvoiceNumber      string          `json:"invoiceNumber"`
-	InvoiceTotal       float64         `json:"invoiceTotal"`
-	InvoiceCurrency    string          `json:"invoiceCurrency"`
-	Provider           PaymentProvider `json:"provider"`
+	SubscriptionID     string  `json:"subscriptionId"`
+	CustomerID         string  `json:"customerId"`
+	Status             string  `json:"status"`
+	CurrentPeriodStart string  `json:"currentPeriodStart"`
+	CurrentPeriodEnd   string  `json:"currentPeriodEnd"`
+	Name               *string `json:"name"`
+	InvoiceID          string  `json:"invoiceId"`
+	InvoiceNumber      string  `json:"invoiceNumber"`
+	InvoiceTotal       float64 `json:"invoiceTotal"`
+	InvoiceCurrency    string  `json:"invoiceCurrency"`
+	Provider           string  `json:"provider"`
 }
 
 // Fired when a subscription is actually terminated. A scheduled cancellation fires it at the end of the billing period; immediate cancellations, full refunds (cancelReason refund), and exhausted dunning retries (cancelReason dunning_exhausted) fire it right away. The status is now canceled and access should be revoked. This event is NOT fired when cancellation is scheduled — that triggers subscription.updated instead. See the cancellation lifecycle below.
@@ -247,18 +247,18 @@ type CheckoutReadyData struct {
 
 // Fired every time a payment settles successfully — the first payment and every renewal alike. subscription.activated fires alongside it only on the first one.
 type PaymentReceivedData struct {
-	InvoiceID            string           `json:"invoiceId"`
-	InvoiceNumber        string           `json:"invoiceNumber"`
-	InvoiceTotal         float64          `json:"invoiceTotal"`
-	CustomerID           string           `json:"customerId"`
-	SubscriptionID       *string          `json:"subscriptionId"`
-	PaymentTransactionID *string          `json:"paymentTransactionId"`
-	Provider             *PaymentProvider `json:"provider"`
-	GrossAmount          *float64         `json:"grossAmount"`
-	Currency             *string          `json:"currency"`
-	OrgNetAmount         *float64         `json:"orgNetAmount"`
-	CustomerEmail        *string          `json:"customerEmail"`
-	PaidAt               string           `json:"paidAt"`
+	InvoiceID            string   `json:"invoiceId"`
+	InvoiceNumber        string   `json:"invoiceNumber"`
+	InvoiceTotal         float64  `json:"invoiceTotal"`
+	CustomerID           string   `json:"customerId"`
+	SubscriptionID       *string  `json:"subscriptionId"`
+	PaymentTransactionID *string  `json:"paymentTransactionId"`
+	Provider             *string  `json:"provider"`
+	GrossAmount          *float64 `json:"grossAmount"`
+	Currency             *string  `json:"currency"`
+	OrgNetAmount         *float64 `json:"orgNetAmount"`
+	CustomerEmail        *string  `json:"customerEmail"`
+	PaidAt               string   `json:"paidAt"`
 }
 
 // Fired when a recurring charge fails. This event is for recurring charge failures only — card declines during initial checkout do not trigger this event.
@@ -292,44 +292,44 @@ type PaymentRetryFailedData struct {
 
 // Fired when a payment is refunded, fully or partially. A full refund of a subscription invoice also cancels the subscription immediately (subscription.canceled fires with reason refund); partial refunds leave the subscription untouched.
 type PaymentRefundedData struct {
-	PaymentTransactionID string          `json:"paymentTransactionId"`
-	Provider             PaymentProvider `json:"provider"`
-	PaymentLinkID        *string         `json:"paymentLinkId"`
-	InvoiceID            *string         `json:"invoiceId"`
-	InvoiceNumber        *string         `json:"invoiceNumber"`
-	CustomerID           *string         `json:"customerId"`
-	SubscriptionID       *string         `json:"subscriptionId"`
-	RefundAmount         float64         `json:"refundAmount"`
-	Currency             string          `json:"currency"`
+	PaymentTransactionID string  `json:"paymentTransactionId"`
+	Provider             string  `json:"provider"`
+	PaymentLinkID        *string `json:"paymentLinkId"`
+	InvoiceID            *string `json:"invoiceId"`
+	InvoiceNumber        *string `json:"invoiceNumber"`
+	CustomerID           *string `json:"customerId"`
+	SubscriptionID       *string `json:"subscriptionId"`
+	RefundAmount         float64 `json:"refundAmount"`
+	Currency             string  `json:"currency"`
 }
 
 // Fired when a cardholder opens a dispute (chargeback) against a payment. The disputed amount is frozen from your payout balance while the dispute is open; Commet, as the Merchant of Record, handles the resolution process. payment.dispute_resolved fires with the outcome.
 type PaymentDisputedData struct {
-	PaymentTransactionID string          `json:"paymentTransactionId"`
-	Provider             PaymentProvider `json:"provider"`
-	PaymentLinkID        *string         `json:"paymentLinkId"`
-	InvoiceID            *string         `json:"invoiceId"`
-	InvoiceNumber        *string         `json:"invoiceNumber"`
-	CustomerID           *string         `json:"customerId"`
-	SubscriptionID       *string         `json:"subscriptionId"`
-	DisputeAmount        float64         `json:"disputeAmount"`
-	Currency             string          `json:"currency"`
-	DisputeReason        *string         `json:"disputeReason"`
+	PaymentTransactionID string  `json:"paymentTransactionId"`
+	Provider             string  `json:"provider"`
+	PaymentLinkID        *string `json:"paymentLinkId"`
+	InvoiceID            *string `json:"invoiceId"`
+	InvoiceNumber        *string `json:"invoiceNumber"`
+	CustomerID           *string `json:"customerId"`
+	SubscriptionID       *string `json:"subscriptionId"`
+	DisputeAmount        float64 `json:"disputeAmount"`
+	Currency             string  `json:"currency"`
+	DisputeReason        *string `json:"disputeReason"`
 }
 
 // Fired when a dispute is closed. Carries the same identifiers as payment.disputed plus the outcome: won restores the frozen amount to your balance, lost keeps the chargeback deducted.
 type PaymentDisputeResolvedData struct {
-	PaymentTransactionID string          `json:"paymentTransactionId"`
-	Provider             PaymentProvider `json:"provider"`
-	PaymentLinkID        *string         `json:"paymentLinkId"`
-	InvoiceID            *string         `json:"invoiceId"`
-	InvoiceNumber        *string         `json:"invoiceNumber"`
-	CustomerID           *string         `json:"customerId"`
-	SubscriptionID       *string         `json:"subscriptionId"`
-	DisputeAmount        float64         `json:"disputeAmount"`
-	Currency             string          `json:"currency"`
-	DisputeReason        *string         `json:"disputeReason"`
-	Outcome              string          `json:"outcome"`
+	PaymentTransactionID string  `json:"paymentTransactionId"`
+	Provider             string  `json:"provider"`
+	PaymentLinkID        *string `json:"paymentLinkId"`
+	InvoiceID            *string `json:"invoiceId"`
+	InvoiceNumber        *string `json:"invoiceNumber"`
+	CustomerID           *string `json:"customerId"`
+	SubscriptionID       *string `json:"subscriptionId"`
+	DisputeAmount        float64 `json:"disputeAmount"`
+	Currency             string  `json:"currency"`
+	DisputeReason        *string `json:"disputeReason"`
+	Outcome              string  `json:"outcome"`
 }
 
 // Fired when a payment link is created. The link is pending — the customer has not paid yet. Do NOT fulfill here; wait for payment_link.completed.
@@ -486,7 +486,7 @@ type CustomerStateChangedData struct {
 	Plan             *WebhookPlanRef        `json:"plan"`
 	BillingInterval  *string                `json:"billingInterval"`
 	ConsumptionModel *string                `json:"consumptionModel"`
-	Features         []WebhookFeatureAccess `json:"features"`
+	Features         []any                  `json:"features"`
 	Seats            []WebhookSeatSummary   `json:"seats"`
 	Credits          *WebhookCreditsBalance `json:"credits"`
 	Balance          *WebhookBalance        `json:"balance"`

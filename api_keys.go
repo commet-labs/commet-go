@@ -20,8 +20,13 @@ type ApiKeysResource struct {
 	http *httpClient
 }
 
+// Permanently revoke and delete an API key.
+func (r *ApiKeysResource) Delete(ctx context.Context, id string) (*DeletedObject, error) {
+	return parseDirectResponse[DeletedObject](r.http.delete(ctx, fmt.Sprintf("/api-keys/%s", id), nil, ""))
+}
+
 // List API keys with cursor-based pagination. Keys are returned without the full secret.
-func (r *ApiKeysResource) List(ctx context.Context, params *ListApiKeysParams) (*ApiResponse[[]ApiKey], error) {
+func (r *ApiKeysResource) List(ctx context.Context, params *ListApiKeysParams) (*ApiKeysListResult, error) {
 	query := map[string]string{}
 	if params.Cursor != nil {
 		query["cursor"] = *params.Cursor
@@ -29,19 +34,14 @@ func (r *ApiKeysResource) List(ctx context.Context, params *ListApiKeysParams) (
 	if params.Limit != nil {
 		query["limit"] = fmt.Sprintf("%d", *params.Limit)
 	}
-	return parseResponse[[]ApiKey](r.http.get(ctx, "/api-keys", query))
+	return parseDirectResponse[ApiKeysListResult](r.http.get(ctx, "/api-keys", query))
 }
 
 // Create a new API key. The full key is only returned once in the response.
-func (r *ApiKeysResource) Create(ctx context.Context, params *CreateApiKeyParams) (*ApiResponse[CreatedApiKey], error) {
+func (r *ApiKeysResource) Create(ctx context.Context, params *CreateApiKeyParams) (*CreatedApiKey, error) {
 	body := buildBody(map[string]any{
 		"name":            params.Name,
 		"expires_in_days": params.ExpiresInDays,
 	})
-	return parseResponse[CreatedApiKey](r.http.post(ctx, "/api-keys", body, params.IdempotencyKey))
-}
-
-// Permanently revoke and delete an API key.
-func (r *ApiKeysResource) Delete(ctx context.Context, id string) (*ApiResponse[DeletedObject], error) {
-	return parseResponse[DeletedObject](r.http.delete(ctx, fmt.Sprintf("/api-keys/%s", id), nil, ""))
+	return parseDirectResponse[CreatedApiKey](r.http.post(ctx, "/api-keys", body, params.IdempotencyKey))
 }

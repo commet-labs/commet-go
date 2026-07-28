@@ -65,8 +65,6 @@ func WithHTTPClient(client *http.Client) Option {
 type Client struct {
 	generatedResources
 
-	// Preserved hand-written resources (not in the generated registry).
-	Usage    *UsageResource
 	Webhooks *WebhooksResource
 
 	http *httpClient
@@ -99,8 +97,9 @@ func New(apiKey string, opts ...Option) (*Client, error) {
 
 	c.wireResources(h)
 
-	c.Usage = &UsageResource{http: h}
-	c.Webhooks = &WebhooksResource{http: h}
+	c.Webhooks = &WebhooksResource{
+		GeneratedWebhooksResource: &GeneratedWebhooksResource{http: h},
+	}
 
 	return c, nil
 }

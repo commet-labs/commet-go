@@ -9,12 +9,12 @@ import (
 // field (FeatureType) serializes to its wire string value in the request body and
 // that the snake_case json tag "unit_name" becomes "unitName" on the wire.
 func TestCreateFeatureSendsTypedEnumAsWireString(t *testing.T) {
-	client, captured := newWireServer(t, 200, `{"data":{"id":"feat_1","name":"API Calls","code":"api_calls","type":"usage","description":null,"unitName":"call","createdAt":"2026-01-01","updatedAt":"2026-01-01","object":"feature","livemode":true}}`)
+	client, captured := newWireServer(t, 200, `{"id":"feat_1","name":"API Calls","code":"api_calls","type":"usage","description":null,"unitName":"call","createdAt":"2026-01-01","updatedAt":"2026-01-01","object":"feature","livemode":true}`)
 
 	resp, err := client.Features.Create(context.Background(), &CreateFeatureParams{
 		Name:     "API Calls",
 		Code:     "api_calls",
-		Type:     FeatureTypeUsage,
+		Type:     "usage",
 		UnitName: strPtr("call"),
 	})
 	if err != nil {
@@ -33,14 +33,14 @@ func TestCreateFeatureSendsTypedEnumAsWireString(t *testing.T) {
 	}
 
 	// Response: typed enum decodes, wire null -> nil pointer.
-	if resp.Data.Type != FeatureTypeUsage {
-		t.Errorf("resp Type = %q, want usage enum", resp.Data.Type)
+	if resp.Type != FeatureTypeUsage {
+		t.Errorf("resp Type = %q, want usage enum", resp.Type)
 	}
-	if resp.Data.Description != nil {
-		t.Errorf("resp Description = %v, want nil for wire null", *resp.Data.Description)
+	if resp.Description != nil {
+		t.Errorf("resp Description = %v, want nil for wire null", *resp.Description)
 	}
-	if resp.Data.UnitName == nil || *resp.Data.UnitName != "call" {
-		t.Errorf("resp UnitName = %v, want call", resp.Data.UnitName)
+	if resp.UnitName == nil || *resp.UnitName != "call" {
+		t.Errorf("resp UnitName = %v, want call", resp.UnitName)
 	}
 }
 
@@ -90,7 +90,7 @@ func TestListTransactionsSendsEnumStatusAsQueryParam(t *testing.T) {
 // with the InvoiceType enum, an explicit-null *int (CreditApplied via omitempty),
 // nested line items array, and a present optional all decode correctly.
 func TestGetInvoiceUnmarshalsTypedEnumLineItemsAndNullables(t *testing.T) {
-	client, _ := newWireServer(t, 200, `{"data":{
+	client, _ := newWireServer(t, 200, `{
 		"id":"inv_1",
 		"customerId":"cus_1",
 		"subscriptionId":null,
@@ -113,13 +113,13 @@ func TestGetInvoiceUnmarshalsTypedEnumLineItemsAndNullables(t *testing.T) {
 		"object":"invoice",
 		"livemode":true,
 		"lineItems":[{"lineType":"plan","featureName":null,"description":"Pro plan"}]
-	}}`)
+	}`)
 
 	resp, err := client.Invoices.Get(context.Background(), "inv_1")
 	if err != nil {
 		t.Fatalf("Get: %v", err)
 	}
-	inv := resp.Data
+	inv := resp
 
 	if inv.InvoiceType != InvoiceTypePlanChange {
 		t.Errorf("InvoiceType = %q, want plan_change enum", inv.InvoiceType)
@@ -175,7 +175,7 @@ func TestSetAllSeatsSendsMapBody(t *testing.T) {
 // omission for *bool IsActive while ensuring a legitimately-zero int (Price=0) is
 // still sent — buildBody must distinguish "unset pointer" from "zero value".
 func TestCreateCreditPackOmitsNilOptionalsAndKeepsZeroPrice(t *testing.T) {
-	client, captured := newWireServer(t, 200, `{"data":{"id":"cp_1","name":"Starter","credits":100,"price":0,"object":"credit_pack","livemode":true}}`)
+	client, captured := newWireServer(t, 200, `{"id":"cp_1","name":"Starter","credits":100,"price":0,"object":"credit_pack","livemode":true}`)
 
 	_, err := client.CreditPacks.Create(context.Background(), &CreateCreditPackParams{
 		Name:    "Starter",
@@ -206,7 +206,7 @@ func TestCreateCreditPackOmitsNilOptionalsAndKeepsZeroPrice(t *testing.T) {
 // snake-tagged fields (base_price, feature_id, consumption_model) camelize, while
 // the unset *int optionals are dropped (not null).
 func TestCreateAddonSendsRequiredAndOmitsOptionals(t *testing.T) {
-	client, captured := newWireServer(t, 200, `{"data":{"id":"addon_1","name":"Extra","slug":"extra","basePrice":500,"consumptionModel":"metered","featureCode":"x","featureName":"X","object":"addon","livemode":true}}`)
+	client, captured := newWireServer(t, 200, `{"id":"addon_1","name":"Extra","slug":"extra","basePrice":500,"consumptionModel":"metered","featureCode":"x","featureName":"X","object":"addon","livemode":true}`)
 
 	_, err := client.Addons.Create(context.Background(), &CreateAddonParams{
 		Name:             "Extra",

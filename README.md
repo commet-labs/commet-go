@@ -5,7 +5,7 @@ Billing and usage tracking for SaaS applications.
 ## Installation
 
 ```bash
-go get github.com/commet-labs/commet-go/v7
+go get github.com/commet-labs/commet-go/v8
 ```
 
 ## Quick start
@@ -17,7 +17,7 @@ import (
 	"context"
 	"log"
 
-	commet "github.com/commet-labs/commet-go/v7"
+	commet "github.com/commet-labs/commet-go/v8"
 )
 
 func main() {
@@ -30,30 +30,36 @@ func main() {
 	ctx := context.Background()
 
 	// Create a customer
-	client.Customers.Create(ctx, &commet.CreateCustomerParams{
-		Email:      "user@example.com",
-		ExternalID: "user_123",
+	customer, err := client.Customers.Create(ctx, &commet.CreateCustomerParams{
+		Email: "user@example.com",
 	})
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	// Create a subscription
+	planCode := "pro"
 	client.Subscriptions.Create(ctx, &commet.CreateSubscriptionParams{
-		ExternalID: "user_123",
-		PlanCode:   "pro",
+		CustomerID: customer.ID,
+		PlanCode:   &planCode,
 	})
 
 	// Track usage
+	value := 1.0
 	client.Usage.Track(ctx, &commet.TrackUsageParams{
-		Feature:    "api_calls",
-		ExternalID: "user_123",
+		FeatureCode: "api_calls",
+		CustomerID:  customer.ID,
+		Value:       &value,
 	})
 
 	// Track AI token usage
+	model := "claude-sonnet-4-20250514"
 	inputTokens := 1000
 	outputTokens := 500
 	client.Usage.Track(ctx, &commet.TrackUsageParams{
-		Feature:      "ai_generation",
-		ExternalID:   "user_123",
-		Model:        "claude-sonnet-4-20250514",
+		FeatureCode:  "ai_generation",
+		CustomerID:   customer.ID,
+		Model:        &model,
 		InputTokens:  &inputTokens,
 		OutputTokens: &outputTokens,
 	})
@@ -66,54 +72,43 @@ Track a durable integer balance (e.g. projects, tasks) that carries across billi
 
 ```go
 // Add to the balance (Count defaults to 1)
-client.Quota.Add(ctx, &commet.QuotaParams{
-	CustomerID:  "user_123",
+customerID := customer.ID
+count := 5
+client.Quota.Add(ctx, &commet.AddQuotaParams{
+	CustomerID:  &customerID,
 	FeatureCode: "tasks",
-	Count:       5,
+	Count:       &count,
 })
 
 // Set the balance to an exact value
-client.Quota.Set(ctx, &commet.QuotaParams{
-	CustomerID:  "user_123",
+client.Quota.Set(ctx, &commet.SetQuotaParams{
+	CustomerID:  &customerID,
 	FeatureCode: "tasks",
 	Count:       10,
 })
 
 // Remove from the balance (Count defaults to 1)
-client.Quota.Remove(ctx, &commet.QuotaParams{
-	CustomerID:  "user_123",
+client.Quota.Remove(ctx, &commet.RemoveQuotaParams{
+	CustomerID:  &customerID,
 	FeatureCode: "tasks",
 })
 
 // Read the current allowance (held vs included, remaining)
-client.Quota.Get(ctx, &commet.GetQuotaParams{
-	CustomerID:  "user_123",
+client.Quota.Get(ctx, &commet.GetQuotaAllowanceParams{
+	CustomerID:  customer.ID,
 	FeatureCode: "tasks",
 })
 
 // Read every quota allowance for a customer
-client.Quota.GetAll(ctx, &commet.GetAllQuotaParams{
-	CustomerID: "user_123",
+client.Quota.GetAll(ctx, &commet.GetAllQuotaAllowancesParams{
+	CustomerID: customer.ID,
 })
-```
-
-## Customer context
-
-Scope all operations to a customer to avoid repeating `ExternalID`:
-
-```go
-customer := client.Customer("user_123")
-
-customer.Usage.Track(ctx, "api_calls")
-customer.Features.Check(ctx, "custom_branding")
-customer.Seats.Add(ctx, "editor", 3)
-customer.Portal.GetURL(ctx)
 ```
 
 ## Webhook verification
 
 ```go
-webhooks := &commet.Webhooks{}
+webhooks := &commet.WebhooksResource{}
 
 payload, err := webhooks.VerifyAndParse(
 	requestBody,

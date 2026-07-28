@@ -1,218 +1,76 @@
 package commet
 
-import (
-	"context"
-	"time"
-)
+import "context"
 
-// UsageEvent and UsageEventProperty are preserved here: the usage track methods
-// keep their hand-written batching/token logic, so the generator does not emit
-// these response models.
-type UsageEvent struct {
-	ID             string               `json:"id"`
-	Object         string               `json:"object"`
-	Livemode       bool                 `json:"livemode"`
-	OrganizationID string               `json:"organization_id"`
-	CustomerID     string               `json:"customer_id"`
-	Feature        string               `json:"feature"`
-	IdempotencyKey string               `json:"idempotency_key,omitempty"`
-	Ts             string               `json:"ts"`
-	Properties     []UsageEventProperty `json:"properties,omitempty"`
-	CreatedAt      string               `json:"created_at"`
+type CheckUsageAvailabilityParams struct {
+	CustomerID     string `json:"customer_id"`
+	FeatureCode    string `json:"feature_code"`
+	Quantity       *int   `json:"quantity,omitempty"`
+	IdempotencyKey string `json:"-"`
 }
-
-type UsageEventProperty struct {
-	ID           string `json:"id"`
-	UsageEventID string `json:"usage_event_id"`
-	Property     string `json:"property"`
-	Value        string `json:"value"`
-	CreatedAt    string `json:"created_at"`
-}
-
-type UsageCheckDenialReason string
-
-const (
-	UsageCheckDenialReasonIncludedLimitReached UsageCheckDenialReason = "included_limit_reached"
-	UsageCheckDenialReasonInsufficientCredits  UsageCheckDenialReason = "insufficient_credits"
-	UsageCheckDenialReasonInsufficientBalance  UsageCheckDenialReason = "insufficient_balance"
-)
 
 type TrackUsageParams struct {
-	Feature          string            `json:"feature"`
-	CustomerID       string            `json:"customer_id"`
-	Value            *int              `json:"value,omitempty"`
-	Model            string            `json:"model,omitempty"`
-	InputTokens      *int              `json:"input_tokens,omitempty"`
-	OutputTokens     *int              `json:"output_tokens,omitempty"`
-	CacheReadTokens  *int              `json:"cache_read_tokens,omitempty"`
-	CacheWriteTokens *int              `json:"cache_write_tokens,omitempty"`
-	IdempotencyKey   string            `json:"-"`
-	Timestamp        string            `json:"timestamp,omitempty"`
-	Properties       map[string]string `json:"properties,omitempty"`
-}
-
-type CheckUsageParams struct {
-	CustomerID  string `json:"customer_id"`
-	FeatureCode string `json:"feature_code"`
-	Quantity    int    `json:"quantity"`
+	FeatureCode      string                           `json:"feature_code"`
+	CustomerID       string                           `json:"customer_id"`
+	EventID          *string                          `json:"event_id,omitempty"`
+	Timestamp        *string                          `json:"timestamp,omitempty"`
+	Properties       []TrackUsageParamsPropertiesItem `json:"properties,omitempty"`
+	Model            *string                          `json:"model,omitempty"`
+	InputTokens      *int                             `json:"input_tokens,omitempty"`
+	OutputTokens     *int                             `json:"output_tokens,omitempty"`
+	Value            *float64                         `json:"value,omitempty"`
+	CacheReadTokens  *int                             `json:"cache_read_tokens,omitempty"`
+	CacheWriteTokens *int                             `json:"cache_write_tokens,omitempty"`
+	IdempotencyKey   string                           `json:"-"`
 }
 
 type SetUsageParams struct {
-	CustomerID     string `json:"customer_id"`
-	Feature        string `json:"feature"`
-	Value          int    `json:"value"`
-	IdempotencyKey string `json:"idempotency_key,omitempty"`
-	Reason         string `json:"reason,omitempty"`
-}
-
-type UsageAdjustment struct {
-	ID             string  `json:"id"`
-	Feature        string  `json:"feature"`
-	Value          int     `json:"value"`
-	PreviousValue  int     `json:"previous_value"`
-	Adjustment     int     `json:"adjustment"`
 	CustomerID     string  `json:"customer_id"`
-	IdempotencyKey *string `json:"idempotency_key"`
-	Reason         *string `json:"reason"`
-	Ts             string  `json:"ts"`
-	CreatedAt      string  `json:"created_at"`
-	Object         string  `json:"object"`
-	Livemode       bool    `json:"livemode"`
-}
-
-type UsageCheckResult struct {
-	Allowed           bool                   `json:"allowed"`
-	ConsumptionModel  ConsumptionModel       `json:"consumption_model"`
-	Feature           string                 `json:"feature"`
-	Quantity          int                    `json:"quantity"`
-	Current           *int                   `json:"current,omitempty"`
-	Remaining         *int                   `json:"remaining,omitempty"`
-	Unlimited         *bool                  `json:"unlimited,omitempty"`
-	Included          *int                   `json:"included,omitempty"`
-	OverageEnabled    *bool                  `json:"overage_enabled,omitempty"`
-	OverageUnitPrice  *float64               `json:"overage_unit_price,omitempty"`
-	CreditsPerUnit    *int                   `json:"credits_per_unit,omitempty"`
-	EstimatedCredits  *int                   `json:"estimated_credits,omitempty"`
-	PlanCredits       *int                   `json:"plan_credits,omitempty"`
-	PurchasedCredits  *int                   `json:"purchased_credits,omitempty"`
-	TotalCredits      *int                   `json:"total_credits,omitempty"`
-	UnitPrice         *float64               `json:"unit_price,omitempty"`
-	EstimatedAmount   *float64               `json:"estimated_amount,omitempty"`
-	CurrentBalance    *float64               `json:"current_balance,omitempty"`
-	BlockOnExhaustion *bool                  `json:"block_on_exhaustion,omitempty"`
-	Currency          string                 `json:"currency,omitempty"`
-	Reason            UsageCheckDenialReason `json:"reason,omitempty"`
-	Message           string                 `json:"message,omitempty"`
+	FeatureCode    string  `json:"feature_code"`
+	Value          int     `json:"value"`
+	Reason         *string `json:"reason,omitempty"`
+	IdempotencyKey string  `json:"-"`
 }
 
 type UsageResource struct {
 	http *httpClient
 }
 
-func (r *UsageResource) Track(ctx context.Context, params *TrackUsageParams) (*ApiResponse[UsageEvent], error) {
-	body := buildUsageBody(params)
-	return parseResponse[UsageEvent](r.http.post(ctx, "/usage/events", body, params.IdempotencyKey))
-}
-
-func (r *UsageResource) Check(ctx context.Context, params *CheckUsageParams) (*ApiResponse[UsageCheckResult], error) {
+// Check if a customer can consume a feature before actual consumption. Returns availability and cost estimates based on the plan's consumption model.
+func (r *UsageResource) Check(ctx context.Context, params *CheckUsageAvailabilityParams) (*UsageCheck, error) {
 	body := buildBody(map[string]any{
 		"customer_id":  params.CustomerID,
 		"feature_code": params.FeatureCode,
 		"quantity":     params.Quantity,
 	})
-	return parseResponse[UsageCheckResult](r.http.post(ctx, "/usage/check", body, ""))
+	return parseDirectResponse[UsageCheck](r.http.post(ctx, "/usage/check", body, params.IdempotencyKey))
 }
 
-func (r *UsageResource) Set(ctx context.Context, params *SetUsageParams) (*ApiResponse[UsageAdjustment], error) {
+// Track a usage event for a metered feature. Deducts from balance/credits if applicable.
+func (r *UsageResource) Track(ctx context.Context, params *TrackUsageParams) (*UsageEvent, error) {
 	body := buildBody(map[string]any{
-		"customer_id":     params.CustomerID,
-		"feature":         params.Feature,
-		"value":           params.Value,
-		"idempotency_key": params.IdempotencyKey,
-		"reason":          params.Reason,
-	})
-	return parseResponse[UsageAdjustment](r.http.put(ctx, "/usage", body, params.IdempotencyKey))
-}
-
-type TrackModelTokensParams struct {
-	Feature          string            `json:"feature"`
-	CustomerID       string            `json:"customer_id"`
-	Model            string            `json:"model"`
-	InputTokens      int               `json:"input_tokens"`
-	OutputTokens     int               `json:"output_tokens"`
-	CacheReadTokens  *int              `json:"cache_read_tokens,omitempty"`
-	CacheWriteTokens *int              `json:"cache_write_tokens,omitempty"`
-	IdempotencyKey   string            `json:"-"`
-	Timestamp        string            `json:"timestamp,omitempty"`
-	Properties       map[string]string `json:"properties,omitempty"`
-}
-
-func (r *UsageResource) TrackModelTokens(ctx context.Context, params *TrackModelTokensParams) (*ApiResponse[UsageEvent], error) {
-	var props []any
-	if params.Properties != nil {
-		props = make([]any, 0, len(params.Properties))
-		for k, v := range params.Properties {
-			props = append(props, map[string]any{"property": k, "value": v})
-		}
-	}
-
-	timestamp := params.Timestamp
-	if timestamp == "" {
-		timestamp = time.Now().UTC().Format(time.RFC3339)
-	}
-
-	body := buildBody(map[string]any{
-		"feature":            params.Feature,
+		"feature_code":       params.FeatureCode,
 		"customer_id":        params.CustomerID,
-		"idempotency_key":    params.IdempotencyKey,
-		"timestamp":          timestamp,
-		"properties":         props,
+		"event_id":           params.EventID,
+		"timestamp":          params.Timestamp,
+		"properties":         params.Properties,
 		"model":              params.Model,
 		"input_tokens":       params.InputTokens,
 		"output_tokens":      params.OutputTokens,
+		"value":              params.Value,
 		"cache_read_tokens":  params.CacheReadTokens,
 		"cache_write_tokens": params.CacheWriteTokens,
 	})
-
-	return parseResponse[UsageEvent](r.http.post(ctx, "/usage/events", body, params.IdempotencyKey))
+	return parseDirectResponse[UsageEvent](r.http.post(ctx, "/usage/events", body, params.IdempotencyKey))
 }
 
-func buildUsageBody(params *TrackUsageParams) map[string]any {
-	var props []any
-	if params.Properties != nil {
-		props = make([]any, 0, len(params.Properties))
-		for k, v := range params.Properties {
-			props = append(props, map[string]any{"property": k, "value": v})
-		}
-	}
-
-	timestamp := params.Timestamp
-	if timestamp == "" {
-		timestamp = time.Now().UTC().Format(time.RFC3339)
-	}
-
+// Set a metered feature's usage to an exact value for the current period. Use the Idempotency-Key header to make retries safe.
+func (r *UsageResource) Set(ctx context.Context, params *SetUsageParams) (*UsageAdjustment, error) {
 	body := buildBody(map[string]any{
-		"feature":         params.Feature,
-		"customer_id":     params.CustomerID,
-		"idempotency_key": params.IdempotencyKey,
-		"timestamp":       timestamp,
-		"properties":      props,
+		"customer_id":  params.CustomerID,
+		"feature_code": params.FeatureCode,
+		"value":        params.Value,
+		"reason":       params.Reason,
 	})
-
-	if params.Model != "" {
-		merged := buildBody(map[string]any{
-			"model":              params.Model,
-			"input_tokens":       params.InputTokens,
-			"output_tokens":      params.OutputTokens,
-			"cache_read_tokens":  params.CacheReadTokens,
-			"cache_write_tokens": params.CacheWriteTokens,
-		})
-		for k, v := range merged {
-			body[k] = v
-		}
-	} else if params.Value != nil {
-		body["value"] = *params.Value
-	}
-
-	return body
+	return parseDirectResponse[UsageAdjustment](r.http.put(ctx, "/usage", body, params.IdempotencyKey))
 }
