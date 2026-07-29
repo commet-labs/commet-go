@@ -54,8 +54,8 @@ func main() {
 
 	// Track AI token usage
 	model := "claude-sonnet-4-20250514"
-	inputTokens := 1000
-	outputTokens := 500
+	inputTokens := int64(1000)
+	outputTokens := int64(500)
 	client.Usage.Track(ctx, &commet.TrackUsageParams{
 		FeatureCode:  "ai_generation",
 		CustomerID:   customer.ID,
@@ -65,6 +65,31 @@ func main() {
 	})
 }
 ```
+
+## Offers and pricing Markets
+
+SDK v8 exposes reusable Offers, country Market Groups, and selectable `PriceID` variants:
+
+```go
+market, err := client.Pricing.CreateMarketGroup(ctx, &commet.CreateMarketGroupParams{
+	Name:         "Argentina",
+	CountryCodes: []string{"AR"},
+})
+
+offer, err := client.Offers.Create(ctx, &commet.CreateOfferParams{
+	Name:         "30-day trial",
+	Purpose:      "introductory",
+	PlanPriceIds: []string{"pp_monthly"},
+	Phases: []commet.CreateOfferParamsPhasesItem{{
+		Value: commet.CreateOfferParamsPhasesItemVariant1{
+			Type:         "free_trial",
+			DurationDays: 30,
+		},
+	}},
+})
+```
+
+Promo Codes reference Promotional Offers. Omitting `PriceID` during subscription creation keeps normal default-price resolution.
 
 ## Quota
 
