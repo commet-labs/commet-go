@@ -5,7 +5,7 @@ Billing and usage tracking for SaaS applications.
 ## Installation
 
 ```bash
-go get github.com/commet-labs/commet-go/v8
+go get github.com/commet-labs/commet-go/v9
 ```
 
 ## Quick start
@@ -17,7 +17,7 @@ import (
 	"context"
 	"log"
 
-	commet "github.com/commet-labs/commet-go/v8"
+	commet "github.com/commet-labs/commet-go/v9"
 )
 
 func main() {
@@ -68,18 +68,16 @@ func main() {
 
 ## Offers and pricing Markets
 
-SDK v8 exposes reusable Offers, country Market Groups, and selectable `PriceID` variants:
+SDK v9 exposes independent Offers, top-level Markets, and selectable `PriceID` variants:
 
 ```go
-market, err := client.Pricing.CreateMarketGroup(ctx, &commet.CreateMarketGroupParams{
+market, err := client.Markets.Create(ctx, &commet.CreateMarketParams{
 	Name:         "Argentina",
 	CountryCodes: []string{"AR"},
 })
 
 offer, err := client.Offers.Create(ctx, &commet.CreateOfferParams{
-	Name:         "30-day trial",
-	Purpose:      "introductory",
-	PlanPriceIds: []string{"pp_monthly"},
+	Name: "30-day trial",
 	Phases: []commet.CreateOfferParamsPhasesItem{{
 		Value: commet.CreateOfferParamsPhasesItemVariant1{
 			Type:         "free_trial",
@@ -89,7 +87,7 @@ offer, err := client.Offers.Create(ctx, &commet.CreateOfferParams{
 })
 ```
 
-Promo Codes reference Promotional Offers. Omitting `PriceID` during subscription creation keeps normal default-price resolution.
+Promo Codes reference compatible Offers. Omitting `PriceID` during subscription creation keeps normal default-price resolution.
 
 ## Quota
 

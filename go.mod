@@ -1,3 +1,3 @@
-module github.com/commet-labs/commet-go/v8
+module github.com/commet-labs/commet-go/v9
 
 go 1.21

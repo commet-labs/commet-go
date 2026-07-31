@@ -216,7 +216,6 @@ type CreatedSubscription struct {
 	Cancellation        *CreatedSubscriptionCancellation        `json:"cancellation"`
 	CancelAtPeriodEnd   bool                                    `json:"cancel_at_period_end"`
 	ScheduledPlanChange *CreatedSubscriptionScheduledPlanChange `json:"scheduled_plan_change"`
-	Discount            *CreatedSubscriptionDiscount            `json:"discount"`
 	StartDate           string                                  `json:"start_date"`
 	EndDate             *string                                 `json:"end_date"`
 	BillingDayOfMonth   *int                                    `json:"billing_day_of_month"`
@@ -224,6 +223,7 @@ type CreatedSubscription struct {
 	CheckoutURL         *string                                 `json:"checkout_url"`
 	CreatedAt           string                                  `json:"created_at"`
 	UpdatedAt           string                                  `json:"updated_at"`
+	OfferApplications   []SubscriptionOfferApplication          `json:"offer_applications"`
 	CheckoutProvider    *PaymentProvider                        `json:"checkout_provider"`
 	PriceID             *string                                 `json:"price_id"`
 	Object              string                                  `json:"object"`
@@ -240,13 +240,6 @@ type CreatedSubscriptionCurrentPeriod struct {
 	Start         string  `json:"start"`
 	End           string  `json:"end"`
 	DaysRemaining float64 `json:"days_remaining"`
-}
-
-type CreatedSubscriptionDiscount struct {
-	Type   string  `json:"type"`
-	Value  float64 `json:"value"`
-	Name   *string `json:"name"`
-	EndsAt *string `json:"ends_at"`
 }
 
 type CreatedSubscriptionPlan struct {
@@ -391,13 +384,13 @@ type CreateOfferParamsPhasesItemVariant1 struct {
 
 type CreateOfferParamsPhasesItemVariant2 struct {
 	Type           string `json:"type"`
-	DurationCycles int    `json:"duration_cycles"`
+	DurationCycles *int   `json:"duration_cycles"`
 	Percentage     int    `json:"percentage"`
 }
 
 type CreateOfferParamsPhasesItemVariant3 struct {
 	Type           string                                           `json:"type"`
-	DurationCycles int                                              `json:"duration_cycles"`
+	DurationCycles *int                                             `json:"duration_cycles"`
 	Amounts        []CreateOfferParamsPhasesItemVariant3AmountsItem `json:"amounts"`
 }
 
@@ -408,7 +401,7 @@ type CreateOfferParamsPhasesItemVariant3AmountsItem struct {
 
 type CreateOfferParamsPhasesItemVariant4 struct {
 	Type           string                                          `json:"type"`
-	DurationCycles int                                             `json:"duration_cycles"`
+	DurationCycles *int                                            `json:"duration_cycles"`
 	Prices         []CreateOfferParamsPhasesItemVariant4PricesItem `json:"prices"`
 }
 
@@ -1014,7 +1007,7 @@ type InvoicesListResult struct {
 	NextCursor *string           `json:"next_cursor,omitempty"`
 }
 
-type MarketGroup struct {
+type Market struct {
 	ID           string         `json:"id"`
 	Name         string         `json:"name"`
 	CountryCodes []string       `json:"country_codes"`
@@ -1025,20 +1018,25 @@ type MarketGroup struct {
 	Livemode     bool           `json:"livemode"`
 }
 
+type MarketsListResult struct {
+	Object     string   `json:"object"`
+	Data       []Market `json:"data"`
+	HasMore    bool     `json:"has_more"`
+	NextCursor *string  `json:"next_cursor,omitempty"`
+}
+
 type Offer struct {
-	ID           string            `json:"id"`
-	Name         string            `json:"name"`
-	Purpose      string            `json:"purpose"`
-	PlanPriceIds []string          `json:"plan_price_ids"`
-	Phases       []OfferPhasesItem `json:"phases"`
-	Metadata     map[string]any    `json:"metadata"`
-	StartsAt     *string           `json:"starts_at"`
-	EndsAt       *string           `json:"ends_at"`
-	Active       bool              `json:"active"`
-	CreatedAt    string            `json:"created_at"`
-	UpdatedAt    string            `json:"updated_at"`
-	Object       string            `json:"object"`
-	Livemode     bool              `json:"livemode"`
+	ID        string            `json:"id"`
+	Name      string            `json:"name"`
+	Phases    []OfferPhasesItem `json:"phases"`
+	Metadata  map[string]any    `json:"metadata"`
+	StartsAt  *string           `json:"starts_at"`
+	EndsAt    *string           `json:"ends_at"`
+	Active    bool              `json:"active"`
+	CreatedAt string            `json:"created_at"`
+	UpdatedAt string            `json:"updated_at"`
+	Object    string            `json:"object"`
+	Livemode  bool              `json:"livemode"`
 }
 
 type OfferPhasesItem struct {
@@ -1157,13 +1155,13 @@ type OfferPhasesItemVariant1 struct {
 
 type OfferPhasesItemVariant2 struct {
 	Type           string `json:"type"`
-	DurationCycles int    `json:"duration_cycles"`
+	DurationCycles *int   `json:"duration_cycles"`
 	Percentage     int    `json:"percentage"`
 }
 
 type OfferPhasesItemVariant3 struct {
 	Type           string                               `json:"type"`
-	DurationCycles int                                  `json:"duration_cycles"`
+	DurationCycles *int                                 `json:"duration_cycles"`
 	Amounts        []OfferPhasesItemVariant3AmountsItem `json:"amounts"`
 }
 
@@ -1174,7 +1172,7 @@ type OfferPhasesItemVariant3AmountsItem struct {
 
 type OfferPhasesItemVariant4 struct {
 	Type           string                              `json:"type"`
-	DurationCycles int                                 `json:"duration_cycles"`
+	DurationCycles *int                                `json:"duration_cycles"`
 	Prices         []OfferPhasesItemVariant4PricesItem `json:"prices"`
 }
 
@@ -1471,6 +1469,111 @@ type PlanChangeVariant1OfferApplication struct {
 	DiscountAmount int                                            `json:"discount_amount"`
 	Total          int                                            `json:"total"`
 	Phases         []PlanChangeVariant1OfferApplicationPhasesItem `json:"phases"`
+	AppliesTo      PlanChangeVariant1OfferApplicationAppliesTo    `json:"applies_to"`
+}
+
+type PlanChangeVariant1OfferApplicationAppliesTo struct {
+	Value any
+}
+
+func (value *PlanChangeVariant1OfferApplicationAppliesTo) UnmarshalJSON(data []byte) error {
+	var fields map[string]json.RawMessage
+	if err := json.Unmarshal(data, &fields); err != nil {
+		return err
+	}
+	var discriminator string
+	if raw, ok := fields["type"]; ok {
+		if err := json.Unmarshal(raw, &discriminator); err != nil {
+			return err
+		}
+	}
+	switch discriminator {
+	case "plan_price":
+		var decoded PlanChangeVariant1OfferApplicationAppliesToVariant1
+		if err := json.Unmarshal(data, &decoded); err != nil {
+			return err
+		}
+		value.Value = decoded
+		return nil
+	case "addon":
+		var decoded PlanChangeVariant1OfferApplicationAppliesToVariant2
+		if err := json.Unmarshal(data, &decoded); err != nil {
+			return err
+		}
+		value.Value = decoded
+		return nil
+	case "credit_pack":
+		var decoded PlanChangeVariant1OfferApplicationAppliesToVariant3
+		if err := json.Unmarshal(data, &decoded); err != nil {
+			return err
+		}
+		value.Value = decoded
+		return nil
+	}
+	if hasJSONFields(fields, "type", "id") {
+		var decoded PlanChangeVariant1OfferApplicationAppliesToVariant1
+		if err := json.Unmarshal(data, &decoded); err != nil {
+			return err
+		}
+		value.Value = decoded
+		return nil
+	}
+	if hasJSONFields(fields, "type", "id") {
+		var decoded PlanChangeVariant1OfferApplicationAppliesToVariant2
+		if err := json.Unmarshal(data, &decoded); err != nil {
+			return err
+		}
+		value.Value = decoded
+		return nil
+	}
+	if hasJSONFields(fields, "type", "id") {
+		var decoded PlanChangeVariant1OfferApplicationAppliesToVariant3
+		if err := json.Unmarshal(data, &decoded); err != nil {
+			return err
+		}
+		value.Value = decoded
+		return nil
+	}
+	var decoded PlanChangeVariant1OfferApplicationAppliesToVariant1
+	if err := json.Unmarshal(data, &decoded); err != nil {
+		return err
+	}
+	value.Value = decoded
+	return nil
+}
+
+func (value PlanChangeVariant1OfferApplicationAppliesTo) MarshalJSON() ([]byte, error) {
+	return json.Marshal(value.Value)
+}
+
+func (value PlanChangeVariant1OfferApplicationAppliesTo) AsPlanChangeVariant1OfferApplicationAppliesToVariant1() (PlanChangeVariant1OfferApplicationAppliesToVariant1, bool) {
+	decoded, ok := value.Value.(PlanChangeVariant1OfferApplicationAppliesToVariant1)
+	return decoded, ok
+}
+
+func (value PlanChangeVariant1OfferApplicationAppliesTo) AsPlanChangeVariant1OfferApplicationAppliesToVariant2() (PlanChangeVariant1OfferApplicationAppliesToVariant2, bool) {
+	decoded, ok := value.Value.(PlanChangeVariant1OfferApplicationAppliesToVariant2)
+	return decoded, ok
+}
+
+func (value PlanChangeVariant1OfferApplicationAppliesTo) AsPlanChangeVariant1OfferApplicationAppliesToVariant3() (PlanChangeVariant1OfferApplicationAppliesToVariant3, bool) {
+	decoded, ok := value.Value.(PlanChangeVariant1OfferApplicationAppliesToVariant3)
+	return decoded, ok
+}
+
+type PlanChangeVariant1OfferApplicationAppliesToVariant1 struct {
+	Type string `json:"type"`
+	ID   string `json:"id"`
+}
+
+type PlanChangeVariant1OfferApplicationAppliesToVariant2 struct {
+	Type string `json:"type"`
+	ID   string `json:"id"`
+}
+
+type PlanChangeVariant1OfferApplicationAppliesToVariant3 struct {
+	Type string `json:"type"`
+	ID   string `json:"id"`
 }
 
 type PlanChangeVariant1OfferApplicationPhasesItem struct {
@@ -1489,22 +1592,29 @@ func (value *PlanChangeVariant1OfferApplicationPhasesItem) UnmarshalJSON(data []
 		}
 	}
 	switch discriminator {
-	case "percentage":
+	case "free_trial":
 		var decoded PlanChangeVariant1OfferApplicationPhasesItemVariant1
 		if err := json.Unmarshal(data, &decoded); err != nil {
 			return err
 		}
 		value.Value = decoded
 		return nil
-	case "amount_off":
+	case "percentage":
 		var decoded PlanChangeVariant1OfferApplicationPhasesItemVariant2
 		if err := json.Unmarshal(data, &decoded); err != nil {
 			return err
 		}
 		value.Value = decoded
 		return nil
-	case "fixed_price":
+	case "amount_off":
 		var decoded PlanChangeVariant1OfferApplicationPhasesItemVariant3
+		if err := json.Unmarshal(data, &decoded); err != nil {
+			return err
+		}
+		value.Value = decoded
+		return nil
+	case "fixed_price":
+		var decoded PlanChangeVariant1OfferApplicationPhasesItemVariant4
 		if err := json.Unmarshal(data, &decoded); err != nil {
 			return err
 		}
@@ -1512,14 +1622,6 @@ func (value *PlanChangeVariant1OfferApplicationPhasesItem) UnmarshalJSON(data []
 		return nil
 	}
 	if hasJSONFields(fields, "type", "duration_cycles", "starts_at", "ends_at", "percentage") {
-		var decoded PlanChangeVariant1OfferApplicationPhasesItemVariant1
-		if err := json.Unmarshal(data, &decoded); err != nil {
-			return err
-		}
-		value.Value = decoded
-		return nil
-	}
-	if hasJSONFields(fields, "type", "duration_cycles", "starts_at", "ends_at", "amount") {
 		var decoded PlanChangeVariant1OfferApplicationPhasesItemVariant2
 		if err := json.Unmarshal(data, &decoded); err != nil {
 			return err
@@ -1527,8 +1629,24 @@ func (value *PlanChangeVariant1OfferApplicationPhasesItem) UnmarshalJSON(data []
 		value.Value = decoded
 		return nil
 	}
-	if hasJSONFields(fields, "type", "duration_cycles", "starts_at", "ends_at", "price") {
+	if hasJSONFields(fields, "type", "duration_cycles", "starts_at", "ends_at", "amount") {
 		var decoded PlanChangeVariant1OfferApplicationPhasesItemVariant3
+		if err := json.Unmarshal(data, &decoded); err != nil {
+			return err
+		}
+		value.Value = decoded
+		return nil
+	}
+	if hasJSONFields(fields, "type", "duration_cycles", "starts_at", "ends_at", "price") {
+		var decoded PlanChangeVariant1OfferApplicationPhasesItemVariant4
+		if err := json.Unmarshal(data, &decoded); err != nil {
+			return err
+		}
+		value.Value = decoded
+		return nil
+	}
+	if hasJSONFields(fields, "type", "duration_days", "starts_at", "ends_at") {
+		var decoded PlanChangeVariant1OfferApplicationPhasesItemVariant1
 		if err := json.Unmarshal(data, &decoded); err != nil {
 			return err
 		}
@@ -1562,25 +1680,37 @@ func (value PlanChangeVariant1OfferApplicationPhasesItem) AsPlanChangeVariant1Of
 	return decoded, ok
 }
 
+func (value PlanChangeVariant1OfferApplicationPhasesItem) AsPlanChangeVariant1OfferApplicationPhasesItemVariant4() (PlanChangeVariant1OfferApplicationPhasesItemVariant4, bool) {
+	decoded, ok := value.Value.(PlanChangeVariant1OfferApplicationPhasesItemVariant4)
+	return decoded, ok
+}
+
 type PlanChangeVariant1OfferApplicationPhasesItemVariant1 struct {
+	Type         string  `json:"type"`
+	DurationDays int     `json:"duration_days"`
+	StartsAt     *string `json:"starts_at"`
+	EndsAt       *string `json:"ends_at"`
+}
+
+type PlanChangeVariant1OfferApplicationPhasesItemVariant2 struct {
 	Type           string  `json:"type"`
-	DurationCycles int     `json:"duration_cycles"`
+	DurationCycles *int    `json:"duration_cycles"`
 	StartsAt       *string `json:"starts_at"`
 	EndsAt         *string `json:"ends_at"`
 	Percentage     int     `json:"percentage"`
 }
 
-type PlanChangeVariant1OfferApplicationPhasesItemVariant2 struct {
+type PlanChangeVariant1OfferApplicationPhasesItemVariant3 struct {
 	Type           string  `json:"type"`
-	DurationCycles int     `json:"duration_cycles"`
+	DurationCycles *int    `json:"duration_cycles"`
 	StartsAt       *string `json:"starts_at"`
 	EndsAt         *string `json:"ends_at"`
 	Amount         int     `json:"amount"`
 }
 
-type PlanChangeVariant1OfferApplicationPhasesItemVariant3 struct {
+type PlanChangeVariant1OfferApplicationPhasesItemVariant4 struct {
 	Type           string  `json:"type"`
-	DurationCycles int     `json:"duration_cycles"`
+	DurationCycles *int    `json:"duration_cycles"`
 	StartsAt       *string `json:"starts_at"`
 	EndsAt         *string `json:"ends_at"`
 	Price          int     `json:"price"`
@@ -1650,6 +1780,111 @@ type PlanChangeVariant3OfferApplication struct {
 	DiscountAmount int                                            `json:"discount_amount"`
 	Total          int                                            `json:"total"`
 	Phases         []PlanChangeVariant3OfferApplicationPhasesItem `json:"phases"`
+	AppliesTo      PlanChangeVariant3OfferApplicationAppliesTo    `json:"applies_to"`
+}
+
+type PlanChangeVariant3OfferApplicationAppliesTo struct {
+	Value any
+}
+
+func (value *PlanChangeVariant3OfferApplicationAppliesTo) UnmarshalJSON(data []byte) error {
+	var fields map[string]json.RawMessage
+	if err := json.Unmarshal(data, &fields); err != nil {
+		return err
+	}
+	var discriminator string
+	if raw, ok := fields["type"]; ok {
+		if err := json.Unmarshal(raw, &discriminator); err != nil {
+			return err
+		}
+	}
+	switch discriminator {
+	case "plan_price":
+		var decoded PlanChangeVariant3OfferApplicationAppliesToVariant1
+		if err := json.Unmarshal(data, &decoded); err != nil {
+			return err
+		}
+		value.Value = decoded
+		return nil
+	case "addon":
+		var decoded PlanChangeVariant3OfferApplicationAppliesToVariant2
+		if err := json.Unmarshal(data, &decoded); err != nil {
+			return err
+		}
+		value.Value = decoded
+		return nil
+	case "credit_pack":
+		var decoded PlanChangeVariant3OfferApplicationAppliesToVariant3
+		if err := json.Unmarshal(data, &decoded); err != nil {
+			return err
+		}
+		value.Value = decoded
+		return nil
+	}
+	if hasJSONFields(fields, "type", "id") {
+		var decoded PlanChangeVariant3OfferApplicationAppliesToVariant1
+		if err := json.Unmarshal(data, &decoded); err != nil {
+			return err
+		}
+		value.Value = decoded
+		return nil
+	}
+	if hasJSONFields(fields, "type", "id") {
+		var decoded PlanChangeVariant3OfferApplicationAppliesToVariant2
+		if err := json.Unmarshal(data, &decoded); err != nil {
+			return err
+		}
+		value.Value = decoded
+		return nil
+	}
+	if hasJSONFields(fields, "type", "id") {
+		var decoded PlanChangeVariant3OfferApplicationAppliesToVariant3
+		if err := json.Unmarshal(data, &decoded); err != nil {
+			return err
+		}
+		value.Value = decoded
+		return nil
+	}
+	var decoded PlanChangeVariant3OfferApplicationAppliesToVariant1
+	if err := json.Unmarshal(data, &decoded); err != nil {
+		return err
+	}
+	value.Value = decoded
+	return nil
+}
+
+func (value PlanChangeVariant3OfferApplicationAppliesTo) MarshalJSON() ([]byte, error) {
+	return json.Marshal(value.Value)
+}
+
+func (value PlanChangeVariant3OfferApplicationAppliesTo) AsPlanChangeVariant3OfferApplicationAppliesToVariant1() (PlanChangeVariant3OfferApplicationAppliesToVariant1, bool) {
+	decoded, ok := value.Value.(PlanChangeVariant3OfferApplicationAppliesToVariant1)
+	return decoded, ok
+}
+
+func (value PlanChangeVariant3OfferApplicationAppliesTo) AsPlanChangeVariant3OfferApplicationAppliesToVariant2() (PlanChangeVariant3OfferApplicationAppliesToVariant2, bool) {
+	decoded, ok := value.Value.(PlanChangeVariant3OfferApplicationAppliesToVariant2)
+	return decoded, ok
+}
+
+func (value PlanChangeVariant3OfferApplicationAppliesTo) AsPlanChangeVariant3OfferApplicationAppliesToVariant3() (PlanChangeVariant3OfferApplicationAppliesToVariant3, bool) {
+	decoded, ok := value.Value.(PlanChangeVariant3OfferApplicationAppliesToVariant3)
+	return decoded, ok
+}
+
+type PlanChangeVariant3OfferApplicationAppliesToVariant1 struct {
+	Type string `json:"type"`
+	ID   string `json:"id"`
+}
+
+type PlanChangeVariant3OfferApplicationAppliesToVariant2 struct {
+	Type string `json:"type"`
+	ID   string `json:"id"`
+}
+
+type PlanChangeVariant3OfferApplicationAppliesToVariant3 struct {
+	Type string `json:"type"`
+	ID   string `json:"id"`
 }
 
 type PlanChangeVariant3OfferApplicationPhasesItem struct {
@@ -1668,22 +1903,29 @@ func (value *PlanChangeVariant3OfferApplicationPhasesItem) UnmarshalJSON(data []
 		}
 	}
 	switch discriminator {
-	case "percentage":
+	case "free_trial":
 		var decoded PlanChangeVariant3OfferApplicationPhasesItemVariant1
 		if err := json.Unmarshal(data, &decoded); err != nil {
 			return err
 		}
 		value.Value = decoded
 		return nil
-	case "amount_off":
+	case "percentage":
 		var decoded PlanChangeVariant3OfferApplicationPhasesItemVariant2
 		if err := json.Unmarshal(data, &decoded); err != nil {
 			return err
 		}
 		value.Value = decoded
 		return nil
-	case "fixed_price":
+	case "amount_off":
 		var decoded PlanChangeVariant3OfferApplicationPhasesItemVariant3
+		if err := json.Unmarshal(data, &decoded); err != nil {
+			return err
+		}
+		value.Value = decoded
+		return nil
+	case "fixed_price":
+		var decoded PlanChangeVariant3OfferApplicationPhasesItemVariant4
 		if err := json.Unmarshal(data, &decoded); err != nil {
 			return err
 		}
@@ -1691,14 +1933,6 @@ func (value *PlanChangeVariant3OfferApplicationPhasesItem) UnmarshalJSON(data []
 		return nil
 	}
 	if hasJSONFields(fields, "type", "duration_cycles", "starts_at", "ends_at", "percentage") {
-		var decoded PlanChangeVariant3OfferApplicationPhasesItemVariant1
-		if err := json.Unmarshal(data, &decoded); err != nil {
-			return err
-		}
-		value.Value = decoded
-		return nil
-	}
-	if hasJSONFields(fields, "type", "duration_cycles", "starts_at", "ends_at", "amount") {
 		var decoded PlanChangeVariant3OfferApplicationPhasesItemVariant2
 		if err := json.Unmarshal(data, &decoded); err != nil {
 			return err
@@ -1706,8 +1940,24 @@ func (value *PlanChangeVariant3OfferApplicationPhasesItem) UnmarshalJSON(data []
 		value.Value = decoded
 		return nil
 	}
-	if hasJSONFields(fields, "type", "duration_cycles", "starts_at", "ends_at", "price") {
+	if hasJSONFields(fields, "type", "duration_cycles", "starts_at", "ends_at", "amount") {
 		var decoded PlanChangeVariant3OfferApplicationPhasesItemVariant3
+		if err := json.Unmarshal(data, &decoded); err != nil {
+			return err
+		}
+		value.Value = decoded
+		return nil
+	}
+	if hasJSONFields(fields, "type", "duration_cycles", "starts_at", "ends_at", "price") {
+		var decoded PlanChangeVariant3OfferApplicationPhasesItemVariant4
+		if err := json.Unmarshal(data, &decoded); err != nil {
+			return err
+		}
+		value.Value = decoded
+		return nil
+	}
+	if hasJSONFields(fields, "type", "duration_days", "starts_at", "ends_at") {
+		var decoded PlanChangeVariant3OfferApplicationPhasesItemVariant1
 		if err := json.Unmarshal(data, &decoded); err != nil {
 			return err
 		}
@@ -1741,25 +1991,37 @@ func (value PlanChangeVariant3OfferApplicationPhasesItem) AsPlanChangeVariant3Of
 	return decoded, ok
 }
 
+func (value PlanChangeVariant3OfferApplicationPhasesItem) AsPlanChangeVariant3OfferApplicationPhasesItemVariant4() (PlanChangeVariant3OfferApplicationPhasesItemVariant4, bool) {
+	decoded, ok := value.Value.(PlanChangeVariant3OfferApplicationPhasesItemVariant4)
+	return decoded, ok
+}
+
 type PlanChangeVariant3OfferApplicationPhasesItemVariant1 struct {
+	Type         string  `json:"type"`
+	DurationDays int     `json:"duration_days"`
+	StartsAt     *string `json:"starts_at"`
+	EndsAt       *string `json:"ends_at"`
+}
+
+type PlanChangeVariant3OfferApplicationPhasesItemVariant2 struct {
 	Type           string  `json:"type"`
-	DurationCycles int     `json:"duration_cycles"`
+	DurationCycles *int    `json:"duration_cycles"`
 	StartsAt       *string `json:"starts_at"`
 	EndsAt         *string `json:"ends_at"`
 	Percentage     int     `json:"percentage"`
 }
 
-type PlanChangeVariant3OfferApplicationPhasesItemVariant2 struct {
+type PlanChangeVariant3OfferApplicationPhasesItemVariant3 struct {
 	Type           string  `json:"type"`
-	DurationCycles int     `json:"duration_cycles"`
+	DurationCycles *int    `json:"duration_cycles"`
 	StartsAt       *string `json:"starts_at"`
 	EndsAt         *string `json:"ends_at"`
 	Amount         int     `json:"amount"`
 }
 
-type PlanChangeVariant3OfferApplicationPhasesItemVariant3 struct {
+type PlanChangeVariant3OfferApplicationPhasesItemVariant4 struct {
 	Type           string  `json:"type"`
-	DurationCycles int     `json:"duration_cycles"`
+	DurationCycles *int    `json:"duration_cycles"`
 	StartsAt       *string `json:"starts_at"`
 	EndsAt         *string `json:"ends_at"`
 	Price          int     `json:"price"`
@@ -1966,6 +2228,111 @@ type PreviewChangeOfferApplication struct {
 	DiscountAmount int                                       `json:"discount_amount"`
 	Total          int                                       `json:"total"`
 	Phases         []PreviewChangeOfferApplicationPhasesItem `json:"phases"`
+	AppliesTo      PreviewChangeOfferApplicationAppliesTo    `json:"applies_to"`
+}
+
+type PreviewChangeOfferApplicationAppliesTo struct {
+	Value any
+}
+
+func (value *PreviewChangeOfferApplicationAppliesTo) UnmarshalJSON(data []byte) error {
+	var fields map[string]json.RawMessage
+	if err := json.Unmarshal(data, &fields); err != nil {
+		return err
+	}
+	var discriminator string
+	if raw, ok := fields["type"]; ok {
+		if err := json.Unmarshal(raw, &discriminator); err != nil {
+			return err
+		}
+	}
+	switch discriminator {
+	case "plan_price":
+		var decoded PreviewChangeOfferApplicationAppliesToVariant1
+		if err := json.Unmarshal(data, &decoded); err != nil {
+			return err
+		}
+		value.Value = decoded
+		return nil
+	case "addon":
+		var decoded PreviewChangeOfferApplicationAppliesToVariant2
+		if err := json.Unmarshal(data, &decoded); err != nil {
+			return err
+		}
+		value.Value = decoded
+		return nil
+	case "credit_pack":
+		var decoded PreviewChangeOfferApplicationAppliesToVariant3
+		if err := json.Unmarshal(data, &decoded); err != nil {
+			return err
+		}
+		value.Value = decoded
+		return nil
+	}
+	if hasJSONFields(fields, "type", "id") {
+		var decoded PreviewChangeOfferApplicationAppliesToVariant1
+		if err := json.Unmarshal(data, &decoded); err != nil {
+			return err
+		}
+		value.Value = decoded
+		return nil
+	}
+	if hasJSONFields(fields, "type", "id") {
+		var decoded PreviewChangeOfferApplicationAppliesToVariant2
+		if err := json.Unmarshal(data, &decoded); err != nil {
+			return err
+		}
+		value.Value = decoded
+		return nil
+	}
+	if hasJSONFields(fields, "type", "id") {
+		var decoded PreviewChangeOfferApplicationAppliesToVariant3
+		if err := json.Unmarshal(data, &decoded); err != nil {
+			return err
+		}
+		value.Value = decoded
+		return nil
+	}
+	var decoded PreviewChangeOfferApplicationAppliesToVariant1
+	if err := json.Unmarshal(data, &decoded); err != nil {
+		return err
+	}
+	value.Value = decoded
+	return nil
+}
+
+func (value PreviewChangeOfferApplicationAppliesTo) MarshalJSON() ([]byte, error) {
+	return json.Marshal(value.Value)
+}
+
+func (value PreviewChangeOfferApplicationAppliesTo) AsPreviewChangeOfferApplicationAppliesToVariant1() (PreviewChangeOfferApplicationAppliesToVariant1, bool) {
+	decoded, ok := value.Value.(PreviewChangeOfferApplicationAppliesToVariant1)
+	return decoded, ok
+}
+
+func (value PreviewChangeOfferApplicationAppliesTo) AsPreviewChangeOfferApplicationAppliesToVariant2() (PreviewChangeOfferApplicationAppliesToVariant2, bool) {
+	decoded, ok := value.Value.(PreviewChangeOfferApplicationAppliesToVariant2)
+	return decoded, ok
+}
+
+func (value PreviewChangeOfferApplicationAppliesTo) AsPreviewChangeOfferApplicationAppliesToVariant3() (PreviewChangeOfferApplicationAppliesToVariant3, bool) {
+	decoded, ok := value.Value.(PreviewChangeOfferApplicationAppliesToVariant3)
+	return decoded, ok
+}
+
+type PreviewChangeOfferApplicationAppliesToVariant1 struct {
+	Type string `json:"type"`
+	ID   string `json:"id"`
+}
+
+type PreviewChangeOfferApplicationAppliesToVariant2 struct {
+	Type string `json:"type"`
+	ID   string `json:"id"`
+}
+
+type PreviewChangeOfferApplicationAppliesToVariant3 struct {
+	Type string `json:"type"`
+	ID   string `json:"id"`
 }
 
 type PreviewChangeOfferApplicationPhasesItem struct {
@@ -1984,22 +2351,29 @@ func (value *PreviewChangeOfferApplicationPhasesItem) UnmarshalJSON(data []byte)
 		}
 	}
 	switch discriminator {
-	case "percentage":
+	case "free_trial":
 		var decoded PreviewChangeOfferApplicationPhasesItemVariant1
 		if err := json.Unmarshal(data, &decoded); err != nil {
 			return err
 		}
 		value.Value = decoded
 		return nil
-	case "amount_off":
+	case "percentage":
 		var decoded PreviewChangeOfferApplicationPhasesItemVariant2
 		if err := json.Unmarshal(data, &decoded); err != nil {
 			return err
 		}
 		value.Value = decoded
 		return nil
-	case "fixed_price":
+	case "amount_off":
 		var decoded PreviewChangeOfferApplicationPhasesItemVariant3
+		if err := json.Unmarshal(data, &decoded); err != nil {
+			return err
+		}
+		value.Value = decoded
+		return nil
+	case "fixed_price":
+		var decoded PreviewChangeOfferApplicationPhasesItemVariant4
 		if err := json.Unmarshal(data, &decoded); err != nil {
 			return err
 		}
@@ -2007,14 +2381,6 @@ func (value *PreviewChangeOfferApplicationPhasesItem) UnmarshalJSON(data []byte)
 		return nil
 	}
 	if hasJSONFields(fields, "type", "duration_cycles", "starts_at", "ends_at", "percentage") {
-		var decoded PreviewChangeOfferApplicationPhasesItemVariant1
-		if err := json.Unmarshal(data, &decoded); err != nil {
-			return err
-		}
-		value.Value = decoded
-		return nil
-	}
-	if hasJSONFields(fields, "type", "duration_cycles", "starts_at", "ends_at", "amount") {
 		var decoded PreviewChangeOfferApplicationPhasesItemVariant2
 		if err := json.Unmarshal(data, &decoded); err != nil {
 			return err
@@ -2022,8 +2388,24 @@ func (value *PreviewChangeOfferApplicationPhasesItem) UnmarshalJSON(data []byte)
 		value.Value = decoded
 		return nil
 	}
-	if hasJSONFields(fields, "type", "duration_cycles", "starts_at", "ends_at", "price") {
+	if hasJSONFields(fields, "type", "duration_cycles", "starts_at", "ends_at", "amount") {
 		var decoded PreviewChangeOfferApplicationPhasesItemVariant3
+		if err := json.Unmarshal(data, &decoded); err != nil {
+			return err
+		}
+		value.Value = decoded
+		return nil
+	}
+	if hasJSONFields(fields, "type", "duration_cycles", "starts_at", "ends_at", "price") {
+		var decoded PreviewChangeOfferApplicationPhasesItemVariant4
+		if err := json.Unmarshal(data, &decoded); err != nil {
+			return err
+		}
+		value.Value = decoded
+		return nil
+	}
+	if hasJSONFields(fields, "type", "duration_days", "starts_at", "ends_at") {
+		var decoded PreviewChangeOfferApplicationPhasesItemVariant1
 		if err := json.Unmarshal(data, &decoded); err != nil {
 			return err
 		}
@@ -2057,35 +2439,40 @@ func (value PreviewChangeOfferApplicationPhasesItem) AsPreviewChangeOfferApplica
 	return decoded, ok
 }
 
+func (value PreviewChangeOfferApplicationPhasesItem) AsPreviewChangeOfferApplicationPhasesItemVariant4() (PreviewChangeOfferApplicationPhasesItemVariant4, bool) {
+	decoded, ok := value.Value.(PreviewChangeOfferApplicationPhasesItemVariant4)
+	return decoded, ok
+}
+
 type PreviewChangeOfferApplicationPhasesItemVariant1 struct {
+	Type         string  `json:"type"`
+	DurationDays int     `json:"duration_days"`
+	StartsAt     *string `json:"starts_at"`
+	EndsAt       *string `json:"ends_at"`
+}
+
+type PreviewChangeOfferApplicationPhasesItemVariant2 struct {
 	Type           string  `json:"type"`
-	DurationCycles int     `json:"duration_cycles"`
+	DurationCycles *int    `json:"duration_cycles"`
 	StartsAt       *string `json:"starts_at"`
 	EndsAt         *string `json:"ends_at"`
 	Percentage     int     `json:"percentage"`
 }
 
-type PreviewChangeOfferApplicationPhasesItemVariant2 struct {
+type PreviewChangeOfferApplicationPhasesItemVariant3 struct {
 	Type           string  `json:"type"`
-	DurationCycles int     `json:"duration_cycles"`
+	DurationCycles *int    `json:"duration_cycles"`
 	StartsAt       *string `json:"starts_at"`
 	EndsAt         *string `json:"ends_at"`
 	Amount         int     `json:"amount"`
 }
 
-type PreviewChangeOfferApplicationPhasesItemVariant3 struct {
+type PreviewChangeOfferApplicationPhasesItemVariant4 struct {
 	Type           string  `json:"type"`
-	DurationCycles int     `json:"duration_cycles"`
+	DurationCycles *int    `json:"duration_cycles"`
 	StartsAt       *string `json:"starts_at"`
 	EndsAt         *string `json:"ends_at"`
 	Price          int     `json:"price"`
-}
-
-type PricingListMarketGroupsResult struct {
-	Object     string        `json:"object"`
-	Data       []MarketGroup `json:"data"`
-	HasMore    bool          `json:"has_more"`
-	NextCursor *string       `json:"next_cursor,omitempty"`
 }
 
 type PromoCode struct {
@@ -2135,6 +2522,111 @@ type ReactivatedSubscriptionOfferApplication struct {
 	DiscountAmount int                                                 `json:"discount_amount"`
 	Total          int                                                 `json:"total"`
 	Phases         []ReactivatedSubscriptionOfferApplicationPhasesItem `json:"phases"`
+	AppliesTo      ReactivatedSubscriptionOfferApplicationAppliesTo    `json:"applies_to"`
+}
+
+type ReactivatedSubscriptionOfferApplicationAppliesTo struct {
+	Value any
+}
+
+func (value *ReactivatedSubscriptionOfferApplicationAppliesTo) UnmarshalJSON(data []byte) error {
+	var fields map[string]json.RawMessage
+	if err := json.Unmarshal(data, &fields); err != nil {
+		return err
+	}
+	var discriminator string
+	if raw, ok := fields["type"]; ok {
+		if err := json.Unmarshal(raw, &discriminator); err != nil {
+			return err
+		}
+	}
+	switch discriminator {
+	case "plan_price":
+		var decoded ReactivatedSubscriptionOfferApplicationAppliesToVariant1
+		if err := json.Unmarshal(data, &decoded); err != nil {
+			return err
+		}
+		value.Value = decoded
+		return nil
+	case "addon":
+		var decoded ReactivatedSubscriptionOfferApplicationAppliesToVariant2
+		if err := json.Unmarshal(data, &decoded); err != nil {
+			return err
+		}
+		value.Value = decoded
+		return nil
+	case "credit_pack":
+		var decoded ReactivatedSubscriptionOfferApplicationAppliesToVariant3
+		if err := json.Unmarshal(data, &decoded); err != nil {
+			return err
+		}
+		value.Value = decoded
+		return nil
+	}
+	if hasJSONFields(fields, "type", "id") {
+		var decoded ReactivatedSubscriptionOfferApplicationAppliesToVariant1
+		if err := json.Unmarshal(data, &decoded); err != nil {
+			return err
+		}
+		value.Value = decoded
+		return nil
+	}
+	if hasJSONFields(fields, "type", "id") {
+		var decoded ReactivatedSubscriptionOfferApplicationAppliesToVariant2
+		if err := json.Unmarshal(data, &decoded); err != nil {
+			return err
+		}
+		value.Value = decoded
+		return nil
+	}
+	if hasJSONFields(fields, "type", "id") {
+		var decoded ReactivatedSubscriptionOfferApplicationAppliesToVariant3
+		if err := json.Unmarshal(data, &decoded); err != nil {
+			return err
+		}
+		value.Value = decoded
+		return nil
+	}
+	var decoded ReactivatedSubscriptionOfferApplicationAppliesToVariant1
+	if err := json.Unmarshal(data, &decoded); err != nil {
+		return err
+	}
+	value.Value = decoded
+	return nil
+}
+
+func (value ReactivatedSubscriptionOfferApplicationAppliesTo) MarshalJSON() ([]byte, error) {
+	return json.Marshal(value.Value)
+}
+
+func (value ReactivatedSubscriptionOfferApplicationAppliesTo) AsReactivatedSubscriptionOfferApplicationAppliesToVariant1() (ReactivatedSubscriptionOfferApplicationAppliesToVariant1, bool) {
+	decoded, ok := value.Value.(ReactivatedSubscriptionOfferApplicationAppliesToVariant1)
+	return decoded, ok
+}
+
+func (value ReactivatedSubscriptionOfferApplicationAppliesTo) AsReactivatedSubscriptionOfferApplicationAppliesToVariant2() (ReactivatedSubscriptionOfferApplicationAppliesToVariant2, bool) {
+	decoded, ok := value.Value.(ReactivatedSubscriptionOfferApplicationAppliesToVariant2)
+	return decoded, ok
+}
+
+func (value ReactivatedSubscriptionOfferApplicationAppliesTo) AsReactivatedSubscriptionOfferApplicationAppliesToVariant3() (ReactivatedSubscriptionOfferApplicationAppliesToVariant3, bool) {
+	decoded, ok := value.Value.(ReactivatedSubscriptionOfferApplicationAppliesToVariant3)
+	return decoded, ok
+}
+
+type ReactivatedSubscriptionOfferApplicationAppliesToVariant1 struct {
+	Type string `json:"type"`
+	ID   string `json:"id"`
+}
+
+type ReactivatedSubscriptionOfferApplicationAppliesToVariant2 struct {
+	Type string `json:"type"`
+	ID   string `json:"id"`
+}
+
+type ReactivatedSubscriptionOfferApplicationAppliesToVariant3 struct {
+	Type string `json:"type"`
+	ID   string `json:"id"`
 }
 
 type ReactivatedSubscriptionOfferApplicationPhasesItem struct {
@@ -2153,22 +2645,29 @@ func (value *ReactivatedSubscriptionOfferApplicationPhasesItem) UnmarshalJSON(da
 		}
 	}
 	switch discriminator {
-	case "percentage":
+	case "free_trial":
 		var decoded ReactivatedSubscriptionOfferApplicationPhasesItemVariant1
 		if err := json.Unmarshal(data, &decoded); err != nil {
 			return err
 		}
 		value.Value = decoded
 		return nil
-	case "amount_off":
+	case "percentage":
 		var decoded ReactivatedSubscriptionOfferApplicationPhasesItemVariant2
 		if err := json.Unmarshal(data, &decoded); err != nil {
 			return err
 		}
 		value.Value = decoded
 		return nil
-	case "fixed_price":
+	case "amount_off":
 		var decoded ReactivatedSubscriptionOfferApplicationPhasesItemVariant3
+		if err := json.Unmarshal(data, &decoded); err != nil {
+			return err
+		}
+		value.Value = decoded
+		return nil
+	case "fixed_price":
+		var decoded ReactivatedSubscriptionOfferApplicationPhasesItemVariant4
 		if err := json.Unmarshal(data, &decoded); err != nil {
 			return err
 		}
@@ -2176,14 +2675,6 @@ func (value *ReactivatedSubscriptionOfferApplicationPhasesItem) UnmarshalJSON(da
 		return nil
 	}
 	if hasJSONFields(fields, "type", "duration_cycles", "starts_at", "ends_at", "percentage") {
-		var decoded ReactivatedSubscriptionOfferApplicationPhasesItemVariant1
-		if err := json.Unmarshal(data, &decoded); err != nil {
-			return err
-		}
-		value.Value = decoded
-		return nil
-	}
-	if hasJSONFields(fields, "type", "duration_cycles", "starts_at", "ends_at", "amount") {
 		var decoded ReactivatedSubscriptionOfferApplicationPhasesItemVariant2
 		if err := json.Unmarshal(data, &decoded); err != nil {
 			return err
@@ -2191,8 +2682,24 @@ func (value *ReactivatedSubscriptionOfferApplicationPhasesItem) UnmarshalJSON(da
 		value.Value = decoded
 		return nil
 	}
-	if hasJSONFields(fields, "type", "duration_cycles", "starts_at", "ends_at", "price") {
+	if hasJSONFields(fields, "type", "duration_cycles", "starts_at", "ends_at", "amount") {
 		var decoded ReactivatedSubscriptionOfferApplicationPhasesItemVariant3
+		if err := json.Unmarshal(data, &decoded); err != nil {
+			return err
+		}
+		value.Value = decoded
+		return nil
+	}
+	if hasJSONFields(fields, "type", "duration_cycles", "starts_at", "ends_at", "price") {
+		var decoded ReactivatedSubscriptionOfferApplicationPhasesItemVariant4
+		if err := json.Unmarshal(data, &decoded); err != nil {
+			return err
+		}
+		value.Value = decoded
+		return nil
+	}
+	if hasJSONFields(fields, "type", "duration_days", "starts_at", "ends_at") {
+		var decoded ReactivatedSubscriptionOfferApplicationPhasesItemVariant1
 		if err := json.Unmarshal(data, &decoded); err != nil {
 			return err
 		}
@@ -2226,25 +2733,37 @@ func (value ReactivatedSubscriptionOfferApplicationPhasesItem) AsReactivatedSubs
 	return decoded, ok
 }
 
+func (value ReactivatedSubscriptionOfferApplicationPhasesItem) AsReactivatedSubscriptionOfferApplicationPhasesItemVariant4() (ReactivatedSubscriptionOfferApplicationPhasesItemVariant4, bool) {
+	decoded, ok := value.Value.(ReactivatedSubscriptionOfferApplicationPhasesItemVariant4)
+	return decoded, ok
+}
+
 type ReactivatedSubscriptionOfferApplicationPhasesItemVariant1 struct {
+	Type         string  `json:"type"`
+	DurationDays int     `json:"duration_days"`
+	StartsAt     *string `json:"starts_at"`
+	EndsAt       *string `json:"ends_at"`
+}
+
+type ReactivatedSubscriptionOfferApplicationPhasesItemVariant2 struct {
 	Type           string  `json:"type"`
-	DurationCycles int     `json:"duration_cycles"`
+	DurationCycles *int    `json:"duration_cycles"`
 	StartsAt       *string `json:"starts_at"`
 	EndsAt         *string `json:"ends_at"`
 	Percentage     int     `json:"percentage"`
 }
 
-type ReactivatedSubscriptionOfferApplicationPhasesItemVariant2 struct {
+type ReactivatedSubscriptionOfferApplicationPhasesItemVariant3 struct {
 	Type           string  `json:"type"`
-	DurationCycles int     `json:"duration_cycles"`
+	DurationCycles *int    `json:"duration_cycles"`
 	StartsAt       *string `json:"starts_at"`
 	EndsAt         *string `json:"ends_at"`
 	Amount         int     `json:"amount"`
 }
 
-type ReactivatedSubscriptionOfferApplicationPhasesItemVariant3 struct {
+type ReactivatedSubscriptionOfferApplicationPhasesItemVariant4 struct {
 	Type           string  `json:"type"`
-	DurationCycles int     `json:"duration_cycles"`
+	DurationCycles *int    `json:"duration_cycles"`
 	StartsAt       *string `json:"starts_at"`
 	EndsAt         *string `json:"ends_at"`
 	Price          int     `json:"price"`
@@ -2357,7 +2876,6 @@ type Subscription struct {
 	Cancellation        *SubscriptionCancellation        `json:"cancellation"`
 	CancelAtPeriodEnd   bool                             `json:"cancel_at_period_end"`
 	ScheduledPlanChange *SubscriptionScheduledPlanChange `json:"scheduled_plan_change"`
-	Discount            *SubscriptionDiscount            `json:"discount"`
 	StartDate           string                           `json:"start_date"`
 	EndDate             *string                          `json:"end_date"`
 	BillingDayOfMonth   *int                             `json:"billing_day_of_month"`
@@ -2365,6 +2883,7 @@ type Subscription struct {
 	CheckoutURL         *string                          `json:"checkout_url"`
 	CreatedAt           string                           `json:"created_at"`
 	UpdatedAt           string                           `json:"updated_at"`
+	OfferApplications   []SubscriptionOfferApplication   `json:"offer_applications"`
 	ConsumptionModel    *ConsumptionModel                `json:"consumption_model"`
 	Features            []SubscriptionFeaturesItem       `json:"features"`
 	Credits             *SubscriptionCredits             `json:"credits"`
@@ -2404,13 +2923,6 @@ type SubscriptionCurrentPeriod struct {
 	Start         string  `json:"start"`
 	End           string  `json:"end"`
 	DaysRemaining float64 `json:"days_remaining"`
-}
-
-type SubscriptionDiscount struct {
-	Type   string  `json:"type"`
-	Value  float64 `json:"value"`
-	Name   *string `json:"name"`
-	EndsAt *string `json:"ends_at"`
 }
 
 type SubscriptionFeaturesItem struct {
@@ -2563,6 +3075,266 @@ type SubscriptionFeaturesItemVariant4 struct {
 	Type string `json:"type"`
 }
 
+type SubscriptionOfferApplication struct {
+	ID             string                                `json:"id"`
+	Name           string                                `json:"name"`
+	AppliesTo      SubscriptionOfferApplicationAppliesTo `json:"applies_to"`
+	OfferID        *string                               `json:"offer_id"`
+	Source         string                                `json:"source"`
+	Status         string                                `json:"status"`
+	Currency       *string                               `json:"currency"`
+	Subtotal       *int                                  `json:"subtotal"`
+	DiscountAmount *int                                  `json:"discount_amount"`
+	Total          *int                                  `json:"total"`
+	Phases         []SubscriptionOfferApplicationPhase   `json:"phases"`
+	QuotedAt       string                                `json:"quoted_at"`
+	AppliedAt      *string                               `json:"applied_at"`
+}
+
+type SubscriptionOfferApplicationAppliesTo struct {
+	Value any
+}
+
+func (value *SubscriptionOfferApplicationAppliesTo) UnmarshalJSON(data []byte) error {
+	var fields map[string]json.RawMessage
+	if err := json.Unmarshal(data, &fields); err != nil {
+		return err
+	}
+	var discriminator string
+	if raw, ok := fields["type"]; ok {
+		if err := json.Unmarshal(raw, &discriminator); err != nil {
+			return err
+		}
+	}
+	switch discriminator {
+	case "plan_price":
+		var decoded SubscriptionOfferApplicationAppliesToVariant1
+		if err := json.Unmarshal(data, &decoded); err != nil {
+			return err
+		}
+		value.Value = decoded
+		return nil
+	case "addon":
+		var decoded SubscriptionOfferApplicationAppliesToVariant2
+		if err := json.Unmarshal(data, &decoded); err != nil {
+			return err
+		}
+		value.Value = decoded
+		return nil
+	case "credit_pack":
+		var decoded SubscriptionOfferApplicationAppliesToVariant3
+		if err := json.Unmarshal(data, &decoded); err != nil {
+			return err
+		}
+		value.Value = decoded
+		return nil
+	}
+	if hasJSONFields(fields, "type", "id") {
+		var decoded SubscriptionOfferApplicationAppliesToVariant1
+		if err := json.Unmarshal(data, &decoded); err != nil {
+			return err
+		}
+		value.Value = decoded
+		return nil
+	}
+	if hasJSONFields(fields, "type", "id") {
+		var decoded SubscriptionOfferApplicationAppliesToVariant2
+		if err := json.Unmarshal(data, &decoded); err != nil {
+			return err
+		}
+		value.Value = decoded
+		return nil
+	}
+	if hasJSONFields(fields, "type", "id") {
+		var decoded SubscriptionOfferApplicationAppliesToVariant3
+		if err := json.Unmarshal(data, &decoded); err != nil {
+			return err
+		}
+		value.Value = decoded
+		return nil
+	}
+	var decoded SubscriptionOfferApplicationAppliesToVariant1
+	if err := json.Unmarshal(data, &decoded); err != nil {
+		return err
+	}
+	value.Value = decoded
+	return nil
+}
+
+func (value SubscriptionOfferApplicationAppliesTo) MarshalJSON() ([]byte, error) {
+	return json.Marshal(value.Value)
+}
+
+func (value SubscriptionOfferApplicationAppliesTo) AsSubscriptionOfferApplicationAppliesToVariant1() (SubscriptionOfferApplicationAppliesToVariant1, bool) {
+	decoded, ok := value.Value.(SubscriptionOfferApplicationAppliesToVariant1)
+	return decoded, ok
+}
+
+func (value SubscriptionOfferApplicationAppliesTo) AsSubscriptionOfferApplicationAppliesToVariant2() (SubscriptionOfferApplicationAppliesToVariant2, bool) {
+	decoded, ok := value.Value.(SubscriptionOfferApplicationAppliesToVariant2)
+	return decoded, ok
+}
+
+func (value SubscriptionOfferApplicationAppliesTo) AsSubscriptionOfferApplicationAppliesToVariant3() (SubscriptionOfferApplicationAppliesToVariant3, bool) {
+	decoded, ok := value.Value.(SubscriptionOfferApplicationAppliesToVariant3)
+	return decoded, ok
+}
+
+type SubscriptionOfferApplicationAppliesToVariant1 struct {
+	Type string `json:"type"`
+	ID   string `json:"id"`
+}
+
+type SubscriptionOfferApplicationAppliesToVariant2 struct {
+	Type string `json:"type"`
+	ID   string `json:"id"`
+}
+
+type SubscriptionOfferApplicationAppliesToVariant3 struct {
+	Type string `json:"type"`
+	ID   string `json:"id"`
+}
+
+type SubscriptionOfferApplicationPhase struct {
+	Value any
+}
+
+func (value *SubscriptionOfferApplicationPhase) UnmarshalJSON(data []byte) error {
+	var fields map[string]json.RawMessage
+	if err := json.Unmarshal(data, &fields); err != nil {
+		return err
+	}
+	var discriminator string
+	if raw, ok := fields["type"]; ok {
+		if err := json.Unmarshal(raw, &discriminator); err != nil {
+			return err
+		}
+	}
+	switch discriminator {
+	case "free_trial":
+		var decoded SubscriptionOfferApplicationPhaseVariant1
+		if err := json.Unmarshal(data, &decoded); err != nil {
+			return err
+		}
+		value.Value = decoded
+		return nil
+	case "percentage":
+		var decoded SubscriptionOfferApplicationPhaseVariant2
+		if err := json.Unmarshal(data, &decoded); err != nil {
+			return err
+		}
+		value.Value = decoded
+		return nil
+	case "amount_off":
+		var decoded SubscriptionOfferApplicationPhaseVariant3
+		if err := json.Unmarshal(data, &decoded); err != nil {
+			return err
+		}
+		value.Value = decoded
+		return nil
+	case "fixed_price":
+		var decoded SubscriptionOfferApplicationPhaseVariant4
+		if err := json.Unmarshal(data, &decoded); err != nil {
+			return err
+		}
+		value.Value = decoded
+		return nil
+	}
+	if hasJSONFields(fields, "type", "duration_cycles", "percentage", "starts_at", "ends_at") {
+		var decoded SubscriptionOfferApplicationPhaseVariant2
+		if err := json.Unmarshal(data, &decoded); err != nil {
+			return err
+		}
+		value.Value = decoded
+		return nil
+	}
+	if hasJSONFields(fields, "type", "duration_cycles", "amount", "starts_at", "ends_at") {
+		var decoded SubscriptionOfferApplicationPhaseVariant3
+		if err := json.Unmarshal(data, &decoded); err != nil {
+			return err
+		}
+		value.Value = decoded
+		return nil
+	}
+	if hasJSONFields(fields, "type", "duration_cycles", "price", "starts_at", "ends_at") {
+		var decoded SubscriptionOfferApplicationPhaseVariant4
+		if err := json.Unmarshal(data, &decoded); err != nil {
+			return err
+		}
+		value.Value = decoded
+		return nil
+	}
+	if hasJSONFields(fields, "type", "duration_days", "starts_at", "ends_at") {
+		var decoded SubscriptionOfferApplicationPhaseVariant1
+		if err := json.Unmarshal(data, &decoded); err != nil {
+			return err
+		}
+		value.Value = decoded
+		return nil
+	}
+	var decoded SubscriptionOfferApplicationPhaseVariant1
+	if err := json.Unmarshal(data, &decoded); err != nil {
+		return err
+	}
+	value.Value = decoded
+	return nil
+}
+
+func (value SubscriptionOfferApplicationPhase) MarshalJSON() ([]byte, error) {
+	return json.Marshal(value.Value)
+}
+
+func (value SubscriptionOfferApplicationPhase) AsSubscriptionOfferApplicationPhaseVariant1() (SubscriptionOfferApplicationPhaseVariant1, bool) {
+	decoded, ok := value.Value.(SubscriptionOfferApplicationPhaseVariant1)
+	return decoded, ok
+}
+
+func (value SubscriptionOfferApplicationPhase) AsSubscriptionOfferApplicationPhaseVariant2() (SubscriptionOfferApplicationPhaseVariant2, bool) {
+	decoded, ok := value.Value.(SubscriptionOfferApplicationPhaseVariant2)
+	return decoded, ok
+}
+
+func (value SubscriptionOfferApplicationPhase) AsSubscriptionOfferApplicationPhaseVariant3() (SubscriptionOfferApplicationPhaseVariant3, bool) {
+	decoded, ok := value.Value.(SubscriptionOfferApplicationPhaseVariant3)
+	return decoded, ok
+}
+
+func (value SubscriptionOfferApplicationPhase) AsSubscriptionOfferApplicationPhaseVariant4() (SubscriptionOfferApplicationPhaseVariant4, bool) {
+	decoded, ok := value.Value.(SubscriptionOfferApplicationPhaseVariant4)
+	return decoded, ok
+}
+
+type SubscriptionOfferApplicationPhaseVariant1 struct {
+	Type         string  `json:"type"`
+	DurationDays int     `json:"duration_days"`
+	StartsAt     *string `json:"starts_at"`
+	EndsAt       *string `json:"ends_at"`
+}
+
+type SubscriptionOfferApplicationPhaseVariant2 struct {
+	Type           string  `json:"type"`
+	DurationCycles *int    `json:"duration_cycles"`
+	Percentage     int     `json:"percentage"`
+	StartsAt       *string `json:"starts_at"`
+	EndsAt         *string `json:"ends_at"`
+}
+
+type SubscriptionOfferApplicationPhaseVariant3 struct {
+	Type           string  `json:"type"`
+	DurationCycles *int    `json:"duration_cycles"`
+	Amount         int     `json:"amount"`
+	StartsAt       *string `json:"starts_at"`
+	EndsAt         *string `json:"ends_at"`
+}
+
+type SubscriptionOfferApplicationPhaseVariant4 struct {
+	Type           string  `json:"type"`
+	DurationCycles *int    `json:"duration_cycles"`
+	Price          int     `json:"price"`
+	StartsAt       *string `json:"starts_at"`
+	EndsAt         *string `json:"ends_at"`
+}
+
 type SubscriptionPlan struct {
 	ID        string  `json:"id"`
 	Name      string  `json:"name"`
@@ -2597,7 +3369,6 @@ type SubscriptionSummary struct {
 	Cancellation        *SubscriptionSummaryCancellation        `json:"cancellation"`
 	CancelAtPeriodEnd   bool                                    `json:"cancel_at_period_end"`
 	ScheduledPlanChange *SubscriptionSummaryScheduledPlanChange `json:"scheduled_plan_change"`
-	Discount            *SubscriptionSummaryDiscount            `json:"discount"`
 	StartDate           string                                  `json:"start_date"`
 	EndDate             *string                                 `json:"end_date"`
 	BillingDayOfMonth   *int                                    `json:"billing_day_of_month"`
@@ -2605,6 +3376,7 @@ type SubscriptionSummary struct {
 	CheckoutURL         *string                                 `json:"checkout_url"`
 	CreatedAt           string                                  `json:"created_at"`
 	UpdatedAt           string                                  `json:"updated_at"`
+	OfferApplications   []SubscriptionOfferApplication          `json:"offer_applications"`
 	PriceID             *string                                 `json:"price_id"`
 	Object              string                                  `json:"object"`
 	Livemode            bool                                    `json:"livemode"`
@@ -2620,13 +3392,6 @@ type SubscriptionSummaryCurrentPeriod struct {
 	Start         string  `json:"start"`
 	End           string  `json:"end"`
 	DaysRemaining float64 `json:"days_remaining"`
-}
-
-type SubscriptionSummaryDiscount struct {
-	Type   string  `json:"type"`
-	Value  float64 `json:"value"`
-	Name   *string `json:"name"`
-	EndsAt *string `json:"ends_at"`
 }
 
 type SubscriptionSummaryPlan struct {
@@ -2845,13 +3610,13 @@ type UpdateOfferParamsPhasesItemVariant1 struct {
 
 type UpdateOfferParamsPhasesItemVariant2 struct {
 	Type           string `json:"type"`
-	DurationCycles int    `json:"duration_cycles"`
+	DurationCycles *int   `json:"duration_cycles"`
 	Percentage     int    `json:"percentage"`
 }
 
 type UpdateOfferParamsPhasesItemVariant3 struct {
 	Type           string                                           `json:"type"`
-	DurationCycles int                                              `json:"duration_cycles"`
+	DurationCycles *int                                             `json:"duration_cycles"`
 	Amounts        []UpdateOfferParamsPhasesItemVariant3AmountsItem `json:"amounts"`
 }
 
@@ -2862,7 +3627,7 @@ type UpdateOfferParamsPhasesItemVariant3AmountsItem struct {
 
 type UpdateOfferParamsPhasesItemVariant4 struct {
 	Type           string                                          `json:"type"`
-	DurationCycles int                                             `json:"duration_cycles"`
+	DurationCycles *int                                            `json:"duration_cycles"`
 	Prices         []UpdateOfferParamsPhasesItemVariant4PricesItem `json:"prices"`
 }
 
