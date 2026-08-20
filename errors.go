@@ -23,7 +23,7 @@ func (e *CommetError) Error() string {
 // ValidationError represents a validation failure from the API.
 type ValidationError struct {
 	CommetError
-	ValidationErrors map[string][]string
+	ValidationErrors map[string][]string `json:"validation_errors"`
 }
 
 func (e *ValidationError) Error() string {

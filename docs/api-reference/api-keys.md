@@ -4,7 +4,7 @@ API version: `2026-07-31`
 
 ## Delete
 
-`client.APIKeys.Delete(ctx, ...)`
+`client.ApiKeys.Delete(ctx, ...)`
 
 `DELETE /api-keys/{id}` · operation `delete-api-key`
 
@@ -20,7 +20,7 @@ Permanently revoke and delete an API key.
 
 ## List
 
-`client.APIKeys.List(ctx, ...)`
+`client.ApiKeys.List(ctx, ...)`
 
 `GET /api-keys` · operation `list-api-keys`
 
@@ -37,7 +37,7 @@ List API keys with cursor-based pagination. Keys are returned without the full s
 
 ## Create
 
-`client.APIKeys.Create(ctx, ...)`
+`client.ApiKeys.Create(ctx, ...)`
 
 `POST /api-keys` · operation `create-api-key`
 

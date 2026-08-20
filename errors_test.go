@@ -65,6 +65,21 @@ func TestValidationErrorMessage(t *testing.T) {
 	if len(err.ValidationErrors["name"]) != 1 {
 		t.Errorf("name errors count = %d, want 1", len(err.ValidationErrors["name"]))
 	}
+
+	serialized, marshalErr := json.Marshal(err)
+	if marshalErr != nil {
+		t.Fatalf("marshal validation error: %v", marshalErr)
+	}
+	var fields map[string]json.RawMessage
+	if unmarshalErr := json.Unmarshal(serialized, &fields); unmarshalErr != nil {
+		t.Fatalf("unmarshal validation error: %v", unmarshalErr)
+	}
+	if _, ok := fields["validation_errors"]; !ok {
+		t.Errorf("serialized validation error missing validation_errors: %s", serialized)
+	}
+	if _, ok := fields["ValidationErrors"]; ok {
+		t.Errorf("serialized validation error contains non-contract field: %s", serialized)
+	}
 }
 
 func TestHandleErrorParsesApiError(t *testing.T) {
