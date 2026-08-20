@@ -16,8 +16,7 @@ type TestClockResource struct {
 	http *httpClient
 }
 
-// Deprecated. POST /test-clock now advances time and processes every due billing deadline in one durable run.
-// Deprecated.
+// Deprecated: POST /test-clock now advances time and processes every due billing deadline in one durable run.
 func (r *TestClockResource) ProcessBilling(ctx context.Context, params *ProcessTestClockBillingParams) (*struct{}, error) {
 	return parseDirectResponse[struct{}](r.http.post(ctx, "/test-clock/process-billing", nil, params.IdempotencyKey))
 }
