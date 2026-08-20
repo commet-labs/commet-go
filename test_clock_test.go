@@ -46,7 +46,6 @@ func TestProcessBillingPostsEmptyBodyToCorrectPath(t *testing.T) {
 	if captured.Path != "/api/v1/test-clock/process-billing" {
 		t.Errorf("path = %s, want /api/v1/test-clock/process-billing", captured.Path)
 	}
-	// Empty map body marshals to "{}" — must not be null or carry stray keys.
 	if len(captured.Body) != 0 {
 		t.Errorf("expected no request body, got %s", captured.Body)
 	}
