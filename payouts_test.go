@@ -76,93 +76,20 @@ func TestAddBankAccountSendsOptionalsWhenSet(t *testing.T) {
 	}
 }
 
-// TestCompleteVerificationCamelizesDeeplyNestedTypedStructs is the strongest guard
-// for the nested-camelization bug: CompletePayoutVerificationParams carries typed
-// nested structs (Bank, Individual with its own Address). Their json tags are
-// snake_case, so without genericize() the inner keys would ship as snake_case.
-// We assert the inner-of-inner Address keys are camelCase on the wire.
-func TestCompleteVerificationCamelizesDeeplyNestedTypedStructs(t *testing.T) {
-	client, captured := newWireServer(t, 200, `{"data":{"provider_account_id":"acct_1","status":"pending","transfers_enabled":false}}`)
+func TestCompleteVerificationSendsNoKYCBody(t *testing.T) {
+	client, captured := newWireServer(t, 200, `{"success":true,"data":null}`)
 
-	_, err := client.Payouts.CompleteVerification(context.Background(), &CompletePayoutVerificationParams{
-		Email:        "ops@acme.com",
-		BusinessType: "individual",
-		BusinessURL:  "https://acme.com",
-		DocumentURL:  "https://files/doc.pdf",
-		Bank: CompletePayoutVerificationParamsBank{
-			AccountNumber:     "000123456789",
-			AccountHolderName: "Jane Roe",
-			RoutingNumber:     strPtr("110000000"),
-		},
-		Individual: &CompletePayoutVerificationParamsIndividual{
-			FirstName:   "Jane",
-			LastName:    "Roe",
-			Phone:       "+15555550123",
-			DateOfBirth: "1990-01-01",
-			Address: CompletePayoutVerificationParamsIndividualAddress{
-				Line1:      "1 Main St",
-				City:       "Springfield",
-				PostalCode: "11111",
-				Country:    "US",
-			},
-		},
-	})
+	result, err := client.Payouts.CompleteVerification(context.Background())
 	if err != nil {
 		t.Fatalf("CompleteVerification: %v", err)
 	}
+	if result != nil {
+		t.Fatalf("CompleteVerification result = %v, want nil", result)
+	}
 
 	body := decodeBody(t, captured.Body)
-
-	// Top-level camelCase.
-	if body["businessType"] != "individual" {
-		t.Errorf("businessType = %v, want individual (raw: %s)", body["businessType"], captured.Body)
-	}
-	if body["businessUrl"] != "https://acme.com" {
-		t.Errorf("businessUrl = %v, want https://acme.com (raw: %s)", body["businessUrl"], captured.Body)
-	}
-
-	// Nested typed struct: bank.accountHolderName must be camelCase, not snake.
-	bank, ok := body["bank"].(map[string]any)
-	if !ok {
-		t.Fatalf("bank = %v, want nested object (raw: %s)", body["bank"], captured.Body)
-	}
-	if bank["accountHolderName"] != "Jane Roe" {
-		t.Errorf("bank.accountHolderName = %v, want Jane Roe (raw: %s)", bank["accountHolderName"], captured.Body)
-	}
-	if _, exists := bank["account_holder_name"]; exists {
-		t.Errorf("nested snake_case bank.account_holder_name leaked (genericize/camelization broken): %s", captured.Body)
-	}
-
-	// Doubly-nested: individual.address fields. This is the level a top-level-only
-	// re-key would miss entirely.
-	individual, ok := body["individual"].(map[string]any)
-	if !ok {
-		t.Fatalf("individual = %v, want nested object (raw: %s)", body["individual"], captured.Body)
-	}
-	if individual["firstName"] != "Jane" {
-		t.Errorf("individual.firstName = %v, want Jane (raw: %s)", individual["firstName"], captured.Body)
-	}
-	if individual["dateOfBirth"] != "1990-01-01" {
-		t.Errorf("individual.dateOfBirth = %v, want 1990-01-01 (raw: %s)", individual["dateOfBirth"], captured.Body)
-	}
-	address, ok := individual["address"].(map[string]any)
-	if !ok {
-		t.Fatalf("individual.address = %v, want nested object (raw: %s)", individual["address"], captured.Body)
-	}
-	if address["postalCode"] != "11111" {
-		t.Errorf("individual.address.postalCode = %v, want 11111 (raw: %s)", address["postalCode"], captured.Body)
-	}
-	if _, exists := address["postal_code"]; exists {
-		t.Errorf("doubly-nested snake_case address.postal_code leaked (deep camelization broken): %s", captured.Body)
-	}
-
-	// Optional nested struct left nil must be fully omitted, not null.
-	if v, exists := body["company"]; exists {
-		t.Errorf("unset optional Company must be omitted, got %v (raw: %s)", v, captured.Body)
-	}
-	// Individual.ssn_last4 was nil and must not leak as null inside the nested object.
-	if v, exists := individual["ssnLast4"]; exists && v == nil {
-		t.Errorf("nested optional ssnLast4 leaked as null inside individual (raw: %s)", captured.Body)
+	if len(body) != 0 {
+		t.Errorf("expected empty JSON body, got %s", captured.Body)
 	}
 }
 

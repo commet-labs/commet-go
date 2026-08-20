@@ -17,17 +17,6 @@ type RequestPayoutParams struct {
 	IdempotencyKey string  `json:"-"`
 }
 
-type CompletePayoutVerificationParams struct {
-	Email          string                                      `json:"email"`
-	BusinessURL    string                                      `json:"business_url"`
-	DocumentURL    string                                      `json:"document_url"`
-	Bank           CompletePayoutVerificationParamsBank        `json:"bank"`
-	BusinessType   string                                      `json:"business_type"`
-	Individual     *CompletePayoutVerificationParamsIndividual `json:"individual,omitempty"`
-	Company        *CompletePayoutVerificationParamsCompany    `json:"company,omitempty"`
-	IdempotencyKey string                                      `json:"-"`
-}
-
 type PayoutsResource struct {
 	http *httpClient
 }
@@ -53,16 +42,8 @@ func (r *PayoutsResource) Request(ctx context.Context, params *RequestPayoutPara
 	return parseDirectResponse[Payout](r.http.post(ctx, "/payouts", body, params.IdempotencyKey))
 }
 
-// Provision the organization's payout account in a single call with the full KYC + bank payload. Uploads the identity document, persists the destination bank, and creates the connected account through the org's payout provider. The account starts `pending_verification` and flips to `verified` via the provider's webhook. Idempotent: returns the existing account if the org already has one.
-func (r *PayoutsResource) CompleteVerification(ctx context.Context, params *CompletePayoutVerificationParams) (*PayoutVerification, error) {
-	body := buildBody(map[string]any{
-		"email":         params.Email,
-		"business_url":  params.BusinessURL,
-		"document_url":  params.DocumentURL,
-		"bank":          params.Bank,
-		"business_type": params.BusinessType,
-		"individual":    params.Individual,
-		"company":       params.Company,
-	})
-	return parseDirectResponse[PayoutVerification](r.http.post(ctx, "/payouts/verification", body, params.IdempotencyKey))
+// Deprecated. Complete business and identity verification in the Commet dashboard. This endpoint no longer accepts or processes KYC data.
+// Deprecated.
+func (r *PayoutsResource) CompleteVerification(ctx context.Context) (*struct{}, error) {
+	return parseDirectResponse[struct{}](r.http.post(ctx, "/payouts/verification", map[string]any{}, ""))
 }

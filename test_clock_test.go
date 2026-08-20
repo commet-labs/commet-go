@@ -9,7 +9,7 @@ import (
 // only AdvanceDays set sends advanceDays (camelCase) and does NOT leak the unset
 // FrozenTime pointer as null — the nil-pointer omission bug class.
 func TestAdvanceOmitsUnsetOptionalsAndCamelizes(t *testing.T) {
-	client, captured := newWireServer(t, 200, `{"simulatedTime":"2026-07-01T00:00:00Z","isActive":true,"now":"2026-07-01T00:00:00Z","object":"test_clock","livemode":false}`)
+	client, captured := newWireServer(t, 200, `{"id":"tcr_1","status":"pending","startedAtTime":"2026-06-01T00:00:00Z","targetTime":"2026-07-01T00:00:00Z","estimatedDeadlineCount":0,"completedDeadlineCount":0,"failedDeadlineCount":0,"error":null,"items":[],"object":"test_clock_run","livemode":false}`)
 
 	_, err := client.TestClock.Advance(context.Background(), &AdvanceTestClockParams{
 		AdvanceDays: intPtr(7),
@@ -30,11 +30,8 @@ func TestAdvanceOmitsUnsetOptionalsAndCamelizes(t *testing.T) {
 	}
 }
 
-// TestProcessBillingPostsEmptyBodyToCorrectPath guards the no-param POST: it must
-// hit /test-clock/process-billing with POST and unmarshal the typed counters.
-// This is behavioral (path + body shape + typed decode), not a bare "did it GET".
 func TestProcessBillingPostsEmptyBodyToCorrectPath(t *testing.T) {
-	client, captured := newWireServer(t, 200, `{"customersFound":3,"enqueued":2,"failed":1,"object":"test_clock_billing","livemode":false}`)
+	client, captured := newWireServer(t, 200, `{"success":true,"data":null}`)
 
 	resp, err := client.TestClock.ProcessBilling(context.Background())
 	if err != nil {
@@ -52,16 +49,15 @@ func TestProcessBillingPostsEmptyBodyToCorrectPath(t *testing.T) {
 	if len(body) != 0 {
 		t.Errorf("expected empty JSON body, got %s", captured.Body)
 	}
-
-	if resp.CustomersFound != 3 || resp.Enqueued != 2 || resp.Failed != 1 {
-		t.Errorf("counters = (%d,%d,%d), want (3,2,1)", resp.CustomersFound, resp.Enqueued, resp.Failed)
+	if resp != nil {
+		t.Errorf("ProcessBilling result = %v, want nil", resp)
 	}
 }
 
 // TestGetTestClockUnmarshalsNullableSimulatedTime checks a camelCase response with
 // an explicit null simulatedTime maps to a nil *string on the typed struct.
 func TestGetTestClockUnmarshalsNullableSimulatedTime(t *testing.T) {
-	client, _ := newWireServer(t, 200, `{"simulatedTime":null,"isActive":false,"now":"2026-06-08T00:00:00Z","object":"test_clock","livemode":false}`)
+	client, _ := newWireServer(t, 200, `{"simulatedTime":null,"isActive":false,"now":"2026-06-08T00:00:00Z","latestRun":null,"object":"test_clock","livemode":false}`)
 
 	resp, err := client.TestClock.Get(context.Background())
 	if err != nil {

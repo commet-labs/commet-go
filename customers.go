@@ -5,6 +5,41 @@ import (
 	"fmt"
 )
 
+type RevokeCustomerCreditParams struct {
+	IdempotencyKey string `json:"-"`
+}
+
+type CreateCustomerCreditParams struct {
+	Amount         int     `json:"amount"`
+	Currency       string  `json:"currency"`
+	Reason         string  `json:"reason"`
+	ExpiresAt      *string `json:"expires_at,omitempty"`
+	IdempotencyKey string  `json:"-"`
+}
+
+type RevokePlanGrantParams struct {
+	Reason         string `json:"reason"`
+	IdempotencyKey string `json:"-"`
+}
+
+type UpdatePlanGrantParams struct {
+	Reason         string  `json:"reason"`
+	Duration       string  `json:"duration"`
+	DurationCycles *int    `json:"duration_cycles,omitempty"`
+	ExpiresAt      *string `json:"expires_at,omitempty"`
+	IdempotencyKey string  `json:"-"`
+}
+
+type CreatePlanGrantParams struct {
+	SubscriptionID string  `json:"subscription_id"`
+	PlanID         string  `json:"plan_id"`
+	Reason         string  `json:"reason"`
+	Duration       string  `json:"duration"`
+	DurationCycles *int    `json:"duration_cycles,omitempty"`
+	ExpiresAt      *string `json:"expires_at,omitempty"`
+	IdempotencyKey string  `json:"-"`
+}
+
 type UpdateCustomerParams struct {
 	Email          *string                      `json:"email,omitempty"`
 	FullName       *string                      `json:"full_name,omitempty"`
@@ -42,6 +77,64 @@ type CreateCustomerParams struct {
 
 type CustomersResource struct {
 	http *httpClient
+}
+
+// Revoke the unallocated remainder of a customer credit grant. Applied invoice history is unchanged.
+func (r *CustomersResource) RevokeCredit(ctx context.Context, id string, creditID string, params *RevokeCustomerCreditParams) (*CustomerCreditRevocation, error) {
+	return parseDirectResponse[CustomerCreditRevocation](r.http.post(ctx, fmt.Sprintf("/customers/%s/credits/%s/revoke", id, creditID), map[string]any{}, params.IdempotencyKey))
+}
+
+// List currency-specific invoice credit grants and their remaining balances for a customer.
+func (r *CustomersResource) ListCredits(ctx context.Context, id string) (*CustomersListCreditsResult, error) {
+	return parseDirectResponse[CustomersListCreditsResult](r.http.get(ctx, fmt.Sprintf("/customers/%s/credits", id), nil))
+}
+
+// Grant monetary credit in one currency. Credit is applied FIFO before tax to eligible recurring invoices.
+func (r *CustomersResource) CreateCredit(ctx context.Context, id string, params *CreateCustomerCreditParams) (*CustomerCredit, error) {
+	body := buildBody(map[string]any{
+		"amount":     params.Amount,
+		"currency":   params.Currency,
+		"reason":     params.Reason,
+		"expires_at": params.ExpiresAt,
+	})
+	return parseDirectResponse[CustomerCredit](r.http.post(ctx, fmt.Sprintf("/customers/%s/credits", id), body, params.IdempotencyKey))
+}
+
+// End expanded access immediately and restore the base plan's limits. The subscription, billing cycle, invoices, and payment state remain unchanged.
+func (r *CustomersResource) RevokePlanGrant(ctx context.Context, id string, grantID string, params *RevokePlanGrantParams) (*PlanGrant, error) {
+	body := buildBody(map[string]any{
+		"reason": params.Reason,
+	})
+	return parseDirectResponse[PlanGrant](r.http.post(ctx, fmt.Sprintf("/customers/%s/plan-grants/%s/revoke", id, grantID), body, params.IdempotencyKey))
+}
+
+// Keep the overlay for a number of the subscription's existing billing cycles, set an exact deadline, or leave it active until revoked. The billing anchor is never reset.
+func (r *CustomersResource) UpdatePlanGrant(ctx context.Context, id string, grantID string, params *UpdatePlanGrantParams) (*PlanGrant, error) {
+	body := buildBody(map[string]any{
+		"reason":          params.Reason,
+		"duration":        params.Duration,
+		"duration_cycles": params.DurationCycles,
+		"expires_at":      params.ExpiresAt,
+	})
+	return parseDirectResponse[PlanGrant](r.http.patch(ctx, fmt.Sprintf("/customers/%s/plan-grants/%s", id, grantID), body, params.IdempotencyKey))
+}
+
+// List the independent audit timeline for paid-plan access granted without checkout or payment credentials.
+func (r *CustomersResource) ListPlanGrants(ctx context.Context, id string) (*CustomersListPlanGrantsResult, error) {
+	return parseDirectResponse[CustomersListPlanGrantsResult](r.http.get(ctx, fmt.Sprintf("/customers/%s/plan-grants", id), nil))
+}
+
+// Temporarily expand an active subscription's feature access using a higher plan in the same plan group. Billing, prices, periods, invoices, and the base subscription remain unchanged.
+func (r *CustomersResource) CreatePlanGrant(ctx context.Context, id string, params *CreatePlanGrantParams) (*PlanGrant, error) {
+	body := buildBody(map[string]any{
+		"subscription_id": params.SubscriptionID,
+		"plan_id":         params.PlanID,
+		"reason":          params.Reason,
+		"duration":        params.Duration,
+		"duration_cycles": params.DurationCycles,
+		"expires_at":      params.ExpiresAt,
+	})
+	return parseDirectResponse[PlanGrant](r.http.post(ctx, fmt.Sprintf("/customers/%s/plan-grants", id), body, params.IdempotencyKey))
 }
 
 // Retrieve a customer by their public ID, including subscription status and metadata.
