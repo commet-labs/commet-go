@@ -2,6 +2,10 @@ package commet
 
 import "context"
 
+type ProcessTestClockBillingParams struct {
+	IdempotencyKey string `json:"-"`
+}
+
 type AdvanceTestClockParams struct {
 	AdvanceDays    *int    `json:"advance_days,omitempty"`
 	FrozenTime     *string `json:"frozen_time,omitempty"`
@@ -14,8 +18,8 @@ type TestClockResource struct {
 
 // Deprecated. POST /test-clock now advances time and processes every due billing deadline in one durable run.
 // Deprecated.
-func (r *TestClockResource) ProcessBilling(ctx context.Context) (*struct{}, error) {
-	return parseDirectResponse[struct{}](r.http.post(ctx, "/test-clock/process-billing", map[string]any{}, ""))
+func (r *TestClockResource) ProcessBilling(ctx context.Context, params *ProcessTestClockBillingParams) (*struct{}, error) {
+	return parseDirectResponse[struct{}](r.http.post(ctx, "/test-clock/process-billing", nil, params.IdempotencyKey))
 }
 
 // Returns the organization's current test clock state and latest durable run. Sandbox only.

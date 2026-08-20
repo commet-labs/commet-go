@@ -79,7 +79,9 @@ func TestAddBankAccountSendsOptionalsWhenSet(t *testing.T) {
 func TestCompleteVerificationSendsNoKYCBody(t *testing.T) {
 	client, captured := newWireServer(t, 200, `{"success":true,"data":null}`)
 
-	result, err := client.Payouts.CompleteVerification(context.Background())
+	result, err := client.Payouts.CompleteVerification(context.Background(), &CompletePayoutVerificationParams{
+		IdempotencyKey: "idem_payout_verification",
+	})
 	if err != nil {
 		t.Fatalf("CompleteVerification: %v", err)
 	}
@@ -87,9 +89,11 @@ func TestCompleteVerificationSendsNoKYCBody(t *testing.T) {
 		t.Fatalf("CompleteVerification result = %v, want nil", result)
 	}
 
-	body := decodeBody(t, captured.Body)
-	if len(body) != 0 {
-		t.Errorf("expected empty JSON body, got %s", captured.Body)
+	if len(captured.Body) != 0 {
+		t.Errorf("expected no request body, got %s", captured.Body)
+	}
+	if captured.Header.Get("Idempotency-Key") != "idem_payout_verification" {
+		t.Errorf("Idempotency-Key = %q, want idem_payout_verification", captured.Header.Get("Idempotency-Key"))
 	}
 }
 

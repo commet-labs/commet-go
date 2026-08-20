@@ -17,6 +17,10 @@ type RequestPayoutParams struct {
 	IdempotencyKey string  `json:"-"`
 }
 
+type CompletePayoutVerificationParams struct {
+	IdempotencyKey string `json:"-"`
+}
+
 type PayoutsResource struct {
 	http *httpClient
 }
@@ -44,6 +48,6 @@ func (r *PayoutsResource) Request(ctx context.Context, params *RequestPayoutPara
 
 // Deprecated. Complete business and identity verification in the Commet dashboard. This endpoint no longer accepts or processes KYC data.
 // Deprecated.
-func (r *PayoutsResource) CompleteVerification(ctx context.Context) (*struct{}, error) {
-	return parseDirectResponse[struct{}](r.http.post(ctx, "/payouts/verification", map[string]any{}, ""))
+func (r *PayoutsResource) CompleteVerification(ctx context.Context, params *CompletePayoutVerificationParams) (*struct{}, error) {
+	return parseDirectResponse[struct{}](r.http.post(ctx, "/payouts/verification", nil, params.IdempotencyKey))
 }

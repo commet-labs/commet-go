@@ -33,7 +33,9 @@ func TestAdvanceOmitsUnsetOptionalsAndCamelizes(t *testing.T) {
 func TestProcessBillingPostsEmptyBodyToCorrectPath(t *testing.T) {
 	client, captured := newWireServer(t, 200, `{"success":true,"data":null}`)
 
-	resp, err := client.TestClock.ProcessBilling(context.Background())
+	resp, err := client.TestClock.ProcessBilling(context.Background(), &ProcessTestClockBillingParams{
+		IdempotencyKey: "idem_process_billing",
+	})
 	if err != nil {
 		t.Fatalf("ProcessBilling: %v", err)
 	}
@@ -45,9 +47,11 @@ func TestProcessBillingPostsEmptyBodyToCorrectPath(t *testing.T) {
 		t.Errorf("path = %s, want /api/v1/test-clock/process-billing", captured.Path)
 	}
 	// Empty map body marshals to "{}" — must not be null or carry stray keys.
-	body := decodeBody(t, captured.Body)
-	if len(body) != 0 {
-		t.Errorf("expected empty JSON body, got %s", captured.Body)
+	if len(captured.Body) != 0 {
+		t.Errorf("expected no request body, got %s", captured.Body)
+	}
+	if captured.Header.Get("Idempotency-Key") != "idem_process_billing" {
+		t.Errorf("Idempotency-Key = %q, want idem_process_billing", captured.Header.Get("Idempotency-Key"))
 	}
 	if resp != nil {
 		t.Errorf("ProcessBilling result = %v, want nil", resp)
