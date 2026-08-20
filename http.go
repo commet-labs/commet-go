@@ -242,11 +242,12 @@ func (h *httpClient) execute(ctx context.Context, method string, endpoint string
 			Message:    fmt.Sprintf("Invalid JSON response: %d", resp.StatusCode),
 			StatusCode: resp.StatusCode,
 			Code:       "INVALID_JSON",
+			RequestID:  resp.Header.Get("x-request-id"),
 		}
 	}
 
 	if resp.StatusCode >= 400 {
-		return nil, h.handleError(resp.StatusCode, rawData)
+		return nil, h.handleError(resp.StatusCode, rawData, resp.Header.Get("x-request-id"))
 	}
 
 	converted := convertKeys(rawData, toSnake).(map[string]any)
@@ -284,12 +285,13 @@ func (h *httpClient) execute(ctx context.Context, method string, endpoint string
 
 	if h.telemetryEnabled {
 		requestID := resp.Header.Get("x-request-id")
-		if requestID == "" {
-			requestID = fmt.Sprintf("req_%d", time.Now().UnixMilli())
-		}
-		h.lastRequestMetrics = &requestMetrics{
-			RequestID:  requestID,
-			DurationMs: time.Since(requestStart).Milliseconds(),
+		if requestID != "" {
+			h.lastRequestMetrics = &requestMetrics{
+				RequestID:  requestID,
+				DurationMs: time.Since(requestStart).Milliseconds(),
+			}
+		} else {
+			h.lastRequestMetrics = nil
 		}
 	}
 
@@ -329,7 +331,15 @@ func parseDirectResponse[T any](raw *rawApiResponse, err error) (*T, error) {
 	return &response.Data, nil
 }
 
-func (h *httpClient) handleError(statusCode int, data map[string]any) error {
+func (h *httpClient) handleError(
+	statusCode int,
+	data map[string]any,
+	requestIDs ...string,
+) error {
+	requestID := ""
+	if len(requestIDs) > 0 {
+		requestID = requestIDs[0]
+	}
 	errorObj := data
 	if nested, ok := data["error"].(map[string]any); ok {
 		errorObj = nested
@@ -372,6 +382,7 @@ func (h *httpClient) handleError(statusCode int, data map[string]any) error {
 					Type:       errType,
 					Param:      param,
 					DocURL:     docURL,
+					RequestID:  requestID,
 					Details:    details,
 				},
 				ValidationErrors: validationErrors,
@@ -386,6 +397,7 @@ func (h *httpClient) handleError(statusCode int, data map[string]any) error {
 		Type:       errType,
 		Param:      param,
 		DocURL:     docURL,
+		RequestID:  requestID,
 		Details:    details,
 	}
 }

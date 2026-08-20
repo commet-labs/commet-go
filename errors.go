@@ -3,13 +3,14 @@ package commet
 import "fmt"
 
 type CommetError struct {
-	Message    string
-	Code       string
-	Type       string
-	StatusCode int
-	Param      string
-	DocURL     string
-	Details    any
+	Message    string `json:"message"`
+	Code       string `json:"code,omitempty"`
+	Type       string `json:"type,omitempty"`
+	StatusCode int    `json:"status_code"`
+	Param      string `json:"param,omitempty"`
+	DocURL     string `json:"doc_url,omitempty"`
+	RequestID  string `json:"request_id,omitempty"`
+	Details    any    `json:"details,omitempty"`
 }
 
 func (e *CommetError) Error() string {

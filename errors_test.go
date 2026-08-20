@@ -76,7 +76,7 @@ func TestHandleErrorParsesApiError(t *testing.T) {
 			"message": "Customer not found",
 		}
 
-		err := h.handleError(404, data)
+		err := h.handleError(404, data, "req_server_123")
 		commetErr, ok := err.(*CommetError)
 		if !ok {
 			t.Fatalf("expected *CommetError, got %T", err)
@@ -89,6 +89,16 @@ func TestHandleErrorParsesApiError(t *testing.T) {
 		}
 		if commetErr.Message != "Customer not found" {
 			t.Errorf("Message = %q, want Customer not found", commetErr.Message)
+		}
+		if commetErr.RequestID != "req_server_123" {
+			t.Errorf("RequestID = %q, want req_server_123", commetErr.RequestID)
+		}
+		serialized, marshalErr := json.Marshal(commetErr)
+		if marshalErr != nil {
+			t.Fatalf("failed to serialize error: %v", marshalErr)
+		}
+		if string(serialized) != `{"message":"Customer not found","code":"not_found","type":"api_error","status_code":404,"request_id":"req_server_123"}` {
+			t.Errorf("serialized error = %s", serialized)
 		}
 	})
 
