@@ -113,7 +113,7 @@ func TestHandleErrorParsesApiError(t *testing.T) {
 			},
 		}
 
-		err := h.handleError(422, data)
+		err := h.handleError(422, data, "")
 		valErr, ok := err.(*ValidationError)
 		if !ok {
 			t.Fatalf("expected *ValidationError, got %T", err)
@@ -138,7 +138,7 @@ func TestHandleErrorParsesApiError(t *testing.T) {
 			},
 		}
 
-		err := h.handleError(422, data)
+		err := h.handleError(422, data, "")
 		valErr, ok := err.(*ValidationError)
 		if !ok {
 			t.Fatalf("expected *ValidationError, got %T", err)
@@ -153,7 +153,7 @@ func TestHandleErrorParsesApiError(t *testing.T) {
 			"code": "server_error",
 		}
 
-		err := h.handleError(500, data)
+		err := h.handleError(500, data, "")
 		commetErr, ok := err.(*CommetError)
 		if !ok {
 			t.Fatalf("expected *CommetError, got %T", err)
@@ -173,7 +173,7 @@ func TestErrorFromJSON(t *testing.T) {
 		}
 
 		h := &httpClient{}
-		err := h.handleError(429, data)
+		err := h.handleError(429, data, "")
 		commetErr, ok := err.(*CommetError)
 		if !ok {
 			t.Fatalf("expected *CommetError, got %T", err)
@@ -194,7 +194,7 @@ func TestErrorFromJSON(t *testing.T) {
 		}
 
 		h := &httpClient{}
-		err := h.handleError(422, data)
+		err := h.handleError(422, data, "")
 		valErr, ok := err.(*ValidationError)
 		if !ok {
 			t.Fatalf("expected *ValidationError, got %T", err)

@@ -334,12 +334,8 @@ func parseDirectResponse[T any](raw *rawApiResponse, err error) (*T, error) {
 func (h *httpClient) handleError(
 	statusCode int,
 	data map[string]any,
-	requestIDs ...string,
+	requestID string,
 ) error {
-	requestID := ""
-	if len(requestIDs) > 0 {
-		requestID = requestIDs[0]
-	}
 	errorObj := data
 	if nested, ok := data["error"].(map[string]any); ok {
 		errorObj = nested
