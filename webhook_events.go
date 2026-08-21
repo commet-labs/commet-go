@@ -42,6 +42,10 @@ const (
 	EventCustomerCreated                   WebhookEventType = "customer.created"
 	EventCustomerUpdated                   WebhookEventType = "customer.updated"
 	EventCustomerStateChanged              WebhookEventType = "customer.state_changed"
+	EventPlanGrantCreated                  WebhookEventType = "plan_grant.created"
+	EventPlanGrantUpdated                  WebhookEventType = "plan_grant.updated"
+	EventPlanGrantExpired                  WebhookEventType = "plan_grant.expired"
+	EventPlanGrantRevoked                  WebhookEventType = "plan_grant.revoked"
 	EventCreditsGranted                    WebhookEventType = "credits.granted"
 	EventCreditsPurchased                  WebhookEventType = "credits.purchased"
 	EventCreditsLow                        WebhookEventType = "credits.low"
@@ -267,6 +271,7 @@ type PaymentFailedData struct {
 	InvoiceNumber  string  `json:"invoiceNumber"`
 	CustomerID     string  `json:"customerId"`
 	SubscriptionID *string `json:"subscriptionId"`
+	Provider       string  `json:"provider"`
 	FailureCode    string  `json:"failureCode"`
 	FailureMessage string  `json:"failureMessage"`
 	RecoveryURL    *string `json:"recoveryUrl"`
@@ -279,6 +284,7 @@ type PaymentRecoveredData struct {
 	InvoiceTotal   float64 `json:"invoiceTotal"`
 	CustomerID     string  `json:"customerId"`
 	SubscriptionID *string `json:"subscriptionId"`
+	Provider       *string `json:"provider"`
 }
 
 // Fired when all dunning retries are exhausted and the subscription is canceled. This is the terminal event of the dunning flow — payment.recovered will not follow. Revoke access when you receive this.
@@ -287,6 +293,7 @@ type PaymentRetryFailedData struct {
 	InvoiceNumber  string `json:"invoiceNumber"`
 	CustomerID     string `json:"customerId"`
 	SubscriptionID string `json:"subscriptionId"`
+	Provider       string `json:"provider"`
 	Reason         string `json:"reason"`
 }
 
@@ -490,6 +497,90 @@ type CustomerStateChangedData struct {
 	Seats            []WebhookSeatSummary   `json:"seats"`
 	Credits          *WebhookCreditsBalance `json:"credits"`
 	Balance          *WebhookBalance        `json:"balance"`
+}
+
+// Fired after a plan grant is durably created. The payload is the grant snapshot at creation.
+type PlanGrantCreatedData struct {
+	ID                  string                          `json:"id"`
+	CustomerID          string                          `json:"customerId"`
+	SubscriptionID      string                          `json:"subscriptionId"`
+	BasePlanID          string                          `json:"basePlanId"`
+	TargetPlanID        string                          `json:"targetPlanId"`
+	TargetPlanReleaseID string                          `json:"targetPlanReleaseId"`
+	Status              string                          `json:"status"`
+	Duration            string                          `json:"duration"`
+	DurationCycles      *int                            `json:"durationCycles"`
+	StartsAt            string                          `json:"startsAt"`
+	ExpiresAt           *string                         `json:"expiresAt"`
+	Reason              string                          `json:"reason"`
+	Source              string                          `json:"source"`
+	RevokedAt           *string                         `json:"revokedAt"`
+	CreatedAt           string                          `json:"createdAt"`
+	UpdatedAt           string                          `json:"updatedAt"`
+	Events              []WebhookPlanGrantTimelineEvent `json:"events"`
+}
+
+// Fired after a plan grant duration or deadline is durably changed. The payload is the grant snapshot at that update.
+type PlanGrantUpdatedData struct {
+	ID                  string                          `json:"id"`
+	CustomerID          string                          `json:"customerId"`
+	SubscriptionID      string                          `json:"subscriptionId"`
+	BasePlanID          string                          `json:"basePlanId"`
+	TargetPlanID        string                          `json:"targetPlanId"`
+	TargetPlanReleaseID string                          `json:"targetPlanReleaseId"`
+	Status              string                          `json:"status"`
+	Duration            string                          `json:"duration"`
+	DurationCycles      *int                            `json:"durationCycles"`
+	StartsAt            string                          `json:"startsAt"`
+	ExpiresAt           *string                         `json:"expiresAt"`
+	Reason              string                          `json:"reason"`
+	Source              string                          `json:"source"`
+	RevokedAt           *string                         `json:"revokedAt"`
+	CreatedAt           string                          `json:"createdAt"`
+	UpdatedAt           string                          `json:"updatedAt"`
+	Events              []WebhookPlanGrantTimelineEvent `json:"events"`
+}
+
+// Fired after a plan grant is durably expired, whether discovered automatically or while replacing an expired grant.
+type PlanGrantExpiredData struct {
+	ID                  string                          `json:"id"`
+	CustomerID          string                          `json:"customerId"`
+	SubscriptionID      string                          `json:"subscriptionId"`
+	BasePlanID          string                          `json:"basePlanId"`
+	TargetPlanID        string                          `json:"targetPlanId"`
+	TargetPlanReleaseID string                          `json:"targetPlanReleaseId"`
+	Status              string                          `json:"status"`
+	Duration            string                          `json:"duration"`
+	DurationCycles      *int                            `json:"durationCycles"`
+	StartsAt            string                          `json:"startsAt"`
+	ExpiresAt           *string                         `json:"expiresAt"`
+	Reason              string                          `json:"reason"`
+	Source              string                          `json:"source"`
+	RevokedAt           *string                         `json:"revokedAt"`
+	CreatedAt           string                          `json:"createdAt"`
+	UpdatedAt           string                          `json:"updatedAt"`
+	Events              []WebhookPlanGrantTimelineEvent `json:"events"`
+}
+
+// Fired after an active plan grant is durably revoked. The payload is the grant snapshot at revocation.
+type PlanGrantRevokedData struct {
+	ID                  string                          `json:"id"`
+	CustomerID          string                          `json:"customerId"`
+	SubscriptionID      string                          `json:"subscriptionId"`
+	BasePlanID          string                          `json:"basePlanId"`
+	TargetPlanID        string                          `json:"targetPlanId"`
+	TargetPlanReleaseID string                          `json:"targetPlanReleaseId"`
+	Status              string                          `json:"status"`
+	Duration            string                          `json:"duration"`
+	DurationCycles      *int                            `json:"durationCycles"`
+	StartsAt            string                          `json:"startsAt"`
+	ExpiresAt           *string                         `json:"expiresAt"`
+	Reason              string                          `json:"reason"`
+	Source              string                          `json:"source"`
+	RevokedAt           *string                         `json:"revokedAt"`
+	CreatedAt           string                          `json:"createdAt"`
+	UpdatedAt           string                          `json:"updatedAt"`
+	Events              []WebhookPlanGrantTimelineEvent `json:"events"`
 }
 
 // Fired when non-purchase credits are granted to a subscription: plan-included credits at the start of each billing period, or a manual adjustment from the dashboard. Credit pack purchases fire credits.purchased instead.
@@ -970,6 +1061,38 @@ func (e *WebhookEvent) AsCustomerUpdated() (*CustomerUpdatedData, error) {
 
 func (e *WebhookEvent) AsCustomerStateChanged() (*CustomerStateChangedData, error) {
 	var d CustomerStateChangedData
+	if err := json.Unmarshal(e.Data, &d); err != nil {
+		return nil, err
+	}
+	return &d, nil
+}
+
+func (e *WebhookEvent) AsPlanGrantCreated() (*PlanGrantCreatedData, error) {
+	var d PlanGrantCreatedData
+	if err := json.Unmarshal(e.Data, &d); err != nil {
+		return nil, err
+	}
+	return &d, nil
+}
+
+func (e *WebhookEvent) AsPlanGrantUpdated() (*PlanGrantUpdatedData, error) {
+	var d PlanGrantUpdatedData
+	if err := json.Unmarshal(e.Data, &d); err != nil {
+		return nil, err
+	}
+	return &d, nil
+}
+
+func (e *WebhookEvent) AsPlanGrantExpired() (*PlanGrantExpiredData, error) {
+	var d PlanGrantExpiredData
+	if err := json.Unmarshal(e.Data, &d); err != nil {
+		return nil, err
+	}
+	return &d, nil
+}
+
+func (e *WebhookEvent) AsPlanGrantRevoked() (*PlanGrantRevokedData, error) {
+	var d PlanGrantRevokedData
 	if err := json.Unmarshal(e.Data, &d); err != nil {
 		return nil, err
 	}

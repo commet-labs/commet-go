@@ -133,55 +133,6 @@ type ClaimLink struct {
 	Livemode  bool   `json:"livemode"`
 }
 
-type CompletePayoutVerificationParamsBank struct {
-	AccountNumber     string  `json:"account_number"`
-	AccountHolderName string  `json:"account_holder_name"`
-	RoutingNumber     *string `json:"routing_number,omitempty"`
-	AccountType       *string `json:"account_type,omitempty"`
-}
-
-type CompletePayoutVerificationParamsCompany struct {
-	Name           string                                                `json:"name"`
-	TaxID          string                                                `json:"tax_id"`
-	Address        CompletePayoutVerificationParamsCompanyAddress        `json:"address"`
-	Representative CompletePayoutVerificationParamsCompanyRepresentative `json:"representative"`
-}
-
-type CompletePayoutVerificationParamsCompanyAddress struct {
-	Line1      string  `json:"line1"`
-	Line2      *string `json:"line2,omitempty"`
-	City       string  `json:"city"`
-	State      *string `json:"state,omitempty"`
-	PostalCode string  `json:"postal_code"`
-	Country    string  `json:"country"`
-}
-
-type CompletePayoutVerificationParamsCompanyRepresentative struct {
-	FirstName string  `json:"first_name"`
-	LastName  string  `json:"last_name"`
-	Phone     *string `json:"phone,omitempty"`
-	Email     *string `json:"email,omitempty"`
-}
-
-type CompletePayoutVerificationParamsIndividual struct {
-	FirstName   string                                            `json:"first_name"`
-	LastName    string                                            `json:"last_name"`
-	Phone       string                                            `json:"phone"`
-	DateOfBirth string                                            `json:"date_of_birth"`
-	SsnLast4    *string                                           `json:"ssn_last4,omitempty"`
-	IDNumber    *string                                           `json:"id_number,omitempty"`
-	Address     CompletePayoutVerificationParamsIndividualAddress `json:"address"`
-}
-
-type CompletePayoutVerificationParamsIndividualAddress struct {
-	Line1      string  `json:"line1"`
-	Line2      *string `json:"line2,omitempty"`
-	City       string  `json:"city"`
-	State      *string `json:"state,omitempty"`
-	PostalCode string  `json:"postal_code"`
-	Country    string  `json:"country"`
-}
-
 type CreateCustomerParamsAddress struct {
 	Line1      string  `json:"line1"`
 	Line2      *string `json:"line2,omitempty"`
@@ -383,15 +334,17 @@ type CreateOfferParamsPhasesItemVariant1 struct {
 }
 
 type CreateOfferParamsPhasesItemVariant2 struct {
-	Type           string `json:"type"`
-	DurationCycles *int   `json:"duration_cycles"`
-	Percentage     int    `json:"percentage"`
+	Type             string  `json:"type"`
+	DurationCycles   *int    `json:"duration_cycles"`
+	DurationInterval *string `json:"duration_interval,omitempty"`
+	Percentage       int     `json:"percentage"`
 }
 
 type CreateOfferParamsPhasesItemVariant3 struct {
-	Type           string                                           `json:"type"`
-	DurationCycles *int                                             `json:"duration_cycles"`
-	Amounts        []CreateOfferParamsPhasesItemVariant3AmountsItem `json:"amounts"`
+	Type             string                                           `json:"type"`
+	DurationCycles   *int                                             `json:"duration_cycles"`
+	DurationInterval *string                                          `json:"duration_interval,omitempty"`
+	Amounts          []CreateOfferParamsPhasesItemVariant3AmountsItem `json:"amounts"`
 }
 
 type CreateOfferParamsPhasesItemVariant3AmountsItem struct {
@@ -400,9 +353,10 @@ type CreateOfferParamsPhasesItemVariant3AmountsItem struct {
 }
 
 type CreateOfferParamsPhasesItemVariant4 struct {
-	Type           string                                          `json:"type"`
-	DurationCycles *int                                            `json:"duration_cycles"`
-	Prices         []CreateOfferParamsPhasesItemVariant4PricesItem `json:"prices"`
+	Type             string                                          `json:"type"`
+	DurationCycles   *int                                            `json:"duration_cycles"`
+	DurationInterval *string                                         `json:"duration_interval,omitempty"`
+	Prices           []CreateOfferParamsPhasesItemVariant4PricesItem `json:"prices"`
 }
 
 type CreateOfferParamsPhasesItemVariant4PricesItem struct {
@@ -500,6 +454,45 @@ type CustomerBatchSuccessfulItem struct {
 	ID         string  `json:"id"`
 	ExternalID *string `json:"external_id"`
 	Email      string  `json:"email"`
+}
+
+type CustomerCredit struct {
+	ID              string  `json:"id"`
+	Amount          int     `json:"amount"`
+	AppliedAmount   int     `json:"applied_amount"`
+	ReversedAmount  int     `json:"reversed_amount"`
+	RevokedAmount   int     `json:"revoked_amount"`
+	RemainingAmount int     `json:"remaining_amount"`
+	Currency        string  `json:"currency"`
+	Reason          string  `json:"reason"`
+	Source          string  `json:"source"`
+	ExpiresAt       *string `json:"expires_at"`
+	CreatedAt       string  `json:"created_at"`
+	Object          string  `json:"object"`
+	Livemode        bool    `json:"livemode"`
+}
+
+type CustomerCreditRevocation struct {
+	ID              string `json:"id"`
+	RemainingAmount int    `json:"remaining_amount"`
+	RevokedAmount   int    `json:"revoked_amount"`
+	Currency        string `json:"currency"`
+	Object          string `json:"object"`
+	Livemode        bool   `json:"livemode"`
+}
+
+type CustomersListCreditsResult struct {
+	Object     string           `json:"object"`
+	Data       []CustomerCredit `json:"data"`
+	HasMore    bool             `json:"has_more"`
+	NextCursor *string          `json:"next_cursor,omitempty"`
+}
+
+type CustomersListPlanGrantsResult struct {
+	Object     string      `json:"object"`
+	Data       []PlanGrant `json:"data"`
+	HasMore    bool        `json:"has_more"`
+	NextCursor *string     `json:"next_cursor,omitempty"`
 }
 
 type CustomersListResult struct {
@@ -666,14 +659,19 @@ type FeatureAccessListResult struct {
 }
 
 type FeatureAccessVariant1 struct {
-	Code     string  `json:"code"`
-	Name     string  `json:"name"`
-	UnitName *string `json:"unit_name"`
-	Allowed  bool    `json:"allowed"`
-	Type     string  `json:"type"`
-	Enabled  bool    `json:"enabled"`
-	Object   string  `json:"object"`
-	Livemode bool    `json:"livemode"`
+	Code       string                           `json:"code"`
+	Name       string                           `json:"name"`
+	UnitName   *string                          `json:"unit_name"`
+	Allowed    bool                             `json:"allowed"`
+	Type       string                           `json:"type"`
+	Enabled    bool                             `json:"enabled"`
+	BaseAccess *FeatureAccessVariant1BaseAccess `json:"base_access,omitempty"`
+	Object     string                           `json:"object"`
+	Livemode   bool                             `json:"livemode"`
+}
+
+type FeatureAccessVariant1BaseAccess struct {
+	Enabled bool `json:"enabled"`
 }
 
 type FeatureAccessVariant2 struct {
@@ -683,8 +681,14 @@ type FeatureAccessVariant2 struct {
 	Allowed     bool                             `json:"allowed"`
 	Type        string                           `json:"type"`
 	Consumption FeatureAccessVariant2Consumption `json:"consumption"`
+	BaseAccess  *FeatureAccessVariant2BaseAccess `json:"base_access,omitempty"`
 	Object      string                           `json:"object"`
 	Livemode    bool                             `json:"livemode"`
+}
+
+type FeatureAccessVariant2BaseAccess struct {
+	IncludedUnits float64 `json:"included_units"`
+	Unlimited     bool    `json:"unlimited"`
 }
 
 type FeatureAccessVariant2Consumption struct {
@@ -843,14 +847,20 @@ type FeatureAccessVariant2ConsumptionVariant3UnitPrice struct {
 }
 
 type FeatureAccessVariant3 struct {
-	Code     string                     `json:"code"`
-	Name     string                     `json:"name"`
-	UnitName *string                    `json:"unit_name"`
-	Allowed  bool                       `json:"allowed"`
-	Type     string                     `json:"type"`
-	Usage    FeatureAccessVariant3Usage `json:"usage"`
-	Object   string                     `json:"object"`
-	Livemode bool                       `json:"livemode"`
+	Code       string                           `json:"code"`
+	Name       string                           `json:"name"`
+	UnitName   *string                          `json:"unit_name"`
+	Allowed    bool                             `json:"allowed"`
+	Type       string                           `json:"type"`
+	Usage      FeatureAccessVariant3Usage       `json:"usage"`
+	BaseAccess *FeatureAccessVariant3BaseAccess `json:"base_access,omitempty"`
+	Object     string                           `json:"object"`
+	Livemode   bool                             `json:"livemode"`
+}
+
+type FeatureAccessVariant3BaseAccess struct {
+	IncludedUnits float64 `json:"included_units"`
+	Unlimited     bool    `json:"unlimited"`
 }
 
 type FeatureAccessVariant3Usage struct {
@@ -880,14 +890,20 @@ type FeatureAccessVariant3UsagePeriod struct {
 }
 
 type FeatureAccessVariant4 struct {
-	Code     string                     `json:"code"`
-	Name     string                     `json:"name"`
-	UnitName *string                    `json:"unit_name"`
-	Allowed  bool                       `json:"allowed"`
-	Type     string                     `json:"type"`
-	Usage    FeatureAccessVariant4Usage `json:"usage"`
-	Object   string                     `json:"object"`
-	Livemode bool                       `json:"livemode"`
+	Code       string                           `json:"code"`
+	Name       string                           `json:"name"`
+	UnitName   *string                          `json:"unit_name"`
+	Allowed    bool                             `json:"allowed"`
+	Type       string                           `json:"type"`
+	Usage      FeatureAccessVariant4Usage       `json:"usage"`
+	BaseAccess *FeatureAccessVariant4BaseAccess `json:"base_access,omitempty"`
+	Object     string                           `json:"object"`
+	Livemode   bool                             `json:"livemode"`
+}
+
+type FeatureAccessVariant4BaseAccess struct {
+	IncludedUnits float64 `json:"included_units"`
+	Unlimited     bool    `json:"unlimited"`
 }
 
 type FeatureAccessVariant4Usage struct {
@@ -1084,7 +1100,7 @@ func (value *OfferPhasesItem) UnmarshalJSON(data []byte) error {
 		value.Value = decoded
 		return nil
 	}
-	if hasJSONFields(fields, "type", "duration_cycles", "percentage") {
+	if hasJSONFields(fields, "type", "duration_cycles", "duration_interval", "percentage") {
 		var decoded OfferPhasesItemVariant2
 		if err := json.Unmarshal(data, &decoded); err != nil {
 			return err
@@ -1092,7 +1108,7 @@ func (value *OfferPhasesItem) UnmarshalJSON(data []byte) error {
 		value.Value = decoded
 		return nil
 	}
-	if hasJSONFields(fields, "type", "duration_cycles", "amounts") {
+	if hasJSONFields(fields, "type", "duration_cycles", "duration_interval", "amounts") {
 		var decoded OfferPhasesItemVariant3
 		if err := json.Unmarshal(data, &decoded); err != nil {
 			return err
@@ -1100,7 +1116,7 @@ func (value *OfferPhasesItem) UnmarshalJSON(data []byte) error {
 		value.Value = decoded
 		return nil
 	}
-	if hasJSONFields(fields, "type", "duration_cycles", "prices") {
+	if hasJSONFields(fields, "type", "duration_cycles", "duration_interval", "prices") {
 		var decoded OfferPhasesItemVariant4
 		if err := json.Unmarshal(data, &decoded); err != nil {
 			return err
@@ -1154,15 +1170,17 @@ type OfferPhasesItemVariant1 struct {
 }
 
 type OfferPhasesItemVariant2 struct {
-	Type           string `json:"type"`
-	DurationCycles *int   `json:"duration_cycles"`
-	Percentage     int    `json:"percentage"`
+	Type             string  `json:"type"`
+	DurationCycles   *int    `json:"duration_cycles"`
+	DurationInterval *string `json:"duration_interval"`
+	Percentage       int     `json:"percentage"`
 }
 
 type OfferPhasesItemVariant3 struct {
-	Type           string                               `json:"type"`
-	DurationCycles *int                                 `json:"duration_cycles"`
-	Amounts        []OfferPhasesItemVariant3AmountsItem `json:"amounts"`
+	Type             string                               `json:"type"`
+	DurationCycles   *int                                 `json:"duration_cycles"`
+	DurationInterval *string                              `json:"duration_interval"`
+	Amounts          []OfferPhasesItemVariant3AmountsItem `json:"amounts"`
 }
 
 type OfferPhasesItemVariant3AmountsItem struct {
@@ -1171,9 +1189,10 @@ type OfferPhasesItemVariant3AmountsItem struct {
 }
 
 type OfferPhasesItemVariant4 struct {
-	Type           string                              `json:"type"`
-	DurationCycles *int                                `json:"duration_cycles"`
-	Prices         []OfferPhasesItemVariant4PricesItem `json:"prices"`
+	Type             string                              `json:"type"`
+	DurationCycles   *int                                `json:"duration_cycles"`
+	DurationInterval *string                             `json:"duration_interval"`
+	Prices           []OfferPhasesItemVariant4PricesItem `json:"prices"`
 }
 
 type OfferPhasesItemVariant4PricesItem struct {
@@ -1249,95 +1268,6 @@ type PayoutBankAccount struct {
 	CreatedAt                 string  `json:"created_at"`
 	Object                    string  `json:"object"`
 	Livemode                  bool    `json:"livemode"`
-}
-
-type PayoutVerification struct {
-	Value any
-}
-
-func (value *PayoutVerification) UnmarshalJSON(data []byte) error {
-	var fields map[string]json.RawMessage
-	if err := json.Unmarshal(data, &fields); err != nil {
-		return err
-	}
-	var discriminator string
-	if raw, ok := fields["outcome"]; ok {
-		if err := json.Unmarshal(raw, &discriminator); err != nil {
-			return err
-		}
-	}
-	switch discriminator {
-	case "existing":
-		var decoded PayoutVerificationVariant1
-		if err := json.Unmarshal(data, &decoded); err != nil {
-			return err
-		}
-		value.Value = decoded
-		return nil
-	case "created":
-		var decoded PayoutVerificationVariant2
-		if err := json.Unmarshal(data, &decoded); err != nil {
-			return err
-		}
-		value.Value = decoded
-		return nil
-	}
-	if hasJSONFields(fields, "provider_account_id", "status", "transfers_enabled", "outcome", "business_type", "country", "object", "livemode") {
-		var decoded PayoutVerificationVariant2
-		if err := json.Unmarshal(data, &decoded); err != nil {
-			return err
-		}
-		value.Value = decoded
-		return nil
-	}
-	if hasJSONFields(fields, "provider_account_id", "status", "transfers_enabled", "outcome", "object", "livemode") {
-		var decoded PayoutVerificationVariant1
-		if err := json.Unmarshal(data, &decoded); err != nil {
-			return err
-		}
-		value.Value = decoded
-		return nil
-	}
-	var decoded PayoutVerificationVariant1
-	if err := json.Unmarshal(data, &decoded); err != nil {
-		return err
-	}
-	value.Value = decoded
-	return nil
-}
-
-func (value PayoutVerification) MarshalJSON() ([]byte, error) {
-	return json.Marshal(value.Value)
-}
-
-func (value PayoutVerification) AsPayoutVerificationVariant1() (PayoutVerificationVariant1, bool) {
-	decoded, ok := value.Value.(PayoutVerificationVariant1)
-	return decoded, ok
-}
-
-func (value PayoutVerification) AsPayoutVerificationVariant2() (PayoutVerificationVariant2, bool) {
-	decoded, ok := value.Value.(PayoutVerificationVariant2)
-	return decoded, ok
-}
-
-type PayoutVerificationVariant1 struct {
-	ProviderAccountID string `json:"provider_account_id"`
-	Status            string `json:"status"`
-	TransfersEnabled  bool   `json:"transfers_enabled"`
-	Outcome           string `json:"outcome"`
-	Object            string `json:"object"`
-	Livemode          bool   `json:"livemode"`
-}
-
-type PayoutVerificationVariant2 struct {
-	ProviderAccountID string `json:"provider_account_id"`
-	Status            string `json:"status"`
-	TransfersEnabled  bool   `json:"transfers_enabled"`
-	Outcome           string `json:"outcome"`
-	BusinessType      string `json:"business_type"`
-	Country           string `json:"country"`
-	Object            string `json:"object"`
-	Livemode          bool   `json:"livemode"`
 }
 
 type Plan struct {
@@ -1621,7 +1551,7 @@ func (value *PlanChangeVariant1OfferApplicationPhasesItem) UnmarshalJSON(data []
 		value.Value = decoded
 		return nil
 	}
-	if hasJSONFields(fields, "type", "duration_cycles", "starts_at", "ends_at", "percentage") {
+	if hasJSONFields(fields, "type", "duration_cycles", "duration_interval", "starts_at", "ends_at", "percentage") {
 		var decoded PlanChangeVariant1OfferApplicationPhasesItemVariant2
 		if err := json.Unmarshal(data, &decoded); err != nil {
 			return err
@@ -1629,7 +1559,7 @@ func (value *PlanChangeVariant1OfferApplicationPhasesItem) UnmarshalJSON(data []
 		value.Value = decoded
 		return nil
 	}
-	if hasJSONFields(fields, "type", "duration_cycles", "starts_at", "ends_at", "amount") {
+	if hasJSONFields(fields, "type", "duration_cycles", "duration_interval", "starts_at", "ends_at", "amount") {
 		var decoded PlanChangeVariant1OfferApplicationPhasesItemVariant3
 		if err := json.Unmarshal(data, &decoded); err != nil {
 			return err
@@ -1637,7 +1567,7 @@ func (value *PlanChangeVariant1OfferApplicationPhasesItem) UnmarshalJSON(data []
 		value.Value = decoded
 		return nil
 	}
-	if hasJSONFields(fields, "type", "duration_cycles", "starts_at", "ends_at", "price") {
+	if hasJSONFields(fields, "type", "duration_cycles", "duration_interval", "starts_at", "ends_at", "price") {
 		var decoded PlanChangeVariant1OfferApplicationPhasesItemVariant4
 		if err := json.Unmarshal(data, &decoded); err != nil {
 			return err
@@ -1693,27 +1623,30 @@ type PlanChangeVariant1OfferApplicationPhasesItemVariant1 struct {
 }
 
 type PlanChangeVariant1OfferApplicationPhasesItemVariant2 struct {
-	Type           string  `json:"type"`
-	DurationCycles *int    `json:"duration_cycles"`
-	StartsAt       *string `json:"starts_at"`
-	EndsAt         *string `json:"ends_at"`
-	Percentage     int     `json:"percentage"`
+	Type             string  `json:"type"`
+	DurationCycles   *int    `json:"duration_cycles"`
+	DurationInterval *string `json:"duration_interval"`
+	StartsAt         *string `json:"starts_at"`
+	EndsAt           *string `json:"ends_at"`
+	Percentage       int     `json:"percentage"`
 }
 
 type PlanChangeVariant1OfferApplicationPhasesItemVariant3 struct {
-	Type           string  `json:"type"`
-	DurationCycles *int    `json:"duration_cycles"`
-	StartsAt       *string `json:"starts_at"`
-	EndsAt         *string `json:"ends_at"`
-	Amount         int     `json:"amount"`
+	Type             string  `json:"type"`
+	DurationCycles   *int    `json:"duration_cycles"`
+	DurationInterval *string `json:"duration_interval"`
+	StartsAt         *string `json:"starts_at"`
+	EndsAt           *string `json:"ends_at"`
+	Amount           int     `json:"amount"`
 }
 
 type PlanChangeVariant1OfferApplicationPhasesItemVariant4 struct {
-	Type           string  `json:"type"`
-	DurationCycles *int    `json:"duration_cycles"`
-	StartsAt       *string `json:"starts_at"`
-	EndsAt         *string `json:"ends_at"`
-	Price          int     `json:"price"`
+	Type             string  `json:"type"`
+	DurationCycles   *int    `json:"duration_cycles"`
+	DurationInterval *string `json:"duration_interval"`
+	StartsAt         *string `json:"starts_at"`
+	EndsAt           *string `json:"ends_at"`
+	Price            int     `json:"price"`
 }
 
 type PlanChangeVariant2 struct {
@@ -1932,7 +1865,7 @@ func (value *PlanChangeVariant3OfferApplicationPhasesItem) UnmarshalJSON(data []
 		value.Value = decoded
 		return nil
 	}
-	if hasJSONFields(fields, "type", "duration_cycles", "starts_at", "ends_at", "percentage") {
+	if hasJSONFields(fields, "type", "duration_cycles", "duration_interval", "starts_at", "ends_at", "percentage") {
 		var decoded PlanChangeVariant3OfferApplicationPhasesItemVariant2
 		if err := json.Unmarshal(data, &decoded); err != nil {
 			return err
@@ -1940,7 +1873,7 @@ func (value *PlanChangeVariant3OfferApplicationPhasesItem) UnmarshalJSON(data []
 		value.Value = decoded
 		return nil
 	}
-	if hasJSONFields(fields, "type", "duration_cycles", "starts_at", "ends_at", "amount") {
+	if hasJSONFields(fields, "type", "duration_cycles", "duration_interval", "starts_at", "ends_at", "amount") {
 		var decoded PlanChangeVariant3OfferApplicationPhasesItemVariant3
 		if err := json.Unmarshal(data, &decoded); err != nil {
 			return err
@@ -1948,7 +1881,7 @@ func (value *PlanChangeVariant3OfferApplicationPhasesItem) UnmarshalJSON(data []
 		value.Value = decoded
 		return nil
 	}
-	if hasJSONFields(fields, "type", "duration_cycles", "starts_at", "ends_at", "price") {
+	if hasJSONFields(fields, "type", "duration_cycles", "duration_interval", "starts_at", "ends_at", "price") {
 		var decoded PlanChangeVariant3OfferApplicationPhasesItemVariant4
 		if err := json.Unmarshal(data, &decoded); err != nil {
 			return err
@@ -2004,27 +1937,30 @@ type PlanChangeVariant3OfferApplicationPhasesItemVariant1 struct {
 }
 
 type PlanChangeVariant3OfferApplicationPhasesItemVariant2 struct {
-	Type           string  `json:"type"`
-	DurationCycles *int    `json:"duration_cycles"`
-	StartsAt       *string `json:"starts_at"`
-	EndsAt         *string `json:"ends_at"`
-	Percentage     int     `json:"percentage"`
+	Type             string  `json:"type"`
+	DurationCycles   *int    `json:"duration_cycles"`
+	DurationInterval *string `json:"duration_interval"`
+	StartsAt         *string `json:"starts_at"`
+	EndsAt           *string `json:"ends_at"`
+	Percentage       int     `json:"percentage"`
 }
 
 type PlanChangeVariant3OfferApplicationPhasesItemVariant3 struct {
-	Type           string  `json:"type"`
-	DurationCycles *int    `json:"duration_cycles"`
-	StartsAt       *string `json:"starts_at"`
-	EndsAt         *string `json:"ends_at"`
-	Amount         int     `json:"amount"`
+	Type             string  `json:"type"`
+	DurationCycles   *int    `json:"duration_cycles"`
+	DurationInterval *string `json:"duration_interval"`
+	StartsAt         *string `json:"starts_at"`
+	EndsAt           *string `json:"ends_at"`
+	Amount           int     `json:"amount"`
 }
 
 type PlanChangeVariant3OfferApplicationPhasesItemVariant4 struct {
-	Type           string  `json:"type"`
-	DurationCycles *int    `json:"duration_cycles"`
-	StartsAt       *string `json:"starts_at"`
-	EndsAt         *string `json:"ends_at"`
-	Price          int     `json:"price"`
+	Type             string  `json:"type"`
+	DurationCycles   *int    `json:"duration_cycles"`
+	DurationInterval *string `json:"duration_interval"`
+	StartsAt         *string `json:"starts_at"`
+	EndsAt           *string `json:"ends_at"`
+	Price            int     `json:"price"`
 }
 
 type PlanChangeVariant3PreviousPlan struct {
@@ -2078,6 +2014,41 @@ type PlanFeaturesItemRegionalPricesItem struct {
 	Currency         string `json:"currency"`
 	OverageUnitPrice *int   `json:"overage_unit_price"`
 	AutoSynced       bool   `json:"auto_synced"`
+}
+
+type PlanGrant struct {
+	ID             string                `json:"id"`
+	CustomerID     string                `json:"customer_id"`
+	SubscriptionID string                `json:"subscription_id"`
+	BasePlanID     string                `json:"base_plan_id"`
+	PlanID         string                `json:"plan_id"`
+	PlanReleaseID  string                `json:"plan_release_id"`
+	Status         string                `json:"status"`
+	Duration       string                `json:"duration"`
+	DurationCycles *int                  `json:"duration_cycles"`
+	StartsAt       string                `json:"starts_at"`
+	ExpiresAt      *string               `json:"expires_at"`
+	Reason         string                `json:"reason"`
+	Source         string                `json:"source"`
+	RevokedAt      *string               `json:"revoked_at"`
+	CreatedAt      string                `json:"created_at"`
+	UpdatedAt      string                `json:"updated_at"`
+	Events         []PlanGrantEventsItem `json:"events"`
+	Object         string                `json:"object"`
+	Livemode       bool                  `json:"livemode"`
+}
+
+type PlanGrantEventsItem struct {
+	ID                 string  `json:"id"`
+	Type               string  `json:"type"`
+	Reason             string  `json:"reason"`
+	Source             string  `json:"source"`
+	PreviousExpiresAt  *string `json:"previous_expires_at"`
+	ExpiresAt          *string `json:"expires_at"`
+	Duration           *string `json:"duration"`
+	DurationCycles     *int    `json:"duration_cycles"`
+	RequestedExpiresAt *string `json:"requested_expires_at"`
+	CreatedAt          string  `json:"created_at"`
 }
 
 type PlanGroup struct {
@@ -2380,7 +2351,7 @@ func (value *PreviewChangeOfferApplicationPhasesItem) UnmarshalJSON(data []byte)
 		value.Value = decoded
 		return nil
 	}
-	if hasJSONFields(fields, "type", "duration_cycles", "starts_at", "ends_at", "percentage") {
+	if hasJSONFields(fields, "type", "duration_cycles", "duration_interval", "starts_at", "ends_at", "percentage") {
 		var decoded PreviewChangeOfferApplicationPhasesItemVariant2
 		if err := json.Unmarshal(data, &decoded); err != nil {
 			return err
@@ -2388,7 +2359,7 @@ func (value *PreviewChangeOfferApplicationPhasesItem) UnmarshalJSON(data []byte)
 		value.Value = decoded
 		return nil
 	}
-	if hasJSONFields(fields, "type", "duration_cycles", "starts_at", "ends_at", "amount") {
+	if hasJSONFields(fields, "type", "duration_cycles", "duration_interval", "starts_at", "ends_at", "amount") {
 		var decoded PreviewChangeOfferApplicationPhasesItemVariant3
 		if err := json.Unmarshal(data, &decoded); err != nil {
 			return err
@@ -2396,7 +2367,7 @@ func (value *PreviewChangeOfferApplicationPhasesItem) UnmarshalJSON(data []byte)
 		value.Value = decoded
 		return nil
 	}
-	if hasJSONFields(fields, "type", "duration_cycles", "starts_at", "ends_at", "price") {
+	if hasJSONFields(fields, "type", "duration_cycles", "duration_interval", "starts_at", "ends_at", "price") {
 		var decoded PreviewChangeOfferApplicationPhasesItemVariant4
 		if err := json.Unmarshal(data, &decoded); err != nil {
 			return err
@@ -2452,27 +2423,30 @@ type PreviewChangeOfferApplicationPhasesItemVariant1 struct {
 }
 
 type PreviewChangeOfferApplicationPhasesItemVariant2 struct {
-	Type           string  `json:"type"`
-	DurationCycles *int    `json:"duration_cycles"`
-	StartsAt       *string `json:"starts_at"`
-	EndsAt         *string `json:"ends_at"`
-	Percentage     int     `json:"percentage"`
+	Type             string  `json:"type"`
+	DurationCycles   *int    `json:"duration_cycles"`
+	DurationInterval *string `json:"duration_interval"`
+	StartsAt         *string `json:"starts_at"`
+	EndsAt           *string `json:"ends_at"`
+	Percentage       int     `json:"percentage"`
 }
 
 type PreviewChangeOfferApplicationPhasesItemVariant3 struct {
-	Type           string  `json:"type"`
-	DurationCycles *int    `json:"duration_cycles"`
-	StartsAt       *string `json:"starts_at"`
-	EndsAt         *string `json:"ends_at"`
-	Amount         int     `json:"amount"`
+	Type             string  `json:"type"`
+	DurationCycles   *int    `json:"duration_cycles"`
+	DurationInterval *string `json:"duration_interval"`
+	StartsAt         *string `json:"starts_at"`
+	EndsAt           *string `json:"ends_at"`
+	Amount           int     `json:"amount"`
 }
 
 type PreviewChangeOfferApplicationPhasesItemVariant4 struct {
-	Type           string  `json:"type"`
-	DurationCycles *int    `json:"duration_cycles"`
-	StartsAt       *string `json:"starts_at"`
-	EndsAt         *string `json:"ends_at"`
-	Price          int     `json:"price"`
+	Type             string  `json:"type"`
+	DurationCycles   *int    `json:"duration_cycles"`
+	DurationInterval *string `json:"duration_interval"`
+	StartsAt         *string `json:"starts_at"`
+	EndsAt           *string `json:"ends_at"`
+	Price            int     `json:"price"`
 }
 
 type PromoCode struct {
@@ -2674,7 +2648,7 @@ func (value *ReactivatedSubscriptionOfferApplicationPhasesItem) UnmarshalJSON(da
 		value.Value = decoded
 		return nil
 	}
-	if hasJSONFields(fields, "type", "duration_cycles", "starts_at", "ends_at", "percentage") {
+	if hasJSONFields(fields, "type", "duration_cycles", "duration_interval", "starts_at", "ends_at", "percentage") {
 		var decoded ReactivatedSubscriptionOfferApplicationPhasesItemVariant2
 		if err := json.Unmarshal(data, &decoded); err != nil {
 			return err
@@ -2682,7 +2656,7 @@ func (value *ReactivatedSubscriptionOfferApplicationPhasesItem) UnmarshalJSON(da
 		value.Value = decoded
 		return nil
 	}
-	if hasJSONFields(fields, "type", "duration_cycles", "starts_at", "ends_at", "amount") {
+	if hasJSONFields(fields, "type", "duration_cycles", "duration_interval", "starts_at", "ends_at", "amount") {
 		var decoded ReactivatedSubscriptionOfferApplicationPhasesItemVariant3
 		if err := json.Unmarshal(data, &decoded); err != nil {
 			return err
@@ -2690,7 +2664,7 @@ func (value *ReactivatedSubscriptionOfferApplicationPhasesItem) UnmarshalJSON(da
 		value.Value = decoded
 		return nil
 	}
-	if hasJSONFields(fields, "type", "duration_cycles", "starts_at", "ends_at", "price") {
+	if hasJSONFields(fields, "type", "duration_cycles", "duration_interval", "starts_at", "ends_at", "price") {
 		var decoded ReactivatedSubscriptionOfferApplicationPhasesItemVariant4
 		if err := json.Unmarshal(data, &decoded); err != nil {
 			return err
@@ -2746,27 +2720,30 @@ type ReactivatedSubscriptionOfferApplicationPhasesItemVariant1 struct {
 }
 
 type ReactivatedSubscriptionOfferApplicationPhasesItemVariant2 struct {
-	Type           string  `json:"type"`
-	DurationCycles *int    `json:"duration_cycles"`
-	StartsAt       *string `json:"starts_at"`
-	EndsAt         *string `json:"ends_at"`
-	Percentage     int     `json:"percentage"`
+	Type             string  `json:"type"`
+	DurationCycles   *int    `json:"duration_cycles"`
+	DurationInterval *string `json:"duration_interval"`
+	StartsAt         *string `json:"starts_at"`
+	EndsAt           *string `json:"ends_at"`
+	Percentage       int     `json:"percentage"`
 }
 
 type ReactivatedSubscriptionOfferApplicationPhasesItemVariant3 struct {
-	Type           string  `json:"type"`
-	DurationCycles *int    `json:"duration_cycles"`
-	StartsAt       *string `json:"starts_at"`
-	EndsAt         *string `json:"ends_at"`
-	Amount         int     `json:"amount"`
+	Type             string  `json:"type"`
+	DurationCycles   *int    `json:"duration_cycles"`
+	DurationInterval *string `json:"duration_interval"`
+	StartsAt         *string `json:"starts_at"`
+	EndsAt           *string `json:"ends_at"`
+	Amount           int     `json:"amount"`
 }
 
 type ReactivatedSubscriptionOfferApplicationPhasesItemVariant4 struct {
-	Type           string  `json:"type"`
-	DurationCycles *int    `json:"duration_cycles"`
-	StartsAt       *string `json:"starts_at"`
-	EndsAt         *string `json:"ends_at"`
-	Price          int     `json:"price"`
+	Type             string  `json:"type"`
+	DurationCycles   *int    `json:"duration_cycles"`
+	DurationInterval *string `json:"duration_interval"`
+	StartsAt         *string `json:"starts_at"`
+	EndsAt           *string `json:"ends_at"`
+	Price            int     `json:"price"`
 }
 
 type RecoveryLink struct {
@@ -2884,6 +2861,7 @@ type Subscription struct {
 	CreatedAt           string                           `json:"created_at"`
 	UpdatedAt           string                           `json:"updated_at"`
 	OfferApplications   []SubscriptionOfferApplication   `json:"offer_applications"`
+	PlanGrant           *SubscriptionPlanGrant           `json:"plan_grant,omitempty"`
 	ConsumptionModel    *ConsumptionModel                `json:"consumption_model"`
 	Features            []SubscriptionFeaturesItem       `json:"features"`
 	Credits             *SubscriptionCredits             `json:"credits"`
@@ -3035,17 +3013,28 @@ func (value SubscriptionFeaturesItem) AsSubscriptionFeaturesItemVariant4() (Subs
 }
 
 type SubscriptionFeaturesItemVariant1 struct {
-	Code    string `json:"code"`
-	Name    string `json:"name"`
-	Type    string `json:"type"`
-	Enabled bool   `json:"enabled"`
+	Code       string                                      `json:"code"`
+	Name       string                                      `json:"name"`
+	Type       string                                      `json:"type"`
+	Enabled    bool                                        `json:"enabled"`
+	BaseAccess *SubscriptionFeaturesItemVariant1BaseAccess `json:"base_access,omitempty"`
+}
+
+type SubscriptionFeaturesItemVariant1BaseAccess struct {
+	Enabled bool `json:"enabled"`
 }
 
 type SubscriptionFeaturesItemVariant2 struct {
-	Code  string                                 `json:"code"`
-	Name  string                                 `json:"name"`
-	Type  string                                 `json:"type"`
-	Usage *SubscriptionFeaturesItemVariant2Usage `json:"usage,omitempty"`
+	Code       string                                      `json:"code"`
+	Name       string                                      `json:"name"`
+	Type       string                                      `json:"type"`
+	Usage      *SubscriptionFeaturesItemVariant2Usage      `json:"usage,omitempty"`
+	BaseAccess *SubscriptionFeaturesItemVariant2BaseAccess `json:"base_access,omitempty"`
+}
+
+type SubscriptionFeaturesItemVariant2BaseAccess struct {
+	Included  float64 `json:"included"`
+	Unlimited bool    `json:"unlimited"`
 }
 
 type SubscriptionFeaturesItemVariant2Usage struct {
@@ -3053,13 +3042,20 @@ type SubscriptionFeaturesItemVariant2Usage struct {
 	Included         float64  `json:"included"`
 	OverageQuantity  float64  `json:"overage_quantity"`
 	OverageUnitPrice *float64 `json:"overage_unit_price,omitempty"`
+	Unlimited        *bool    `json:"unlimited,omitempty"`
 }
 
 type SubscriptionFeaturesItemVariant3 struct {
-	Code  string                                `json:"code"`
-	Name  string                                `json:"name"`
-	Type  string                                `json:"type"`
-	Usage SubscriptionFeaturesItemVariant3Usage `json:"usage"`
+	Code       string                                      `json:"code"`
+	Name       string                                      `json:"name"`
+	Type       string                                      `json:"type"`
+	Usage      SubscriptionFeaturesItemVariant3Usage       `json:"usage"`
+	BaseAccess *SubscriptionFeaturesItemVariant3BaseAccess `json:"base_access,omitempty"`
+}
+
+type SubscriptionFeaturesItemVariant3BaseAccess struct {
+	Included  float64 `json:"included"`
+	Unlimited bool    `json:"unlimited"`
 }
 
 type SubscriptionFeaturesItemVariant3Usage struct {
@@ -3067,12 +3063,28 @@ type SubscriptionFeaturesItemVariant3Usage struct {
 	Included         float64  `json:"included"`
 	OverageQuantity  float64  `json:"overage_quantity"`
 	OverageUnitPrice *float64 `json:"overage_unit_price,omitempty"`
+	Unlimited        *bool    `json:"unlimited,omitempty"`
 }
 
 type SubscriptionFeaturesItemVariant4 struct {
-	Code string `json:"code"`
-	Name string `json:"name"`
-	Type string `json:"type"`
+	Code       string                                      `json:"code"`
+	Name       string                                      `json:"name"`
+	Type       string                                      `json:"type"`
+	Usage      *SubscriptionFeaturesItemVariant4Usage      `json:"usage,omitempty"`
+	BaseAccess *SubscriptionFeaturesItemVariant4BaseAccess `json:"base_access,omitempty"`
+}
+
+type SubscriptionFeaturesItemVariant4BaseAccess struct {
+	Included  float64 `json:"included"`
+	Unlimited bool    `json:"unlimited"`
+}
+
+type SubscriptionFeaturesItemVariant4Usage struct {
+	Current          float64  `json:"current"`
+	Included         float64  `json:"included"`
+	OverageQuantity  float64  `json:"overage_quantity"`
+	OverageUnitPrice *float64 `json:"overage_unit_price,omitempty"`
+	Unlimited        *bool    `json:"unlimited,omitempty"`
 }
 
 type SubscriptionOfferApplication struct {
@@ -3088,6 +3100,7 @@ type SubscriptionOfferApplication struct {
 	Total          *int                                  `json:"total"`
 	Phases         []SubscriptionOfferApplicationPhase   `json:"phases"`
 	QuotedAt       string                                `json:"quoted_at"`
+	ExpiresAt      *string                               `json:"expires_at"`
 	AppliedAt      *string                               `json:"applied_at"`
 }
 
@@ -3240,7 +3253,7 @@ func (value *SubscriptionOfferApplicationPhase) UnmarshalJSON(data []byte) error
 		value.Value = decoded
 		return nil
 	}
-	if hasJSONFields(fields, "type", "duration_cycles", "percentage", "starts_at", "ends_at") {
+	if hasJSONFields(fields, "type", "duration_cycles", "duration_interval", "percentage", "starts_at", "ends_at") {
 		var decoded SubscriptionOfferApplicationPhaseVariant2
 		if err := json.Unmarshal(data, &decoded); err != nil {
 			return err
@@ -3248,7 +3261,7 @@ func (value *SubscriptionOfferApplicationPhase) UnmarshalJSON(data []byte) error
 		value.Value = decoded
 		return nil
 	}
-	if hasJSONFields(fields, "type", "duration_cycles", "amount", "starts_at", "ends_at") {
+	if hasJSONFields(fields, "type", "duration_cycles", "duration_interval", "amount", "starts_at", "ends_at") {
 		var decoded SubscriptionOfferApplicationPhaseVariant3
 		if err := json.Unmarshal(data, &decoded); err != nil {
 			return err
@@ -3256,7 +3269,7 @@ func (value *SubscriptionOfferApplicationPhase) UnmarshalJSON(data []byte) error
 		value.Value = decoded
 		return nil
 	}
-	if hasJSONFields(fields, "type", "duration_cycles", "price", "starts_at", "ends_at") {
+	if hasJSONFields(fields, "type", "duration_cycles", "duration_interval", "price", "starts_at", "ends_at") {
 		var decoded SubscriptionOfferApplicationPhaseVariant4
 		if err := json.Unmarshal(data, &decoded); err != nil {
 			return err
@@ -3264,7 +3277,7 @@ func (value *SubscriptionOfferApplicationPhase) UnmarshalJSON(data []byte) error
 		value.Value = decoded
 		return nil
 	}
-	if hasJSONFields(fields, "type", "duration_days", "starts_at", "ends_at") {
+	if hasJSONFields(fields, "type", "duration_days", "duration_interval", "starts_at", "ends_at") {
 		var decoded SubscriptionOfferApplicationPhaseVariant1
 		if err := json.Unmarshal(data, &decoded); err != nil {
 			return err
@@ -3305,40 +3318,55 @@ func (value SubscriptionOfferApplicationPhase) AsSubscriptionOfferApplicationPha
 }
 
 type SubscriptionOfferApplicationPhaseVariant1 struct {
-	Type         string  `json:"type"`
-	DurationDays int     `json:"duration_days"`
-	StartsAt     *string `json:"starts_at"`
-	EndsAt       *string `json:"ends_at"`
+	Type             string  `json:"type"`
+	DurationDays     int     `json:"duration_days"`
+	DurationInterval *string `json:"duration_interval"`
+	StartsAt         *string `json:"starts_at"`
+	EndsAt           *string `json:"ends_at"`
 }
 
 type SubscriptionOfferApplicationPhaseVariant2 struct {
-	Type           string  `json:"type"`
-	DurationCycles *int    `json:"duration_cycles"`
-	Percentage     int     `json:"percentage"`
-	StartsAt       *string `json:"starts_at"`
-	EndsAt         *string `json:"ends_at"`
+	Type             string  `json:"type"`
+	DurationCycles   *int    `json:"duration_cycles"`
+	DurationInterval *string `json:"duration_interval"`
+	Percentage       int     `json:"percentage"`
+	StartsAt         *string `json:"starts_at"`
+	EndsAt           *string `json:"ends_at"`
 }
 
 type SubscriptionOfferApplicationPhaseVariant3 struct {
-	Type           string  `json:"type"`
-	DurationCycles *int    `json:"duration_cycles"`
-	Amount         int     `json:"amount"`
-	StartsAt       *string `json:"starts_at"`
-	EndsAt         *string `json:"ends_at"`
+	Type             string  `json:"type"`
+	DurationCycles   *int    `json:"duration_cycles"`
+	DurationInterval *string `json:"duration_interval"`
+	Amount           int     `json:"amount"`
+	StartsAt         *string `json:"starts_at"`
+	EndsAt           *string `json:"ends_at"`
 }
 
 type SubscriptionOfferApplicationPhaseVariant4 struct {
-	Type           string  `json:"type"`
-	DurationCycles *int    `json:"duration_cycles"`
-	Price          int     `json:"price"`
-	StartsAt       *string `json:"starts_at"`
-	EndsAt         *string `json:"ends_at"`
+	Type             string  `json:"type"`
+	DurationCycles   *int    `json:"duration_cycles"`
+	DurationInterval *string `json:"duration_interval"`
+	Price            int     `json:"price"`
+	StartsAt         *string `json:"starts_at"`
+	EndsAt           *string `json:"ends_at"`
 }
 
 type SubscriptionPlan struct {
 	ID        string  `json:"id"`
 	Name      string  `json:"name"`
 	BasePrice float64 `json:"base_price"`
+}
+
+type SubscriptionPlanGrant struct {
+	ID        string                    `json:"id"`
+	Plan      SubscriptionPlanGrantPlan `json:"plan"`
+	ExpiresAt *string                   `json:"expires_at"`
+}
+
+type SubscriptionPlanGrantPlan struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
 }
 
 type SubscriptionScheduledPlanChange struct {
@@ -3408,21 +3436,64 @@ type SubscriptionSummaryScheduledPlanChange struct {
 }
 
 type TestClock struct {
-	SimulatedTime *string `json:"simulated_time"`
-	IsActive      bool    `json:"is_active"`
-	Now           string  `json:"now"`
-	Object        string  `json:"object"`
-	Livemode      bool    `json:"livemode"`
+	SimulatedTime *string             `json:"simulated_time"`
+	IsActive      bool                `json:"is_active"`
+	Now           string              `json:"now"`
+	LatestRun     *TestClockLatestRun `json:"latest_run"`
+	Object        string              `json:"object"`
+	Livemode      bool                `json:"livemode"`
 }
 
-type TestClockBilling struct {
-	CustomersFound int    `json:"customers_found"`
-	Enqueued       int    `json:"enqueued"`
-	Failed         int    `json:"failed"`
-	DunningRetried int    `json:"dunning_retried"`
-	DunningFailed  int    `json:"dunning_failed"`
-	Object         string `json:"object"`
-	Livemode       bool   `json:"livemode"`
+type TestClockLatestRun struct {
+	ID                     string                        `json:"id"`
+	Status                 string                        `json:"status"`
+	StartedAtTime          string                        `json:"started_at_time"`
+	TargetTime             string                        `json:"target_time"`
+	EstimatedDeadlineCount int                           `json:"estimated_deadline_count"`
+	CompletedDeadlineCount int                           `json:"completed_deadline_count"`
+	FailedDeadlineCount    int                           `json:"failed_deadline_count"`
+	Error                  *string                       `json:"error"`
+	Items                  []TestClockLatestRunItemsItem `json:"items"`
+}
+
+type TestClockLatestRunItemsItem struct {
+	Kind           string  `json:"kind"`
+	Status         string  `json:"status"`
+	DueAt          string  `json:"due_at"`
+	SubscriptionID string  `json:"subscription_id"`
+	CustomerName   *string `json:"customer_name"`
+	InvoiceNumber  *string `json:"invoice_number"`
+	InvoiceID      *string `json:"invoice_id"`
+	Outcome        *string `json:"outcome"`
+	Detail         *string `json:"detail"`
+	Error          *string `json:"error"`
+}
+
+type TestClockRun struct {
+	ID                     string                  `json:"id"`
+	Status                 string                  `json:"status"`
+	StartedAtTime          string                  `json:"started_at_time"`
+	TargetTime             string                  `json:"target_time"`
+	EstimatedDeadlineCount int                     `json:"estimated_deadline_count"`
+	CompletedDeadlineCount int                     `json:"completed_deadline_count"`
+	FailedDeadlineCount    int                     `json:"failed_deadline_count"`
+	Error                  *string                 `json:"error"`
+	Items                  []TestClockRunItemsItem `json:"items"`
+	Object                 string                  `json:"object"`
+	Livemode               bool                    `json:"livemode"`
+}
+
+type TestClockRunItemsItem struct {
+	Kind           string  `json:"kind"`
+	Status         string  `json:"status"`
+	DueAt          string  `json:"due_at"`
+	SubscriptionID string  `json:"subscription_id"`
+	CustomerName   *string `json:"customer_name"`
+	InvoiceNumber  *string `json:"invoice_number"`
+	InvoiceID      *string `json:"invoice_id"`
+	Outcome        *string `json:"outcome"`
+	Detail         *string `json:"detail"`
+	Error          *string `json:"error"`
 }
 
 type TrackUsageParamsPropertiesItem struct {
@@ -3609,15 +3680,17 @@ type UpdateOfferParamsPhasesItemVariant1 struct {
 }
 
 type UpdateOfferParamsPhasesItemVariant2 struct {
-	Type           string `json:"type"`
-	DurationCycles *int   `json:"duration_cycles"`
-	Percentage     int    `json:"percentage"`
+	Type             string  `json:"type"`
+	DurationCycles   *int    `json:"duration_cycles"`
+	DurationInterval *string `json:"duration_interval,omitempty"`
+	Percentage       int     `json:"percentage"`
 }
 
 type UpdateOfferParamsPhasesItemVariant3 struct {
-	Type           string                                           `json:"type"`
-	DurationCycles *int                                             `json:"duration_cycles"`
-	Amounts        []UpdateOfferParamsPhasesItemVariant3AmountsItem `json:"amounts"`
+	Type             string                                           `json:"type"`
+	DurationCycles   *int                                             `json:"duration_cycles"`
+	DurationInterval *string                                          `json:"duration_interval,omitempty"`
+	Amounts          []UpdateOfferParamsPhasesItemVariant3AmountsItem `json:"amounts"`
 }
 
 type UpdateOfferParamsPhasesItemVariant3AmountsItem struct {
@@ -3626,9 +3699,10 @@ type UpdateOfferParamsPhasesItemVariant3AmountsItem struct {
 }
 
 type UpdateOfferParamsPhasesItemVariant4 struct {
-	Type           string                                          `json:"type"`
-	DurationCycles *int                                            `json:"duration_cycles"`
-	Prices         []UpdateOfferParamsPhasesItemVariant4PricesItem `json:"prices"`
+	Type             string                                          `json:"type"`
+	DurationCycles   *int                                            `json:"duration_cycles"`
+	DurationInterval *string                                         `json:"duration_interval,omitempty"`
+	Prices           []UpdateOfferParamsPhasesItemVariant4PricesItem `json:"prices"`
 }
 
 type UpdateOfferParamsPhasesItemVariant4PricesItem struct {
@@ -3896,6 +3970,19 @@ type WebhookCreditsBalance struct {
 	PlanCredits      float64 `json:"plan_credits"`
 	PurchasedCredits float64 `json:"purchased_credits"`
 	TotalCredits     float64 `json:"total_credits"`
+}
+
+type WebhookPlanGrantTimelineEvent struct {
+	ID                 string  `json:"id"`
+	Type               string  `json:"type"`
+	Reason             string  `json:"reason"`
+	Source             string  `json:"source"`
+	PreviousExpiresAt  *string `json:"previous_expires_at"`
+	ExpiresAt          *string `json:"expires_at"`
+	Duration           *string `json:"duration"`
+	DurationCycles     *int    `json:"duration_cycles"`
+	RequestedExpiresAt *string `json:"requested_expires_at"`
+	CreatedAt          string  `json:"created_at"`
 }
 
 type WebhookPlanRef struct {

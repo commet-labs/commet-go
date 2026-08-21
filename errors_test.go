@@ -65,6 +65,21 @@ func TestValidationErrorMessage(t *testing.T) {
 	if len(err.ValidationErrors["name"]) != 1 {
 		t.Errorf("name errors count = %d, want 1", len(err.ValidationErrors["name"]))
 	}
+
+	serialized, marshalErr := json.Marshal(err)
+	if marshalErr != nil {
+		t.Fatalf("marshal validation error: %v", marshalErr)
+	}
+	var fields map[string]json.RawMessage
+	if unmarshalErr := json.Unmarshal(serialized, &fields); unmarshalErr != nil {
+		t.Fatalf("unmarshal validation error: %v", unmarshalErr)
+	}
+	if _, ok := fields["validation_errors"]; !ok {
+		t.Errorf("serialized validation error missing validation_errors: %s", serialized)
+	}
+	if _, ok := fields["ValidationErrors"]; ok {
+		t.Errorf("serialized validation error contains non-contract field: %s", serialized)
+	}
 }
 
 func TestHandleErrorParsesApiError(t *testing.T) {
@@ -76,7 +91,7 @@ func TestHandleErrorParsesApiError(t *testing.T) {
 			"message": "Customer not found",
 		}
 
-		err := h.handleError(404, data)
+		err := h.handleError(404, data, "req_server_123")
 		commetErr, ok := err.(*CommetError)
 		if !ok {
 			t.Fatalf("expected *CommetError, got %T", err)
@@ -89,6 +104,16 @@ func TestHandleErrorParsesApiError(t *testing.T) {
 		}
 		if commetErr.Message != "Customer not found" {
 			t.Errorf("Message = %q, want Customer not found", commetErr.Message)
+		}
+		if commetErr.RequestID != "req_server_123" {
+			t.Errorf("RequestID = %q, want req_server_123", commetErr.RequestID)
+		}
+		serialized, marshalErr := json.Marshal(commetErr)
+		if marshalErr != nil {
+			t.Fatalf("failed to serialize error: %v", marshalErr)
+		}
+		if string(serialized) != `{"message":"Customer not found","code":"not_found","type":"api_error","status_code":404,"request_id":"req_server_123"}` {
+			t.Errorf("serialized error = %s", serialized)
 		}
 	})
 
@@ -103,7 +128,7 @@ func TestHandleErrorParsesApiError(t *testing.T) {
 			},
 		}
 
-		err := h.handleError(422, data)
+		err := h.handleError(422, data, "")
 		valErr, ok := err.(*ValidationError)
 		if !ok {
 			t.Fatalf("expected *ValidationError, got %T", err)
@@ -128,7 +153,7 @@ func TestHandleErrorParsesApiError(t *testing.T) {
 			},
 		}
 
-		err := h.handleError(422, data)
+		err := h.handleError(422, data, "")
 		valErr, ok := err.(*ValidationError)
 		if !ok {
 			t.Fatalf("expected *ValidationError, got %T", err)
@@ -143,7 +168,7 @@ func TestHandleErrorParsesApiError(t *testing.T) {
 			"code": "server_error",
 		}
 
-		err := h.handleError(500, data)
+		err := h.handleError(500, data, "")
 		commetErr, ok := err.(*CommetError)
 		if !ok {
 			t.Fatalf("expected *CommetError, got %T", err)
@@ -163,7 +188,7 @@ func TestErrorFromJSON(t *testing.T) {
 		}
 
 		h := &httpClient{}
-		err := h.handleError(429, data)
+		err := h.handleError(429, data, "")
 		commetErr, ok := err.(*CommetError)
 		if !ok {
 			t.Fatalf("expected *CommetError, got %T", err)
@@ -184,7 +209,7 @@ func TestErrorFromJSON(t *testing.T) {
 		}
 
 		h := &httpClient{}
-		err := h.handleError(422, data)
+		err := h.handleError(422, data, "")
 		valErr, ok := err.(*ValidationError)
 		if !ok {
 			t.Fatalf("expected *ValidationError, got %T", err)
