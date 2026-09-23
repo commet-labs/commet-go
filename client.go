@@ -75,8 +75,8 @@ func New(apiKey string, opts ...Option) (*Client, error) {
 		return nil, errors.New("commet: API key is required")
 	}
 
-	if !strings.HasPrefix(apiKey, "ck_") {
-		return nil, errors.New("commet: invalid API key format, expected prefix ck_")
+	if !strings.HasPrefix(apiKey, "ck_") && !strings.HasPrefix(apiKey, "rk_") {
+		return nil, errors.New("commet: invalid API key format, expected prefix ck_ or rk_")
 	}
 
 	cfg := &clientConfig{

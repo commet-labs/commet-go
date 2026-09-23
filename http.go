@@ -459,6 +459,10 @@ func convertKeys(obj any, fn func(string) string) any {
 	case map[string]any:
 		converted := make(map[string]any, len(v))
 		for key, val := range v {
+			if key == "permissions" {
+				converted[fn(key)] = val
+				continue
+			}
 			converted[fn(key)] = convertKeys(val, fn)
 		}
 		return converted
