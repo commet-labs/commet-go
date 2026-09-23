@@ -11,9 +11,10 @@ type ListApiKeysParams struct {
 }
 
 type CreateApiKeyParams struct {
-	Name           string `json:"name"`
-	ExpiresInDays  *int   `json:"expires_in_days,omitempty"`
-	IdempotencyKey string `json:"-"`
+	Name           string              `json:"name"`
+	ExpiresInDays  *int                `json:"expires_in_days,omitempty"`
+	Permissions    map[string][]string `json:"permissions,omitempty"`
+	IdempotencyKey string              `json:"-"`
 }
 
 type ApiKeysResource struct {
@@ -43,5 +44,8 @@ func (r *ApiKeysResource) Create(ctx context.Context, params *CreateApiKeyParams
 		"name":            params.Name,
 		"expires_in_days": params.ExpiresInDays,
 	})
+	if params.Permissions != nil {
+		body["permissions"] = params.Permissions
+	}
 	return parseDirectResponse[CreatedApiKey](r.http.post(ctx, "/api-keys", body, params.IdempotencyKey))
 }
