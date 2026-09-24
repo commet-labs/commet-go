@@ -96,12 +96,12 @@ func TestPaymentReceivedWebhookParsesSubPaymentMethod(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	data, err := event.AsPaymentReceived()
+	paymentReceived, err := event.AsPaymentReceived()
 	if err != nil {
 		t.Fatal(err)
 	}
-	if data.SubPaymentMethod == nil || *data.SubPaymentMethod != SubPaymentMethodCreditCard {
-		t.Errorf("SubPaymentMethod = %v, want credit_card", data.SubPaymentMethod)
+	if paymentReceived.SubPaymentMethod == nil || *paymentReceived.SubPaymentMethod != SubPaymentMethodCreditCard {
+		t.Errorf("SubPaymentMethod = %v, want credit_card", paymentReceived.SubPaymentMethod)
 	}
 }
 
