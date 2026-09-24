@@ -251,40 +251,43 @@ type CheckoutReadyData struct {
 
 // Fired every time a payment settles successfully — the first payment and every renewal alike. subscription.activated fires alongside it only on the first one.
 type PaymentReceivedData struct {
-	InvoiceID            string   `json:"invoiceId"`
-	InvoiceNumber        string   `json:"invoiceNumber"`
-	InvoiceTotal         float64  `json:"invoiceTotal"`
-	CustomerID           string   `json:"customerId"`
-	SubscriptionID       *string  `json:"subscriptionId"`
-	PaymentTransactionID *string  `json:"paymentTransactionId"`
-	Provider             *string  `json:"provider"`
-	GrossAmount          *float64 `json:"grossAmount"`
-	Currency             *string  `json:"currency"`
-	OrgNetAmount         *float64 `json:"orgNetAmount"`
-	CustomerEmail        *string  `json:"customerEmail"`
-	PaidAt               string   `json:"paidAt"`
+	InvoiceID            string         `json:"invoiceId"`
+	InvoiceNumber        string         `json:"invoiceNumber"`
+	InvoiceTotal         float64        `json:"invoiceTotal"`
+	CustomerID           string         `json:"customerId"`
+	SubscriptionID       *string        `json:"subscriptionId"`
+	PaymentTransactionID *string        `json:"paymentTransactionId"`
+	Provider             *string        `json:"provider"`
+	PaymentMethod        *PaymentMethod `json:"paymentMethod"`
+	GrossAmount          *float64       `json:"grossAmount"`
+	Currency             *string        `json:"currency"`
+	OrgNetAmount         *float64       `json:"orgNetAmount"`
+	CustomerEmail        *string        `json:"customerEmail"`
+	PaidAt               string         `json:"paidAt"`
 }
 
 // Fired when a recurring charge fails. This event is for recurring charge failures only — card declines during initial checkout do not trigger this event.
 type PaymentFailedData struct {
-	InvoiceID      string  `json:"invoiceId"`
-	InvoiceNumber  string  `json:"invoiceNumber"`
-	CustomerID     string  `json:"customerId"`
-	SubscriptionID *string `json:"subscriptionId"`
-	Provider       string  `json:"provider"`
-	FailureCode    string  `json:"failureCode"`
-	FailureMessage string  `json:"failureMessage"`
-	RecoveryURL    *string `json:"recoveryUrl"`
+	InvoiceID      string         `json:"invoiceId"`
+	InvoiceNumber  string         `json:"invoiceNumber"`
+	CustomerID     string         `json:"customerId"`
+	SubscriptionID *string        `json:"subscriptionId"`
+	Provider       string         `json:"provider"`
+	PaymentMethod  *PaymentMethod `json:"paymentMethod"`
+	FailureCode    string         `json:"failureCode"`
+	FailureMessage string         `json:"failureMessage"`
+	RecoveryURL    *string        `json:"recoveryUrl"`
 }
 
 // Fired when an outstanding invoice that previously failed is successfully paid — automatically on retry or by the customer through the portal. The subscription returns to active at the same time; use this event to close the dunning flow you opened on payment.failed.
 type PaymentRecoveredData struct {
-	InvoiceID      string  `json:"invoiceId"`
-	InvoiceNumber  string  `json:"invoiceNumber"`
-	InvoiceTotal   float64 `json:"invoiceTotal"`
-	CustomerID     string  `json:"customerId"`
-	SubscriptionID *string `json:"subscriptionId"`
-	Provider       *string `json:"provider"`
+	InvoiceID      string         `json:"invoiceId"`
+	InvoiceNumber  string         `json:"invoiceNumber"`
+	InvoiceTotal   float64        `json:"invoiceTotal"`
+	CustomerID     string         `json:"customerId"`
+	SubscriptionID *string        `json:"subscriptionId"`
+	Provider       *string        `json:"provider"`
+	PaymentMethod  *PaymentMethod `json:"paymentMethod"`
 }
 
 // Fired when all dunning retries are exhausted and the subscription is canceled. This is the terminal event of the dunning flow — payment.recovered will not follow. Revoke access when you receive this.
@@ -351,27 +354,29 @@ type PaymentLinkCreatedData struct {
 
 // Fired when a payment link is paid. The charge settled and a one-time invoice was generated. Fulfill the purchase on this event.
 type PaymentLinkCompletedData struct {
-	PaymentID            string  `json:"paymentId"`
-	Status               string  `json:"status"`
-	Amount               float64 `json:"amount"`
-	Currency             string  `json:"currency"`
-	Description          string  `json:"description"`
-	CustomerID           *string `json:"customerId"`
-	InvoiceID            string  `json:"invoiceId"`
-	InvoiceNumber        string  `json:"invoiceNumber"`
-	PaymentTransactionID *string `json:"paymentTransactionId"`
+	PaymentID            string         `json:"paymentId"`
+	Status               string         `json:"status"`
+	Amount               float64        `json:"amount"`
+	Currency             string         `json:"currency"`
+	Description          string         `json:"description"`
+	CustomerID           *string        `json:"customerId"`
+	InvoiceID            string         `json:"invoiceId"`
+	InvoiceNumber        string         `json:"invoiceNumber"`
+	PaymentTransactionID *string        `json:"paymentTransactionId"`
+	PaymentMethod        *PaymentMethod `json:"paymentMethod"`
 }
 
 // Fired when a payment link charge attempt is declined. The link stays open and can be paid again — a failed link is retryable.
 type PaymentLinkFailedData struct {
-	PaymentID      string  `json:"paymentId"`
-	Status         string  `json:"status"`
-	Amount         float64 `json:"amount"`
-	Currency       string  `json:"currency"`
-	Description    string  `json:"description"`
-	CustomerID     *string `json:"customerId"`
-	FailureCode    string  `json:"failureCode"`
-	FailureMessage string  `json:"failureMessage"`
+	PaymentID      string         `json:"paymentId"`
+	Status         string         `json:"status"`
+	Amount         float64        `json:"amount"`
+	Currency       string         `json:"currency"`
+	Description    string         `json:"description"`
+	CustomerID     *string        `json:"customerId"`
+	FailureCode    string         `json:"failureCode"`
+	FailureMessage string         `json:"failureMessage"`
+	PaymentMethod  *PaymentMethod `json:"paymentMethod"`
 }
 
 // Fired when a pending payment link is canceled before being paid. A canceled link can no longer be paid.
@@ -448,12 +453,14 @@ type PaymentMethodAttachedData struct {
 	SubscriptionID string           `json:"subscriptionId"`
 	CustomerID     string           `json:"customerId"`
 	Card           *WebhookCardInfo `json:"card"`
+	PaymentMethod  *PaymentMethod   `json:"paymentMethod"`
 }
 
 // Fired when a customer replaces their default payment method through the customer portal. The new method applies to all of the customer's subscriptions. A payment method update is also a strong recovery signal for past-due subscriptions.
 type PaymentMethodUpdatedData struct {
-	CustomerID string           `json:"customerId"`
-	Card       *WebhookCardInfo `json:"card"`
+	CustomerID    string           `json:"customerId"`
+	Card          *WebhookCardInfo `json:"card"`
+	PaymentMethod *PaymentMethod   `json:"paymentMethod"`
 }
 
 // Fired when a customer is created, via the API (including batch create), SDK, or dashboard. The payload is the customer resource exactly as GET /customers returns it.

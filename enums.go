@@ -41,6 +41,14 @@ const (
 	InvoiceTypeReactivation    InvoiceType = "reactivation"
 )
 
+type PaymentMethod string
+
+const (
+	PaymentMethodCard        PaymentMethod = "card"
+	PaymentMethodOxxo        PaymentMethod = "oxxo"
+	PaymentMethodMercadoPago PaymentMethod = "mercado_pago"
+)
+
 type PaymentProvider string
 
 const (
