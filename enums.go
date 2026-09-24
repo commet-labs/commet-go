@@ -49,6 +49,16 @@ const (
 	PaymentMethodMercadoPago PaymentMethod = "mercado_pago"
 )
 
+type SubPaymentMethod string
+
+const (
+	SubPaymentMethodCreditCard   SubPaymentMethod = "credit_card"
+	SubPaymentMethodDebitCard    SubPaymentMethod = "debit_card"
+	SubPaymentMethodPrepaidCard  SubPaymentMethod = "prepaid_card"
+	SubPaymentMethodBankTransfer SubPaymentMethod = "bank_transfer"
+	SubPaymentMethodAccountMoney SubPaymentMethod = "account_money"
+)
+
 type PaymentProvider string
 
 const (

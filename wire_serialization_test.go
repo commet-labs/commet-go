@@ -2,6 +2,7 @@ package commet
 
 import (
 	"context"
+	"encoding/json"
 	"testing"
 )
 
@@ -49,7 +50,7 @@ func TestCreateFeatureSendsTypedEnumAsWireString(t *testing.T) {
 // numeric Limit is stringified. List responses decode the typed Status enum and a
 // nullable *string (InvoiceID null -> nil).
 func TestListTransactionsSendsEnumStatusAsQueryParam(t *testing.T) {
-	client, captured := newWireServer(t, 200, `{"data":[{"id":"txn_1","invoiceId":null,"grossAmount":1000,"subtotal":900,"taxAmount":100,"currency":"usd","status":"succeeded","customerEmail":"a@b.com","customerName":null,"paidAt":"2026-01-01","createdAt":"2026-01-01","updatedAt":"2026-01-01","object":"transaction","livemode":true}],"hasMore":false}`)
+	client, captured := newWireServer(t, 200, `{"data":[{"id":"txn_1","invoiceId":null,"grossAmount":1000,"subtotal":900,"taxAmount":100,"currency":"usd","status":"succeeded","subPaymentMethod":"prepaid_card","customerEmail":"a@b.com","customerName":null,"paidAt":"2026-01-01","createdAt":"2026-01-01","updatedAt":"2026-01-01","object":"transaction","livemode":true}],"hasMore":false}`)
 
 	status := TransactionStatusSucceeded
 	resp, err := client.Transactions.List(context.Background(), &ListTransactionsParams{
@@ -75,6 +76,9 @@ func TestListTransactionsSendsEnumStatusAsQueryParam(t *testing.T) {
 	if txn.Status != TransactionStatusSucceeded {
 		t.Errorf("Status = %q, want succeeded enum", txn.Status)
 	}
+	if txn.SubPaymentMethod == nil || *txn.SubPaymentMethod != SubPaymentMethodPrepaidCard {
+		t.Errorf("SubPaymentMethod = %v, want prepaid_card", txn.SubPaymentMethod)
+	}
 	if txn.InvoiceID != nil {
 		t.Errorf("InvoiceID = %v, want nil for wire null", *txn.InvoiceID)
 	}
@@ -83,6 +87,21 @@ func TestListTransactionsSendsEnumStatusAsQueryParam(t *testing.T) {
 	}
 	if txn.GrossAmount == nil || *txn.GrossAmount != 1000 || txn.TaxAmount == nil || *txn.TaxAmount != 100 {
 		t.Errorf("amounts = (%v,%v), want (1000,100)", txn.GrossAmount, txn.TaxAmount)
+	}
+}
+
+func TestPaymentReceivedWebhookParsesSubPaymentMethod(t *testing.T) {
+	var event WebhookEvent
+	if err := json.Unmarshal([]byte(`{"event":"payment.received","data":{"subPaymentMethod":"credit_card"}}`), &event); err != nil {
+		t.Fatal(err)
+	}
+
+	data, err := event.AsPaymentReceived()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if data.SubPaymentMethod == nil || *data.SubPaymentMethod != SubPaymentMethodCreditCard {
+		t.Errorf("SubPaymentMethod = %v, want credit_card", data.SubPaymentMethod)
 	}
 }
 

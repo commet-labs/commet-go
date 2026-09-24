@@ -3511,6 +3511,7 @@ type Transaction struct {
 	Currency          string            `json:"currency"`
 	Provider          PaymentProvider   `json:"provider"`
 	PaymentMethod     *PaymentMethod    `json:"payment_method"`
+	SubPaymentMethod  *SubPaymentMethod `json:"sub_payment_method"`
 	Status            TransactionStatus `json:"status"`
 	CustomerEmail     *string           `json:"customer_email"`
 	CustomerName      *string           `json:"customer_name"`
@@ -3532,6 +3533,7 @@ type TransactionListItem struct {
 	Currency          string            `json:"currency"`
 	Provider          PaymentProvider   `json:"provider"`
 	PaymentMethod     *PaymentMethod    `json:"payment_method"`
+	SubPaymentMethod  *SubPaymentMethod `json:"sub_payment_method"`
 	Status            TransactionStatus `json:"status"`
 	CustomerEmail     *string           `json:"customer_email"`
 	CustomerName      *string           `json:"customer_name"`
