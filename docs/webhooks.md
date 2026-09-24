@@ -212,6 +212,7 @@ Fired every time a payment settles successfully — the first payment and every 
 - `subscriptionId` (`string`)
 - `paymentTransactionId` (`string`)
 - `provider` (`string`)
+- `paymentMethod` (`*PaymentMethod`) — The method used for this charge: card, oxxo, or mercado_pago. Null when unknown.
 - `grossAmount` (`float64`)
 - `currency` (`string`)
 - `orgNetAmount` (`float64`)
@@ -227,6 +228,7 @@ Fired when a recurring charge fails. This event is for recurring charge failures
 - `customerId` (`string`)
 - `subscriptionId` (`string`)
 - `provider` (`string`)
+- `paymentMethod` (`*PaymentMethod`) — The method used for this charge: card, oxxo, or mercado_pago. Null when unknown.
 - `failureCode` (`string`)
 - `failureMessage` (`string`)
 - `recoveryUrl` (`string`)
@@ -241,6 +243,7 @@ Fired when an outstanding invoice that previously failed is successfully paid �
 - `customerId` (`string`)
 - `subscriptionId` (`string`)
 - `provider` (`string`)
+- `paymentMethod` (`*PaymentMethod`) — The method used for this charge: card, oxxo, or mercado_pago. Null when unknown.
 
 ## payment.retry_failed
 
@@ -322,6 +325,7 @@ Fired when a payment link is paid. The charge settled and a one-time invoice was
 - `invoiceId` (`string`)
 - `invoiceNumber` (`string`)
 - `paymentTransactionId` (`string`)
+- `paymentMethod` (`*PaymentMethod`) — The method used for this charge: card, oxxo, or mercado_pago. Null when unknown.
 
 ## payment_link.failed
 
@@ -335,6 +339,7 @@ Fired when a payment link charge attempt is declined. The link stays open and ca
 - `customerId` (`string`)
 - `failureCode` (`string`)
 - `failureMessage` (`string`)
+- `paymentMethod` (`*PaymentMethod`) — The method used for this charge: card, oxxo, or mercado_pago. Null when unknown.
 
 ## payment_link.canceled
 
@@ -416,6 +421,7 @@ Fired when Commet records a payment method for a subscription: after a paid chec
 
 - `subscriptionId` (`string`)
 - `customerId` (`string`)
+- `paymentMethod` (`*PaymentMethod`) — The saved instrument referenced by this event: card, oxxo, or mercado_pago. Null when unknown.
 - `card` (`WebhookCardInfo`)
 
 ## payment_method.updated
@@ -423,6 +429,7 @@ Fired when Commet records a payment method for a subscription: after a paid chec
 Fired when a customer replaces their default payment method through the customer portal. The new method applies to all of the customer's subscriptions. A payment method update is also a strong recovery signal for past-due subscriptions.
 
 - `customerId` (`string`)
+- `paymentMethod` (`*PaymentMethod`) — The saved instrument referenced by this event: card, oxxo, or mercado_pago. Null when unknown.
 - `card` (`WebhookCardInfo`)
 
 ## customer.created
