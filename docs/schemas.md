@@ -37,6 +37,14 @@ Generated from Commet API version `2026-07-31`.
 - `"one_time_payment"`
 - `"reactivation"`
 
+### SubPaymentMethod
+
+- `"credit_card"`
+- `"debit_card"`
+- `"prepaid_card"`
+- `"bank_transfer"`
+- `"account_money"`
+
 ### PaymentMethod
 
 - `"card"`
@@ -2231,6 +2239,7 @@ Discriminator: `Type`
 - `Currency` (`string`, required)
 - `Provider` (`PaymentProvider`, required) — The payment provider the charge was routed to: stripe, commet, or dlocal.
 - `PaymentMethod` (`*PaymentMethod`, required) — Method used for this charge: card, oxxo, or mercado_pago. Null when unknown; later changes to the saved method do not alter this transaction.
+- `SubPaymentMethod` (`*SubPaymentMethod`, required) — The source of funds for this charge, when reported by the provider. Null when unavailable or unknown.
 - `Status` (`TransactionStatus`, required)
 - `CustomerEmail` (`string | null`, required)
 - `CustomerName` (`string | null`, required)
@@ -2252,6 +2261,7 @@ Discriminator: `Type`
 - `Currency` (`string`, required)
 - `Provider` (`PaymentProvider`, required) — The payment provider the charge was routed to: stripe, commet, or dlocal.
 - `PaymentMethod` (`*PaymentMethod`, required) — Method used for this charge: card, oxxo, or mercado_pago. Null when unknown; later changes to the saved method do not alter this transaction.
+- `SubPaymentMethod` (`*SubPaymentMethod`, required) — The source of funds for this charge, when reported by the provider. Null when unavailable or unknown.
 - `Status` (`TransactionStatus`, required)
 - `CustomerEmail` (`string | null`, required)
 - `CustomerName` (`string | null`, required)
