@@ -47,6 +47,17 @@ type ApplySubscriptionOfferParams struct {
 	IdempotencyKey string  `json:"-"`
 }
 
+type PauseSubscriptionParams struct {
+	Mode           string `json:"mode"`
+	DurationDays   *int   `json:"duration_days"`
+	IdempotencyKey string `json:"-"`
+}
+
+type UpdateSubscriptionPauseParams struct {
+	DurationDays   *int   `json:"duration_days"`
+	IdempotencyKey string `json:"-"`
+}
+
 type UpdatePaymentMethodParams struct {
 	SuccessURL     *string `json:"success_url,omitempty"`
 	IdempotencyKey string  `json:"-"`
@@ -65,6 +76,10 @@ type ReactivateSubscriptionParams struct {
 }
 
 type CreateSubscriptionRecoveryLinkParams struct {
+	IdempotencyKey string `json:"-"`
+}
+
+type ResumeSubscriptionParams struct {
 	IdempotencyKey string `json:"-"`
 }
 
@@ -177,6 +192,27 @@ func (r *SubscriptionsResource) RemoveOffer(ctx context.Context, id string) (*Su
 	return parseDirectResponse[Subscription](r.http.delete(ctx, fmt.Sprintf("/subscriptions/%s/offer", id), nil, ""))
 }
 
+// Pause immediately or schedule a pause for the end of the current billing or trial period. Set durationDays to null for an indefinite pause.
+func (r *SubscriptionsResource) Pause(ctx context.Context, id string, params *PauseSubscriptionParams) (*Subscription, error) {
+	body := buildBody(map[string]any{
+		"mode": params.Mode,
+	})
+	body["duration_days"] = params.DurationDays
+	return parseDirectResponse[Subscription](r.http.post(ctx, fmt.Sprintf("/subscriptions/%s/pause", id), body, params.IdempotencyKey))
+}
+
+// Change the duration of a scheduled or active pause. Set durationDays to null to make it indefinite.
+func (r *SubscriptionsResource) UpdatePause(ctx context.Context, id string, params *UpdateSubscriptionPauseParams) (*Subscription, error) {
+	body := buildBody(map[string]any{})
+	body["duration_days"] = params.DurationDays
+	return parseDirectResponse[Subscription](r.http.patch(ctx, fmt.Sprintf("/subscriptions/%s/pause", id), body, params.IdempotencyKey))
+}
+
+// Revoke a pause before it becomes effective. Active pauses must be resumed instead.
+func (r *SubscriptionsResource) RevokePause(ctx context.Context, id string) (*Subscription, error) {
+	return parseDirectResponse[Subscription](r.http.delete(ctx, fmt.Sprintf("/subscriptions/%s/pause", id), nil, ""))
+}
+
 // Creates a hosted checkout session for the customer to update the subscription's default payment method.
 func (r *SubscriptionsResource) UpdatePaymentMethod(ctx context.Context, id string, params *UpdatePaymentMethodParams) (*PaymentMethodUpdateCheckout, error) {
 	body := buildBody(map[string]any{
@@ -206,6 +242,11 @@ func (r *SubscriptionsResource) Reactivate(ctx context.Context, id string, param
 // Generates a hosted, signed recovery link that lets the customer pay the outstanding renewal charge for a past_due subscription. Unlike reactivate, which charges server-to-server, this returns a link the merchant can deliver through their own email, SMS, or dashboard. The link carries a self-contained signed token and stays valid until the charge is paid or the subscription is no longer past due.
 func (r *SubscriptionsResource) CreateRecoveryLink(ctx context.Context, id string, params *CreateSubscriptionRecoveryLinkParams) (*RecoveryLink, error) {
 	return parseDirectResponse[RecoveryLink](r.http.post(ctx, fmt.Sprintf("/subscriptions/%s/recovery-links", id), map[string]any{}, params.IdempotencyKey))
+}
+
+// Resume a paused subscription. Immediate pauses continue the preserved period without a charge. Period-end pauses charge a new period before access is restored.
+func (r *SubscriptionsResource) Resume(ctx context.Context, id string, params *ResumeSubscriptionParams) (*SubscriptionResume, error) {
+	return parseDirectResponse[SubscriptionResume](r.http.post(ctx, fmt.Sprintf("/subscriptions/%s/resume", id), map[string]any{}, params.IdempotencyKey))
 }
 
 // Get a subscription by its public ID, regardless of status (including pending_payment and past_due).

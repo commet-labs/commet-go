@@ -133,6 +133,28 @@ type ClaimLink struct {
 	Livemode  bool   `json:"livemode"`
 }
 
+type CreateApiKeyParamsPermissions struct {
+	Customer     []string `json:"customer,omitempty"`
+	Subscription []string `json:"subscription,omitempty"`
+	Invoice      []string `json:"invoice,omitempty"`
+	Usage        []string `json:"usage,omitempty"`
+	Seat         []string `json:"seat,omitempty"`
+	Plan         []string `json:"plan,omitempty"`
+	PlanGroup    []string `json:"plan_group,omitempty"`
+	Feature      []string `json:"feature,omitempty"`
+	Addon        []string `json:"addon,omitempty"`
+	CreditPack   []string `json:"credit_pack,omitempty"`
+	Offer        []string `json:"offer,omitempty"`
+	PromoCode    []string `json:"promo_code,omitempty"`
+	MarketGroup  []string `json:"market_group,omitempty"`
+	Payment      []string `json:"payment,omitempty"`
+	Transaction  []string `json:"transaction,omitempty"`
+	Payout       []string `json:"payout,omitempty"`
+	TestClock    []string `json:"test_clock,omitempty"`
+	Organization []string `json:"organization,omitempty"`
+	APIKey       []string `json:"api_key,omitempty"`
+}
+
 type CreateCustomerParamsAddress struct {
 	Line1      string  `json:"line1"`
 	Line2      *string `json:"line2,omitempty"`
@@ -175,6 +197,7 @@ type CreatedSubscription struct {
 	CreatedAt           string                                  `json:"created_at"`
 	UpdatedAt           string                                  `json:"updated_at"`
 	OfferApplications   []SubscriptionOfferApplication          `json:"offer_applications"`
+	Pause               *CreatedSubscriptionPause               `json:"pause"`
 	CheckoutProvider    *PaymentProvider                        `json:"checkout_provider"`
 	PriceID             *string                                 `json:"price_id"`
 	Object              string                                  `json:"object"`
@@ -191,6 +214,91 @@ type CreatedSubscriptionCurrentPeriod struct {
 	Start         string  `json:"start"`
 	End           string  `json:"end"`
 	DaysRemaining float64 `json:"days_remaining"`
+}
+
+type CreatedSubscriptionPause struct {
+	Value any
+}
+
+func (value *CreatedSubscriptionPause) UnmarshalJSON(data []byte) error {
+	var fields map[string]json.RawMessage
+	if err := json.Unmarshal(data, &fields); err != nil {
+		return err
+	}
+	var discriminator string
+	if raw, ok := fields["status"]; ok {
+		if err := json.Unmarshal(raw, &discriminator); err != nil {
+			return err
+		}
+	}
+	switch discriminator {
+	case "scheduled":
+		var decoded CreatedSubscriptionPauseVariant1
+		if err := json.Unmarshal(data, &decoded); err != nil {
+			return err
+		}
+		value.Value = decoded
+		return nil
+	case "active":
+		var decoded CreatedSubscriptionPauseVariant2
+		if err := json.Unmarshal(data, &decoded); err != nil {
+			return err
+		}
+		value.Value = decoded
+		return nil
+	}
+	if hasJSONFields(fields, "status", "mode", "requested_at", "effective_at", "resume_at") {
+		var decoded CreatedSubscriptionPauseVariant1
+		if err := json.Unmarshal(data, &decoded); err != nil {
+			return err
+		}
+		value.Value = decoded
+		return nil
+	}
+	if hasJSONFields(fields, "status", "mode", "requested_at", "effective_at", "resume_at") {
+		var decoded CreatedSubscriptionPauseVariant2
+		if err := json.Unmarshal(data, &decoded); err != nil {
+			return err
+		}
+		value.Value = decoded
+		return nil
+	}
+	var decoded CreatedSubscriptionPauseVariant1
+	if err := json.Unmarshal(data, &decoded); err != nil {
+		return err
+	}
+	value.Value = decoded
+	return nil
+}
+
+func (value CreatedSubscriptionPause) MarshalJSON() ([]byte, error) {
+	return json.Marshal(value.Value)
+}
+
+func (value CreatedSubscriptionPause) AsCreatedSubscriptionPauseVariant1() (CreatedSubscriptionPauseVariant1, bool) {
+	decoded, ok := value.Value.(CreatedSubscriptionPauseVariant1)
+	return decoded, ok
+}
+
+func (value CreatedSubscriptionPause) AsCreatedSubscriptionPauseVariant2() (CreatedSubscriptionPauseVariant2, bool) {
+	decoded, ok := value.Value.(CreatedSubscriptionPauseVariant2)
+	return decoded, ok
+}
+
+type CreatedSubscriptionPauseVariant1 struct {
+	Status      string  `json:"status"`
+	Mode        string  `json:"mode"`
+	RequestedAt string  `json:"requested_at"`
+	EffectiveAt string  `json:"effective_at"`
+	ResumeAt    *string `json:"resume_at"`
+}
+
+type CreatedSubscriptionPauseVariant2 struct {
+	Status      string  `json:"status"`
+	Mode        string  `json:"mode"`
+	RequestedAt string  `json:"requested_at"`
+	EffectiveAt string  `json:"effective_at"`
+	ResumeAt    *string `json:"resume_at"`
 }
 
 type CreatedSubscriptionPlan struct {
@@ -1208,29 +1316,115 @@ type OffersListResult struct {
 }
 
 type Payment struct {
-	ID             string         `json:"id"`
-	CustomerID     *string        `json:"customer_id"`
-	Kind           string         `json:"kind"`
-	Status         string         `json:"status"`
-	Provider       string         `json:"provider"`
-	AmountSubtotal int            `json:"amount_subtotal"`
-	TaxAmount      int            `json:"tax_amount"`
-	AmountTotal    int            `json:"amount_total"`
-	Currency       string         `json:"currency"`
-	Description    string         `json:"description"`
-	Metadata       map[string]any `json:"metadata"`
-	URL            *string        `json:"url"`
-	ExpiresAt      *string        `json:"expires_at"`
-	CreatedAt      string         `json:"created_at"`
-	UpdatedAt      string         `json:"updated_at"`
-	Object         string         `json:"object"`
-	Livemode       bool           `json:"livemode"`
+	PaymentContext *PaymentPaymentContext `json:"payment_context"`
+	ID             string                 `json:"id"`
+	CustomerID     *string                `json:"customer_id"`
+	Kind           string                 `json:"kind"`
+	Status         string                 `json:"status"`
+	Provider       string                 `json:"provider"`
+	AmountSubtotal int                    `json:"amount_subtotal"`
+	TaxAmount      int                    `json:"tax_amount"`
+	AmountTotal    int                    `json:"amount_total"`
+	Currency       string                 `json:"currency"`
+	Description    string                 `json:"description"`
+	Metadata       map[string]any         `json:"metadata"`
+	URL            *string                `json:"url"`
+	ExpiresAt      *string                `json:"expires_at"`
+	CreatedAt      string                 `json:"created_at"`
+	UpdatedAt      string                 `json:"updated_at"`
+	Object         string                 `json:"object"`
+	Livemode       bool                   `json:"livemode"`
 }
 
 type PaymentMethodUpdateCheckout struct {
 	CheckoutURL string `json:"checkout_url"`
 	Object      string `json:"object"`
 	Livemode    bool   `json:"livemode"`
+}
+
+type PaymentPaymentContext struct {
+	Reason        string                         `json:"reason"`
+	PaymentLinkID *string                        `json:"payment_link_id"`
+	Recovery      *PaymentPaymentContextRecovery `json:"recovery"`
+}
+
+type PaymentPaymentContextRecovery struct {
+	Value any
+}
+
+func (value *PaymentPaymentContextRecovery) UnmarshalJSON(data []byte) error {
+	var fields map[string]json.RawMessage
+	if err := json.Unmarshal(data, &fields); err != nil {
+		return err
+	}
+	var discriminator string
+	if raw, ok := fields["type"]; ok {
+		if err := json.Unmarshal(raw, &discriminator); err != nil {
+			return err
+		}
+	}
+	switch discriminator {
+	case "payment_recovery":
+		var decoded PaymentPaymentContextRecoveryVariant1
+		if err := json.Unmarshal(data, &decoded); err != nil {
+			return err
+		}
+		value.Value = decoded
+		return nil
+	case "dunning_retry":
+		var decoded PaymentPaymentContextRecoveryVariant2
+		if err := json.Unmarshal(data, &decoded); err != nil {
+			return err
+		}
+		value.Value = decoded
+		return nil
+	}
+	if hasJSONFields(fields, "type", "attempt", "max_attempts") {
+		var decoded PaymentPaymentContextRecoveryVariant2
+		if err := json.Unmarshal(data, &decoded); err != nil {
+			return err
+		}
+		value.Value = decoded
+		return nil
+	}
+	if hasJSONFields(fields, "type") {
+		var decoded PaymentPaymentContextRecoveryVariant1
+		if err := json.Unmarshal(data, &decoded); err != nil {
+			return err
+		}
+		value.Value = decoded
+		return nil
+	}
+	var decoded PaymentPaymentContextRecoveryVariant1
+	if err := json.Unmarshal(data, &decoded); err != nil {
+		return err
+	}
+	value.Value = decoded
+	return nil
+}
+
+func (value PaymentPaymentContextRecovery) MarshalJSON() ([]byte, error) {
+	return json.Marshal(value.Value)
+}
+
+func (value PaymentPaymentContextRecovery) AsPaymentPaymentContextRecoveryVariant1() (PaymentPaymentContextRecoveryVariant1, bool) {
+	decoded, ok := value.Value.(PaymentPaymentContextRecoveryVariant1)
+	return decoded, ok
+}
+
+func (value PaymentPaymentContextRecovery) AsPaymentPaymentContextRecoveryVariant2() (PaymentPaymentContextRecoveryVariant2, bool) {
+	decoded, ok := value.Value.(PaymentPaymentContextRecoveryVariant2)
+	return decoded, ok
+}
+
+type PaymentPaymentContextRecoveryVariant1 struct {
+	Type string `json:"type"`
+}
+
+type PaymentPaymentContextRecoveryVariant2 struct {
+	Type        string `json:"type"`
+	Attempt     int    `json:"attempt"`
+	MaxAttempts int    `json:"max_attempts"`
 }
 
 type PaymentsListResult struct {
@@ -2861,6 +3055,7 @@ type Subscription struct {
 	CreatedAt           string                           `json:"created_at"`
 	UpdatedAt           string                           `json:"updated_at"`
 	OfferApplications   []SubscriptionOfferApplication   `json:"offer_applications"`
+	Pause               *SubscriptionPause               `json:"pause"`
 	PlanGrant           *SubscriptionPlanGrant           `json:"plan_grant,omitempty"`
 	ConsumptionModel    *ConsumptionModel                `json:"consumption_model"`
 	Features            []SubscriptionFeaturesItem       `json:"features"`
@@ -3352,6 +3547,91 @@ type SubscriptionOfferApplicationPhaseVariant4 struct {
 	EndsAt           *string `json:"ends_at"`
 }
 
+type SubscriptionPause struct {
+	Value any
+}
+
+func (value *SubscriptionPause) UnmarshalJSON(data []byte) error {
+	var fields map[string]json.RawMessage
+	if err := json.Unmarshal(data, &fields); err != nil {
+		return err
+	}
+	var discriminator string
+	if raw, ok := fields["status"]; ok {
+		if err := json.Unmarshal(raw, &discriminator); err != nil {
+			return err
+		}
+	}
+	switch discriminator {
+	case "scheduled":
+		var decoded SubscriptionPauseVariant1
+		if err := json.Unmarshal(data, &decoded); err != nil {
+			return err
+		}
+		value.Value = decoded
+		return nil
+	case "active":
+		var decoded SubscriptionPauseVariant2
+		if err := json.Unmarshal(data, &decoded); err != nil {
+			return err
+		}
+		value.Value = decoded
+		return nil
+	}
+	if hasJSONFields(fields, "status", "mode", "requested_at", "effective_at", "resume_at") {
+		var decoded SubscriptionPauseVariant1
+		if err := json.Unmarshal(data, &decoded); err != nil {
+			return err
+		}
+		value.Value = decoded
+		return nil
+	}
+	if hasJSONFields(fields, "status", "mode", "requested_at", "effective_at", "resume_at") {
+		var decoded SubscriptionPauseVariant2
+		if err := json.Unmarshal(data, &decoded); err != nil {
+			return err
+		}
+		value.Value = decoded
+		return nil
+	}
+	var decoded SubscriptionPauseVariant1
+	if err := json.Unmarshal(data, &decoded); err != nil {
+		return err
+	}
+	value.Value = decoded
+	return nil
+}
+
+func (value SubscriptionPause) MarshalJSON() ([]byte, error) {
+	return json.Marshal(value.Value)
+}
+
+func (value SubscriptionPause) AsSubscriptionPauseVariant1() (SubscriptionPauseVariant1, bool) {
+	decoded, ok := value.Value.(SubscriptionPauseVariant1)
+	return decoded, ok
+}
+
+func (value SubscriptionPause) AsSubscriptionPauseVariant2() (SubscriptionPauseVariant2, bool) {
+	decoded, ok := value.Value.(SubscriptionPauseVariant2)
+	return decoded, ok
+}
+
+type SubscriptionPauseVariant1 struct {
+	Status      string  `json:"status"`
+	Mode        string  `json:"mode"`
+	RequestedAt string  `json:"requested_at"`
+	EffectiveAt string  `json:"effective_at"`
+	ResumeAt    *string `json:"resume_at"`
+}
+
+type SubscriptionPauseVariant2 struct {
+	Status      string  `json:"status"`
+	Mode        string  `json:"mode"`
+	RequestedAt string  `json:"requested_at"`
+	EffectiveAt string  `json:"effective_at"`
+	ResumeAt    *string `json:"resume_at"`
+}
+
 type SubscriptionPlan struct {
 	ID        string  `json:"id"`
 	Name      string  `json:"name"`
@@ -3367,6 +3647,14 @@ type SubscriptionPlanGrant struct {
 type SubscriptionPlanGrantPlan struct {
 	ID   string `json:"id"`
 	Name string `json:"name"`
+}
+
+type SubscriptionResume struct {
+	SubscriptionID string  `json:"subscription_id"`
+	InvoiceID      *string `json:"invoice_id"`
+	Status         string  `json:"status"`
+	Object         string  `json:"object"`
+	Livemode       bool    `json:"livemode"`
 }
 
 type SubscriptionScheduledPlanChange struct {
@@ -3405,6 +3693,7 @@ type SubscriptionSummary struct {
 	CreatedAt           string                                  `json:"created_at"`
 	UpdatedAt           string                                  `json:"updated_at"`
 	OfferApplications   []SubscriptionOfferApplication          `json:"offer_applications"`
+	Pause               *SubscriptionSummaryPause               `json:"pause"`
 	PriceID             *string                                 `json:"price_id"`
 	Object              string                                  `json:"object"`
 	Livemode            bool                                    `json:"livemode"`
@@ -3420,6 +3709,91 @@ type SubscriptionSummaryCurrentPeriod struct {
 	Start         string  `json:"start"`
 	End           string  `json:"end"`
 	DaysRemaining float64 `json:"days_remaining"`
+}
+
+type SubscriptionSummaryPause struct {
+	Value any
+}
+
+func (value *SubscriptionSummaryPause) UnmarshalJSON(data []byte) error {
+	var fields map[string]json.RawMessage
+	if err := json.Unmarshal(data, &fields); err != nil {
+		return err
+	}
+	var discriminator string
+	if raw, ok := fields["status"]; ok {
+		if err := json.Unmarshal(raw, &discriminator); err != nil {
+			return err
+		}
+	}
+	switch discriminator {
+	case "scheduled":
+		var decoded SubscriptionSummaryPauseVariant1
+		if err := json.Unmarshal(data, &decoded); err != nil {
+			return err
+		}
+		value.Value = decoded
+		return nil
+	case "active":
+		var decoded SubscriptionSummaryPauseVariant2
+		if err := json.Unmarshal(data, &decoded); err != nil {
+			return err
+		}
+		value.Value = decoded
+		return nil
+	}
+	if hasJSONFields(fields, "status", "mode", "requested_at", "effective_at", "resume_at") {
+		var decoded SubscriptionSummaryPauseVariant1
+		if err := json.Unmarshal(data, &decoded); err != nil {
+			return err
+		}
+		value.Value = decoded
+		return nil
+	}
+	if hasJSONFields(fields, "status", "mode", "requested_at", "effective_at", "resume_at") {
+		var decoded SubscriptionSummaryPauseVariant2
+		if err := json.Unmarshal(data, &decoded); err != nil {
+			return err
+		}
+		value.Value = decoded
+		return nil
+	}
+	var decoded SubscriptionSummaryPauseVariant1
+	if err := json.Unmarshal(data, &decoded); err != nil {
+		return err
+	}
+	value.Value = decoded
+	return nil
+}
+
+func (value SubscriptionSummaryPause) MarshalJSON() ([]byte, error) {
+	return json.Marshal(value.Value)
+}
+
+func (value SubscriptionSummaryPause) AsSubscriptionSummaryPauseVariant1() (SubscriptionSummaryPauseVariant1, bool) {
+	decoded, ok := value.Value.(SubscriptionSummaryPauseVariant1)
+	return decoded, ok
+}
+
+func (value SubscriptionSummaryPause) AsSubscriptionSummaryPauseVariant2() (SubscriptionSummaryPauseVariant2, bool) {
+	decoded, ok := value.Value.(SubscriptionSummaryPauseVariant2)
+	return decoded, ok
+}
+
+type SubscriptionSummaryPauseVariant1 struct {
+	Status      string  `json:"status"`
+	Mode        string  `json:"mode"`
+	RequestedAt string  `json:"requested_at"`
+	EffectiveAt string  `json:"effective_at"`
+	ResumeAt    *string `json:"resume_at"`
+}
+
+type SubscriptionSummaryPauseVariant2 struct {
+	Status      string  `json:"status"`
+	Mode        string  `json:"mode"`
+	RequestedAt string  `json:"requested_at"`
+	EffectiveAt string  `json:"effective_at"`
+	ResumeAt    *string `json:"resume_at"`
 }
 
 type SubscriptionSummaryPlan struct {
@@ -3502,42 +3876,218 @@ type TrackUsageParamsPropertiesItem struct {
 }
 
 type Transaction struct {
-	ID                string            `json:"id"`
-	InvoiceID         *string           `json:"invoice_id"`
-	GrossAmount       *int              `json:"gross_amount"`
-	Subtotal          *int              `json:"subtotal"`
-	TaxAmount         *int              `json:"tax_amount"`
-	PresentmentAmount *int              `json:"presentment_amount"`
-	Currency          string            `json:"currency"`
-	Provider          PaymentProvider   `json:"provider"`
-	Status            TransactionStatus `json:"status"`
-	CustomerEmail     *string           `json:"customer_email"`
-	CustomerName      *string           `json:"customer_name"`
-	PaidAt            *string           `json:"paid_at"`
-	CreatedAt         string            `json:"created_at"`
-	UpdatedAt         string            `json:"updated_at"`
-	AvailableAt       *string           `json:"available_at"`
-	Object            string            `json:"object"`
-	Livemode          bool              `json:"livemode"`
+	PaymentContext    *TransactionPaymentContext `json:"payment_context"`
+	ID                string                     `json:"id"`
+	InvoiceID         *string                    `json:"invoice_id"`
+	GrossAmount       *int                       `json:"gross_amount"`
+	Subtotal          *int                       `json:"subtotal"`
+	TaxAmount         *int                       `json:"tax_amount"`
+	PresentmentAmount *int                       `json:"presentment_amount"`
+	Currency          string                     `json:"currency"`
+	Provider          PaymentProvider            `json:"provider"`
+	PaymentMethod     *PaymentMethod             `json:"payment_method"`
+	SubPaymentMethod  *SubPaymentMethod          `json:"sub_payment_method"`
+	Status            TransactionStatus          `json:"status"`
+	CustomerEmail     *string                    `json:"customer_email"`
+	CustomerName      *string                    `json:"customer_name"`
+	PaidAt            *string                    `json:"paid_at"`
+	CreatedAt         string                     `json:"created_at"`
+	UpdatedAt         string                     `json:"updated_at"`
+	AvailableAt       *string                    `json:"available_at"`
+	Object            string                     `json:"object"`
+	Livemode          bool                       `json:"livemode"`
 }
 
 type TransactionListItem struct {
-	ID                string            `json:"id"`
-	InvoiceID         *string           `json:"invoice_id"`
-	GrossAmount       *int              `json:"gross_amount"`
-	Subtotal          *int              `json:"subtotal"`
-	TaxAmount         *int              `json:"tax_amount"`
-	PresentmentAmount *int              `json:"presentment_amount"`
-	Currency          string            `json:"currency"`
-	Provider          PaymentProvider   `json:"provider"`
-	Status            TransactionStatus `json:"status"`
-	CustomerEmail     *string           `json:"customer_email"`
-	CustomerName      *string           `json:"customer_name"`
-	PaidAt            *string           `json:"paid_at"`
-	CreatedAt         string            `json:"created_at"`
-	UpdatedAt         string            `json:"updated_at"`
-	Object            string            `json:"object"`
-	Livemode          bool              `json:"livemode"`
+	PaymentContext    *TransactionListItemPaymentContext `json:"payment_context"`
+	ID                string                             `json:"id"`
+	InvoiceID         *string                            `json:"invoice_id"`
+	GrossAmount       *int                               `json:"gross_amount"`
+	Subtotal          *int                               `json:"subtotal"`
+	TaxAmount         *int                               `json:"tax_amount"`
+	PresentmentAmount *int                               `json:"presentment_amount"`
+	Currency          string                             `json:"currency"`
+	Provider          PaymentProvider                    `json:"provider"`
+	PaymentMethod     *PaymentMethod                     `json:"payment_method"`
+	SubPaymentMethod  *SubPaymentMethod                  `json:"sub_payment_method"`
+	Status            TransactionStatus                  `json:"status"`
+	CustomerEmail     *string                            `json:"customer_email"`
+	CustomerName      *string                            `json:"customer_name"`
+	PaidAt            *string                            `json:"paid_at"`
+	CreatedAt         string                             `json:"created_at"`
+	UpdatedAt         string                             `json:"updated_at"`
+	Object            string                             `json:"object"`
+	Livemode          bool                               `json:"livemode"`
+}
+
+type TransactionListItemPaymentContext struct {
+	Reason        string                                     `json:"reason"`
+	PaymentLinkID *string                                    `json:"payment_link_id"`
+	Recovery      *TransactionListItemPaymentContextRecovery `json:"recovery"`
+}
+
+type TransactionListItemPaymentContextRecovery struct {
+	Value any
+}
+
+func (value *TransactionListItemPaymentContextRecovery) UnmarshalJSON(data []byte) error {
+	var fields map[string]json.RawMessage
+	if err := json.Unmarshal(data, &fields); err != nil {
+		return err
+	}
+	var discriminator string
+	if raw, ok := fields["type"]; ok {
+		if err := json.Unmarshal(raw, &discriminator); err != nil {
+			return err
+		}
+	}
+	switch discriminator {
+	case "payment_recovery":
+		var decoded TransactionListItemPaymentContextRecoveryVariant1
+		if err := json.Unmarshal(data, &decoded); err != nil {
+			return err
+		}
+		value.Value = decoded
+		return nil
+	case "dunning_retry":
+		var decoded TransactionListItemPaymentContextRecoveryVariant2
+		if err := json.Unmarshal(data, &decoded); err != nil {
+			return err
+		}
+		value.Value = decoded
+		return nil
+	}
+	if hasJSONFields(fields, "type", "attempt", "max_attempts") {
+		var decoded TransactionListItemPaymentContextRecoveryVariant2
+		if err := json.Unmarshal(data, &decoded); err != nil {
+			return err
+		}
+		value.Value = decoded
+		return nil
+	}
+	if hasJSONFields(fields, "type") {
+		var decoded TransactionListItemPaymentContextRecoveryVariant1
+		if err := json.Unmarshal(data, &decoded); err != nil {
+			return err
+		}
+		value.Value = decoded
+		return nil
+	}
+	var decoded TransactionListItemPaymentContextRecoveryVariant1
+	if err := json.Unmarshal(data, &decoded); err != nil {
+		return err
+	}
+	value.Value = decoded
+	return nil
+}
+
+func (value TransactionListItemPaymentContextRecovery) MarshalJSON() ([]byte, error) {
+	return json.Marshal(value.Value)
+}
+
+func (value TransactionListItemPaymentContextRecovery) AsTransactionListItemPaymentContextRecoveryVariant1() (TransactionListItemPaymentContextRecoveryVariant1, bool) {
+	decoded, ok := value.Value.(TransactionListItemPaymentContextRecoveryVariant1)
+	return decoded, ok
+}
+
+func (value TransactionListItemPaymentContextRecovery) AsTransactionListItemPaymentContextRecoveryVariant2() (TransactionListItemPaymentContextRecoveryVariant2, bool) {
+	decoded, ok := value.Value.(TransactionListItemPaymentContextRecoveryVariant2)
+	return decoded, ok
+}
+
+type TransactionListItemPaymentContextRecoveryVariant1 struct {
+	Type string `json:"type"`
+}
+
+type TransactionListItemPaymentContextRecoveryVariant2 struct {
+	Type        string `json:"type"`
+	Attempt     int    `json:"attempt"`
+	MaxAttempts int    `json:"max_attempts"`
+}
+
+type TransactionPaymentContext struct {
+	Reason        string                             `json:"reason"`
+	PaymentLinkID *string                            `json:"payment_link_id"`
+	Recovery      *TransactionPaymentContextRecovery `json:"recovery"`
+}
+
+type TransactionPaymentContextRecovery struct {
+	Value any
+}
+
+func (value *TransactionPaymentContextRecovery) UnmarshalJSON(data []byte) error {
+	var fields map[string]json.RawMessage
+	if err := json.Unmarshal(data, &fields); err != nil {
+		return err
+	}
+	var discriminator string
+	if raw, ok := fields["type"]; ok {
+		if err := json.Unmarshal(raw, &discriminator); err != nil {
+			return err
+		}
+	}
+	switch discriminator {
+	case "payment_recovery":
+		var decoded TransactionPaymentContextRecoveryVariant1
+		if err := json.Unmarshal(data, &decoded); err != nil {
+			return err
+		}
+		value.Value = decoded
+		return nil
+	case "dunning_retry":
+		var decoded TransactionPaymentContextRecoveryVariant2
+		if err := json.Unmarshal(data, &decoded); err != nil {
+			return err
+		}
+		value.Value = decoded
+		return nil
+	}
+	if hasJSONFields(fields, "type", "attempt", "max_attempts") {
+		var decoded TransactionPaymentContextRecoveryVariant2
+		if err := json.Unmarshal(data, &decoded); err != nil {
+			return err
+		}
+		value.Value = decoded
+		return nil
+	}
+	if hasJSONFields(fields, "type") {
+		var decoded TransactionPaymentContextRecoveryVariant1
+		if err := json.Unmarshal(data, &decoded); err != nil {
+			return err
+		}
+		value.Value = decoded
+		return nil
+	}
+	var decoded TransactionPaymentContextRecoveryVariant1
+	if err := json.Unmarshal(data, &decoded); err != nil {
+		return err
+	}
+	value.Value = decoded
+	return nil
+}
+
+func (value TransactionPaymentContextRecovery) MarshalJSON() ([]byte, error) {
+	return json.Marshal(value.Value)
+}
+
+func (value TransactionPaymentContextRecovery) AsTransactionPaymentContextRecoveryVariant1() (TransactionPaymentContextRecoveryVariant1, bool) {
+	decoded, ok := value.Value.(TransactionPaymentContextRecoveryVariant1)
+	return decoded, ok
+}
+
+func (value TransactionPaymentContextRecovery) AsTransactionPaymentContextRecoveryVariant2() (TransactionPaymentContextRecoveryVariant2, bool) {
+	decoded, ok := value.Value.(TransactionPaymentContextRecoveryVariant2)
+	return decoded, ok
+}
+
+type TransactionPaymentContextRecoveryVariant1 struct {
+	Type string `json:"type"`
+}
+
+type TransactionPaymentContextRecoveryVariant2 struct {
+	Type        string `json:"type"`
+	Attempt     int    `json:"attempt"`
+	MaxAttempts int    `json:"max_attempts"`
 }
 
 type TransactionRetry struct {

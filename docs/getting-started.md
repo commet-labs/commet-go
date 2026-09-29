@@ -3,7 +3,7 @@
 Install the SDK:
 
 ```bash
-go get github.com/commet-labs/commet-go/v9@v9.3.0
+go get github.com/commet-labs/commet-go/v9@v9.4.0
 ```
 
 Create one server-side client. Never expose an API key to browser code.
