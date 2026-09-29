@@ -2,8 +2,51 @@ package commet
 
 import (
 	"context"
+	"encoding/json"
+	"reflect"
 	"testing"
 )
+
+func TestSerializeRequestBody(t *testing.T) {
+	permissions, err := json.Marshal(CreateApiKeyParamsPermissions{
+		PlanGroup: []string{"read"}, CreditPack: []string{"write"}, PromoCode: []string{"read", "write"},
+		MarketGroup: []string{"read"}, TestClock: []string{"write"}, APIKey: []string{"read"},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	encoded, err := serializeRequestBody(map[string]any{
+		"expires_in_days": 30, "permissions": json.RawMessage(permissions), "duration_days": (*int)(nil),
+		"address": CreateCustomerParamsAddress{Line1: "Main", City: "City", PostalCode: "123", Country: "US"},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	var actual any
+	if err := json.Unmarshal(encoded, &actual); err != nil {
+		t.Fatal(err)
+	}
+	var expected any
+	if err := json.Unmarshal([]byte(`{"expiresInDays":30,"permissions":{"plan_group":["read"],"credit_pack":["write"],"promo_code":["read","write"],"market_group":["read"],"test_clock":["write"],"api_key":["read"]},"durationDays":null,"address":{"line1":"Main","city":"City","postalCode":"123","country":"US"}}`), &expected); err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(actual, expected) {
+		t.Fatalf("unexpected request: %s", encoded)
+	}
+	for _, body := range []map[string]any{{}, {"permissions": json.RawMessage(`{}`)}} {
+		encoded, err := serializeRequestBody(body)
+		if err != nil {
+			t.Fatal(err)
+		}
+		want := `{}`
+		if len(body) != 0 {
+			want = `{"permissions":{}}`
+		}
+		if string(encoded) != want {
+			t.Fatalf("got %s, want %s", encoded, want)
+		}
+	}
+}
 
 // TestCreateFeatureSendsTypedEnumAsWireString verifies a top-level typed enum
 // field (FeatureType) serializes to its wire string value in the request body and

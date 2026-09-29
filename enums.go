@@ -39,6 +39,15 @@ const (
 	InvoiceTypeAddonActivation InvoiceType = "addon_activation"
 	InvoiceTypeOneTimePayment  InvoiceType = "one_time_payment"
 	InvoiceTypeReactivation    InvoiceType = "reactivation"
+	InvoiceTypeResume          InvoiceType = "resume"
+)
+
+type PaymentMethod string
+
+const (
+	PaymentMethodCard        PaymentMethod = "card"
+	PaymentMethodOxxo        PaymentMethod = "oxxo"
+	PaymentMethodMercadoPago PaymentMethod = "mercado_pago"
 )
 
 type PaymentProvider string
@@ -49,6 +58,16 @@ const (
 	PaymentProviderDlocal PaymentProvider = "dlocal"
 )
 
+type SubPaymentMethod string
+
+const (
+	SubPaymentMethodCreditCard   SubPaymentMethod = "credit_card"
+	SubPaymentMethodDebitCard    SubPaymentMethod = "debit_card"
+	SubPaymentMethodPrepaidCard  SubPaymentMethod = "prepaid_card"
+	SubPaymentMethodBankTransfer SubPaymentMethod = "bank_transfer"
+	SubPaymentMethodAccountMoney SubPaymentMethod = "account_money"
+)
+
 type SubscriptionStatus string
 
 const (
@@ -57,6 +76,7 @@ const (
 	SubscriptionStatusTrialing       SubscriptionStatus = "trialing"
 	SubscriptionStatusActive         SubscriptionStatus = "active"
 	SubscriptionStatusPastDue        SubscriptionStatus = "past_due"
+	SubscriptionStatusPaused         SubscriptionStatus = "paused"
 	SubscriptionStatusCanceled       SubscriptionStatus = "canceled"
 )
 

@@ -8,6 +8,12 @@ const (
 	EventSubscriptionCreated               WebhookEventType = "subscription.created"
 	EventSubscriptionActivated             WebhookEventType = "subscription.activated"
 	EventSubscriptionReactivated           WebhookEventType = "subscription.reactivated"
+	EventSubscriptionPauseScheduled        WebhookEventType = "subscription.pause_scheduled"
+	EventSubscriptionPauseUpdated          WebhookEventType = "subscription.pause_updated"
+	EventSubscriptionPauseRevoked          WebhookEventType = "subscription.pause_revoked"
+	EventSubscriptionPaused                WebhookEventType = "subscription.paused"
+	EventSubscriptionResumed               WebhookEventType = "subscription.resumed"
+	EventSubscriptionResumeFailed          WebhookEventType = "subscription.resume_failed"
 	EventSubscriptionCanceled              WebhookEventType = "subscription.canceled"
 	EventSubscriptionUpdated               WebhookEventType = "subscription.updated"
 	EventSubscriptionPlanChanged           WebhookEventType = "subscription.plan_changed"
@@ -108,7 +114,62 @@ type SubscriptionReactivatedData struct {
 	Provider           string  `json:"provider"`
 }
 
-// Fired when a subscription is actually terminated. A scheduled cancellation fires it at the end of the billing period; immediate cancellations, full refunds (cancelReason refund), and exhausted dunning retries (cancelReason dunning_exhausted) fire it right away. The status is now canceled and access should be revoked. This event is NOT fired when cancellation is scheduled — that triggers subscription.updated instead. See the cancellation lifecycle below.
+// Fired when a period-end pause is scheduled. Access and billing continue until effectiveAt.
+type SubscriptionPauseScheduledData struct {
+	SubscriptionID string  `json:"subscriptionId"`
+	CustomerID     string  `json:"customerId"`
+	Status         string  `json:"status"`
+	Mode           string  `json:"mode"`
+	EffectiveAt    string  `json:"effectiveAt"`
+	ResumeAt       *string `json:"resumeAt"`
+}
+
+// Fired when the finite or indefinite pause duration changes.
+type SubscriptionPauseUpdatedData struct {
+	SubscriptionID string  `json:"subscriptionId"`
+	CustomerID     string  `json:"customerId"`
+	Status         string  `json:"status"`
+	EffectiveAt    string  `json:"effectiveAt"`
+	ResumeAt       *string `json:"resumeAt"`
+}
+
+// Fired when a scheduled pause is revoked before it becomes effective.
+type SubscriptionPauseRevokedData struct {
+	SubscriptionID string `json:"subscriptionId"`
+	CustomerID     string `json:"customerId"`
+	Status         string `json:"status"`
+}
+
+// Fired when a pause becomes effective and access is revoked.
+type SubscriptionPausedData struct {
+	SubscriptionID string  `json:"subscriptionId"`
+	CustomerID     string  `json:"customerId"`
+	Status         string  `json:"status"`
+	Mode           string  `json:"mode"`
+	EffectiveAt    string  `json:"effectiveAt"`
+	ResumeAt       *string `json:"resumeAt"`
+}
+
+// Fired after a paused subscription restores access.
+type SubscriptionResumedData struct {
+	SubscriptionID string  `json:"subscriptionId"`
+	CustomerID     string  `json:"customerId"`
+	Status         string  `json:"status"`
+	Mode           string  `json:"mode"`
+	ResumedAt      string  `json:"resumedAt"`
+	InvoiceID      *string `json:"invoiceId"`
+}
+
+// Fired when a period-end resume charge fails. The subscription remains paused.
+type SubscriptionResumeFailedData struct {
+	SubscriptionID string `json:"subscriptionId"`
+	CustomerID     string `json:"customerId"`
+	Status         string `json:"status"`
+	InvoiceID      string `json:"invoiceId"`
+	FailedAt       string `json:"failedAt"`
+}
+
+// Fired when a subscription is actually terminated. A scheduled cancellation fires it at the end of the billing period; immediate cancellations and exhausted dunning retries (cancelReason dunning_exhausted) fire it right away. Refunds do not terminate subscriptions. The status is now canceled and access should be revoked. This event is NOT fired when cancellation is scheduled — that triggers subscription.updated instead. See the cancellation lifecycle below.
 type SubscriptionCanceledData struct {
 	SubscriptionID string  `json:"subscriptionId"`
 	CustomerID     string  `json:"customerId"`
@@ -251,40 +312,48 @@ type CheckoutReadyData struct {
 
 // Fired every time a payment settles successfully — the first payment and every renewal alike. subscription.activated fires alongside it only on the first one.
 type PaymentReceivedData struct {
-	InvoiceID            string   `json:"invoiceId"`
-	InvoiceNumber        string   `json:"invoiceNumber"`
-	InvoiceTotal         float64  `json:"invoiceTotal"`
-	CustomerID           string   `json:"customerId"`
-	SubscriptionID       *string  `json:"subscriptionId"`
-	PaymentTransactionID *string  `json:"paymentTransactionId"`
-	Provider             *string  `json:"provider"`
-	GrossAmount          *float64 `json:"grossAmount"`
-	Currency             *string  `json:"currency"`
-	OrgNetAmount         *float64 `json:"orgNetAmount"`
-	CustomerEmail        *string  `json:"customerEmail"`
-	PaidAt               string   `json:"paidAt"`
+	PaymentContext       any               `json:"paymentContext"`
+	InvoiceID            string            `json:"invoiceId"`
+	InvoiceNumber        string            `json:"invoiceNumber"`
+	InvoiceTotal         float64           `json:"invoiceTotal"`
+	CustomerID           string            `json:"customerId"`
+	SubscriptionID       *string           `json:"subscriptionId"`
+	PaymentTransactionID *string           `json:"paymentTransactionId"`
+	Provider             *string           `json:"provider"`
+	PaymentMethod        *PaymentMethod    `json:"paymentMethod"`
+	SubPaymentMethod     *SubPaymentMethod `json:"subPaymentMethod"`
+	GrossAmount          *float64          `json:"grossAmount"`
+	Currency             *string           `json:"currency"`
+	OrgNetAmount         *float64          `json:"orgNetAmount"`
+	CustomerEmail        *string           `json:"customerEmail"`
+	PaidAt               string            `json:"paidAt"`
 }
 
-// Fired when a recurring charge fails. This event is for recurring charge failures only — card declines during initial checkout do not trigger this event.
+// Fired when an invoice-linked subscription charge fails.
 type PaymentFailedData struct {
-	InvoiceID      string  `json:"invoiceId"`
-	InvoiceNumber  string  `json:"invoiceNumber"`
-	CustomerID     string  `json:"customerId"`
-	SubscriptionID *string `json:"subscriptionId"`
-	Provider       string  `json:"provider"`
-	FailureCode    string  `json:"failureCode"`
-	FailureMessage string  `json:"failureMessage"`
-	RecoveryURL    *string `json:"recoveryUrl"`
+	PaymentContext   any               `json:"paymentContext"`
+	InvoiceID        string            `json:"invoiceId"`
+	InvoiceNumber    string            `json:"invoiceNumber"`
+	CustomerID       string            `json:"customerId"`
+	SubscriptionID   *string           `json:"subscriptionId"`
+	Provider         string            `json:"provider"`
+	PaymentMethod    *PaymentMethod    `json:"paymentMethod"`
+	SubPaymentMethod *SubPaymentMethod `json:"subPaymentMethod"`
+	FailureCode      string            `json:"failureCode"`
+	FailureMessage   string            `json:"failureMessage"`
+	RecoveryURL      *string           `json:"recoveryUrl"`
 }
 
 // Fired when an outstanding invoice that previously failed is successfully paid — automatically on retry or by the customer through the portal. The subscription returns to active at the same time; use this event to close the dunning flow you opened on payment.failed.
 type PaymentRecoveredData struct {
-	InvoiceID      string  `json:"invoiceId"`
-	InvoiceNumber  string  `json:"invoiceNumber"`
-	InvoiceTotal   float64 `json:"invoiceTotal"`
-	CustomerID     string  `json:"customerId"`
-	SubscriptionID *string `json:"subscriptionId"`
-	Provider       *string `json:"provider"`
+	InvoiceID        string            `json:"invoiceId"`
+	InvoiceNumber    string            `json:"invoiceNumber"`
+	InvoiceTotal     float64           `json:"invoiceTotal"`
+	CustomerID       string            `json:"customerId"`
+	SubscriptionID   *string           `json:"subscriptionId"`
+	Provider         *string           `json:"provider"`
+	PaymentMethod    *PaymentMethod    `json:"paymentMethod"`
+	SubPaymentMethod *SubPaymentMethod `json:"subPaymentMethod"`
 }
 
 // Fired when all dunning retries are exhausted and the subscription is canceled. This is the terminal event of the dunning flow — payment.recovered will not follow. Revoke access when you receive this.
@@ -297,7 +366,7 @@ type PaymentRetryFailedData struct {
 	Reason         string `json:"reason"`
 }
 
-// Fired when a payment is refunded, fully or partially. A full refund of a subscription invoice also cancels the subscription immediately (subscription.canceled fires with reason refund); partial refunds leave the subscription untouched.
+// Fired when a payment is refunded, fully or partially. A refund does not change the subscription. Cancel it separately if it should end.
 type PaymentRefundedData struct {
 	PaymentTransactionID string  `json:"paymentTransactionId"`
 	Provider             string  `json:"provider"`
@@ -351,27 +420,33 @@ type PaymentLinkCreatedData struct {
 
 // Fired when a payment link is paid. The charge settled and a one-time invoice was generated. Fulfill the purchase on this event.
 type PaymentLinkCompletedData struct {
-	PaymentID            string  `json:"paymentId"`
-	Status               string  `json:"status"`
-	Amount               float64 `json:"amount"`
-	Currency             string  `json:"currency"`
-	Description          string  `json:"description"`
-	CustomerID           *string `json:"customerId"`
-	InvoiceID            string  `json:"invoiceId"`
-	InvoiceNumber        string  `json:"invoiceNumber"`
-	PaymentTransactionID *string `json:"paymentTransactionId"`
+	PaymentContext       any               `json:"paymentContext"`
+	PaymentID            string            `json:"paymentId"`
+	Status               string            `json:"status"`
+	Amount               float64           `json:"amount"`
+	Currency             string            `json:"currency"`
+	Description          string            `json:"description"`
+	CustomerID           *string           `json:"customerId"`
+	InvoiceID            string            `json:"invoiceId"`
+	InvoiceNumber        string            `json:"invoiceNumber"`
+	PaymentTransactionID *string           `json:"paymentTransactionId"`
+	PaymentMethod        *PaymentMethod    `json:"paymentMethod"`
+	SubPaymentMethod     *SubPaymentMethod `json:"subPaymentMethod"`
 }
 
 // Fired when a payment link charge attempt is declined. The link stays open and can be paid again — a failed link is retryable.
 type PaymentLinkFailedData struct {
-	PaymentID      string  `json:"paymentId"`
-	Status         string  `json:"status"`
-	Amount         float64 `json:"amount"`
-	Currency       string  `json:"currency"`
-	Description    string  `json:"description"`
-	CustomerID     *string `json:"customerId"`
-	FailureCode    string  `json:"failureCode"`
-	FailureMessage string  `json:"failureMessage"`
+	PaymentContext   any               `json:"paymentContext"`
+	PaymentID        string            `json:"paymentId"`
+	Status           string            `json:"status"`
+	Amount           float64           `json:"amount"`
+	Currency         string            `json:"currency"`
+	Description      string            `json:"description"`
+	CustomerID       *string           `json:"customerId"`
+	FailureCode      string            `json:"failureCode"`
+	FailureMessage   string            `json:"failureMessage"`
+	PaymentMethod    *PaymentMethod    `json:"paymentMethod"`
+	SubPaymentMethod *SubPaymentMethod `json:"subPaymentMethod"`
 }
 
 // Fired when a pending payment link is canceled before being paid. A canceled link can no longer be paid.
@@ -447,13 +522,15 @@ type InvoiceUpcomingData struct {
 type PaymentMethodAttachedData struct {
 	SubscriptionID string           `json:"subscriptionId"`
 	CustomerID     string           `json:"customerId"`
+	PaymentMethod  *PaymentMethod   `json:"paymentMethod"`
 	Card           *WebhookCardInfo `json:"card"`
 }
 
 // Fired when a customer replaces their default payment method through the customer portal. The new method applies to all of the customer's subscriptions. A payment method update is also a strong recovery signal for past-due subscriptions.
 type PaymentMethodUpdatedData struct {
-	CustomerID string           `json:"customerId"`
-	Card       *WebhookCardInfo `json:"card"`
+	CustomerID    string           `json:"customerId"`
+	PaymentMethod *PaymentMethod   `json:"paymentMethod"`
+	Card          *WebhookCardInfo `json:"card"`
 }
 
 // Fired when a customer is created, via the API (including batch create), SDK, or dashboard. The payload is the customer resource exactly as GET /customers returns it.
@@ -484,7 +561,7 @@ type CustomerUpdatedData struct {
 	UpdatedAt    string         `json:"updatedAt"`
 }
 
-// Aggregate entitlement event answering one question: what can this customer access right now? Fired on every entitlement transition (subscription lifecycle, plan changes, trials, past due, scheduled cancellations) with the customer's CURRENT subscription, plan, features, seats, and credits or balance. Handle this single event to keep access in sync instead of wiring every lifecycle event.
+// Aggregate entitlement event answering one question: what can this customer access right now? Fired on every entitlement transition (subscription lifecycle, pauses, plan changes, trials, past due, scheduled cancellations) with the customer's CURRENT subscription, plan, features, seats, and credits or balance. Handle this single event to keep access in sync instead of wiring every lifecycle event.
 type CustomerStateChangedData struct {
 	CustomerID       string                 `json:"customerId"`
 	Trigger          string                 `json:"trigger"`
@@ -789,6 +866,54 @@ func (e *WebhookEvent) AsSubscriptionActivated() (*SubscriptionActivatedData, er
 
 func (e *WebhookEvent) AsSubscriptionReactivated() (*SubscriptionReactivatedData, error) {
 	var d SubscriptionReactivatedData
+	if err := json.Unmarshal(e.Data, &d); err != nil {
+		return nil, err
+	}
+	return &d, nil
+}
+
+func (e *WebhookEvent) AsSubscriptionPauseScheduled() (*SubscriptionPauseScheduledData, error) {
+	var d SubscriptionPauseScheduledData
+	if err := json.Unmarshal(e.Data, &d); err != nil {
+		return nil, err
+	}
+	return &d, nil
+}
+
+func (e *WebhookEvent) AsSubscriptionPauseUpdated() (*SubscriptionPauseUpdatedData, error) {
+	var d SubscriptionPauseUpdatedData
+	if err := json.Unmarshal(e.Data, &d); err != nil {
+		return nil, err
+	}
+	return &d, nil
+}
+
+func (e *WebhookEvent) AsSubscriptionPauseRevoked() (*SubscriptionPauseRevokedData, error) {
+	var d SubscriptionPauseRevokedData
+	if err := json.Unmarshal(e.Data, &d); err != nil {
+		return nil, err
+	}
+	return &d, nil
+}
+
+func (e *WebhookEvent) AsSubscriptionPaused() (*SubscriptionPausedData, error) {
+	var d SubscriptionPausedData
+	if err := json.Unmarshal(e.Data, &d); err != nil {
+		return nil, err
+	}
+	return &d, nil
+}
+
+func (e *WebhookEvent) AsSubscriptionResumed() (*SubscriptionResumedData, error) {
+	var d SubscriptionResumedData
+	if err := json.Unmarshal(e.Data, &d); err != nil {
+		return nil, err
+	}
+	return &d, nil
+}
+
+func (e *WebhookEvent) AsSubscriptionResumeFailed() (*SubscriptionResumeFailedData, error) {
+	var d SubscriptionResumeFailedData
 	if err := json.Unmarshal(e.Data, &d); err != nil {
 		return nil, err
 	}

@@ -18,11 +18,11 @@ import (
 	"unicode"
 )
 
-const version = "9.3.0"
+const version = "9.4.0"
 
 const baseURL = "https://commet.co"
 
-const APIVersion = "2026-07-31"
+const APIVersion = "2026-08-27"
 
 var retryableStatusCodes = map[int]bool{
 	408: true,
@@ -130,18 +130,34 @@ func (h *httpClient) request(ctx context.Context, method string, endpoint string
 
 	var jsonBody []byte
 	if body != nil {
-		generic, err := genericize(body)
+		var err error
+		jsonBody, err = serializeRequestBody(body)
 		if err != nil {
-			return nil, fmt.Errorf("commet: failed to normalize request body: %w", err)
-		}
-		converted := convertKeys(generic, toCamel)
-		jsonBody, err = json.Marshal(converted)
-		if err != nil {
-			return nil, fmt.Errorf("commet: failed to marshal request body: %w", err)
+			return nil, err
 		}
 	}
 
 	return h.execute(ctx, method, endpoint, jsonBody, params, headers, opts, 1)
+}
+
+func serializeRequestBody(body map[string]any) ([]byte, error) {
+	converted := make(map[string]any, len(body))
+	for key, value := range body {
+		if raw, ok := value.(json.RawMessage); ok {
+			converted[toCamel(key)] = raw
+			continue
+		}
+		generic, err := genericize(value)
+		if err != nil {
+			return nil, fmt.Errorf("commet: failed to normalize request body: %w", err)
+		}
+		converted[toCamel(key)] = convertKeys(generic, toCamel)
+	}
+	encoded, err := json.Marshal(converted)
+	if err != nil {
+		return nil, fmt.Errorf("commet: failed to marshal request body: %w", err)
+	}
+	return encoded, nil
 }
 
 func (h *httpClient) execute(ctx context.Context, method string, endpoint string, jsonBody []byte, params map[string]string, headers map[string]string, opts *RequestOptions, attempt int) (*rawApiResponse, error) {

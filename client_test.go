@@ -13,6 +13,26 @@ func TestNewClient(t *testing.T) {
 			apiKey: "ck_test_abc123",
 		},
 		{
+			name:   "restricted API key",
+			apiKey: "rk_test_abc123",
+		},
+		{
+			name:   "live restricted API key",
+			apiKey: "rk_live_abc123",
+		},
+		{
+			name:   "sandbox restricted API key",
+			apiKey: "rk_sandbox_abc123",
+		},
+		{
+			name:   "live API key",
+			apiKey: "ck_live_abc123",
+		},
+		{
+			name:   "sandbox API key",
+			apiKey: "ck_sandbox_abc123",
+		},
+		{
 			name:    "empty API key",
 			apiKey:  "",
 			wantErr: "commet: API key is required",
@@ -20,7 +40,7 @@ func TestNewClient(t *testing.T) {
 		{
 			name:    "invalid API key format",
 			apiKey:  "sk_invalid_key",
-			wantErr: "commet: invalid API key format, expected prefix ck_",
+			wantErr: "commet: invalid API key format, expected prefix ck_ or rk_",
 		},
 	}
 
