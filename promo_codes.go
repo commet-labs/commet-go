@@ -62,7 +62,7 @@ func (r *PromoCodesResource) List(ctx context.Context, params *ListPromoCodesPar
 	return parseDirectResponse[PromoCodesListResult](r.http.get(ctx, "/promo-codes", query))
 }
 
-// Create a distribution code for an existing Offer. The referenced Offer owns the benefit and duration; the promo code owns redemption restrictions.
+// Create a distribution code for an existing Offer with one or more sequential discount phases and an optional leading trial. The code owns redemption restrictions.
 func (r *PromoCodesResource) Create(ctx context.Context, params *CreatePromoCodeParams) (*PromoCode, error) {
 	body := buildBody(map[string]any{
 		"code":             params.Code,
