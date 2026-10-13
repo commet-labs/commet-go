@@ -3,11 +3,12 @@ package commet
 type BillingInterval string
 
 const (
-	BillingIntervalWeekly    BillingInterval = "weekly"
-	BillingIntervalMonthly   BillingInterval = "monthly"
-	BillingIntervalQuarterly BillingInterval = "quarterly"
-	BillingIntervalYearly    BillingInterval = "yearly"
-	BillingIntervalOneTime   BillingInterval = "one_time"
+	BillingIntervalWeekly     BillingInterval = "weekly"
+	BillingIntervalMonthly    BillingInterval = "monthly"
+	BillingIntervalQuarterly  BillingInterval = "quarterly"
+	BillingIntervalSemiannual BillingInterval = "semiannual"
+	BillingIntervalYearly     BillingInterval = "yearly"
+	BillingIntervalOneTime    BillingInterval = "one_time"
 )
 
 type ConsumptionModel string

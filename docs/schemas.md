@@ -9,6 +9,7 @@ Generated from Commet API version `2026-08-27`.
 - `"weekly"`
 - `"monthly"`
 - `"quarterly"`
+- `"semiannual"`
 - `"yearly"`
 - `"one_time"`
 
