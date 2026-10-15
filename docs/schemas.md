@@ -38,12 +38,15 @@ Generated from Commet API version `2026-08-27`.
 - `"one_time_payment"`
 - `"reactivation"`
 - `"resume"`
+- `"prepayment"`
 
 ### PaymentMethod
 
 - `"card"`
 - `"oxxo"`
 - `"mercado_pago"`
+- `"google_pay"`
+- `"smartpix"`
 
 ### PaymentProvider
 
@@ -1580,6 +1583,12 @@ Discriminator: `Type`
 ### PortalAccess
 
 - `PortalURL` (`string`, required)
+- `Object` (`string`, required)
+- `Livemode` (`bool`, required)
+
+### PrepaidPeriodsCheckout
+
+- `CheckoutURL` (`string`, required)
 - `Object` (`string`, required)
 - `Livemode` (`bool`, required)
 

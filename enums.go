@@ -41,6 +41,7 @@ const (
 	InvoiceTypeOneTimePayment  InvoiceType = "one_time_payment"
 	InvoiceTypeReactivation    InvoiceType = "reactivation"
 	InvoiceTypeResume          InvoiceType = "resume"
+	InvoiceTypePrepayment      InvoiceType = "prepayment"
 )
 
 type PaymentMethod string
@@ -49,6 +50,8 @@ const (
 	PaymentMethodCard        PaymentMethod = "card"
 	PaymentMethodOxxo        PaymentMethod = "oxxo"
 	PaymentMethodMercadoPago PaymentMethod = "mercado_pago"
+	PaymentMethodGooglePay   PaymentMethod = "google_pay"
+	PaymentMethodSmartpix    PaymentMethod = "smartpix"
 )
 
 type PaymentProvider string
