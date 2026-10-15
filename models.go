@@ -2370,6 +2370,12 @@ type PortalAccess struct {
 	Livemode  bool   `json:"livemode"`
 }
 
+type PrepaidPeriodsCheckout struct {
+	CheckoutURL string `json:"checkout_url"`
+	Object      string `json:"object"`
+	Livemode    bool   `json:"livemode"`
+}
+
 type PreviewChange struct {
 	Currency          string                         `json:"currency"`
 	CurrentPlanCredit int                            `json:"current_plan_credit"`

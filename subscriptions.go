@@ -63,6 +63,13 @@ type UpdatePaymentMethodParams struct {
 	IdempotencyKey string  `json:"-"`
 }
 
+type CreatePrepaidPeriodsCheckoutParams struct {
+	Periods        int     `json:"periods"`
+	OfferID        *string `json:"offer_id,omitempty"`
+	SuccessURL     *string `json:"success_url,omitempty"`
+	IdempotencyKey string  `json:"-"`
+}
+
 type PreviewChangePlanParams struct {
 	PlanID          string  `json:"plan_id"`
 	BillingInterval *string `json:"billing_interval,omitempty"`
@@ -97,22 +104,24 @@ type ListSubscriptionsParams struct {
 }
 
 type CreateSubscriptionParams struct {
-	CustomerID      string         `json:"customer_id"`
-	BillingInterval *string        `json:"billing_interval,omitempty"`
-	PriceID         *string        `json:"price_id,omitempty"`
-	InitialSeats    map[string]int `json:"initial_seats,omitempty"`
-	Provider        *string        `json:"provider,omitempty"`
-	Name            *string        `json:"name,omitempty"`
-	StartDate       *string        `json:"start_date,omitempty"`
-	SuccessURL      *string        `json:"success_url,omitempty"`
-	OfferID         *string        `json:"offer_id,omitempty"`
-	PromoCode       *string        `json:"promo_code,omitempty"`
-	CustomTrialDays *int           `json:"custom_trial_days,omitempty"`
-	SkipTrial       *bool          `json:"skip_trial,omitempty"`
-	PlanID          *string        `json:"plan_id,omitempty"`
-	PlanCode        *string        `json:"plan_code,omitempty"`
-	CardPromotionID *string        `json:"card_promotion_id,omitempty"`
-	IdempotencyKey  string         `json:"-"`
+	CustomerID        string         `json:"customer_id"`
+	BillingInterval   *string        `json:"billing_interval,omitempty"`
+	PriceID           *string        `json:"price_id,omitempty"`
+	InitialSeats      map[string]int `json:"initial_seats,omitempty"`
+	Provider          *string        `json:"provider,omitempty"`
+	Name              *string        `json:"name,omitempty"`
+	StartDate         *string        `json:"start_date,omitempty"`
+	SuccessURL        *string        `json:"success_url,omitempty"`
+	PrepaidPeriods    *int           `json:"prepaid_periods,omitempty"`
+	CancelAtPeriodEnd *bool          `json:"cancel_at_period_end,omitempty"`
+	OfferID           *string        `json:"offer_id,omitempty"`
+	PromoCode         *string        `json:"promo_code,omitempty"`
+	CustomTrialDays   *int           `json:"custom_trial_days,omitempty"`
+	SkipTrial         *bool          `json:"skip_trial,omitempty"`
+	PlanID            *string        `json:"plan_id,omitempty"`
+	PlanCode          *string        `json:"plan_code,omitempty"`
+	CardPromotionID   *string        `json:"card_promotion_id,omitempty"`
+	IdempotencyKey    string         `json:"-"`
 }
 
 type SubscriptionsResource struct {
@@ -213,12 +222,22 @@ func (r *SubscriptionsResource) RevokePause(ctx context.Context, id string) (*Su
 	return parseDirectResponse[Subscription](r.http.delete(ctx, fmt.Sprintf("/subscriptions/%s/pause", id), nil, ""))
 }
 
-// Creates a hosted checkout session for the customer to update the subscription's default payment method.
+// Creates a hosted checkout to update the payment method of an active, trialing or past_due subscription. Pending-payment subscriptions must use their payment checkout.
 func (r *SubscriptionsResource) UpdatePaymentMethod(ctx context.Context, id string, params *UpdatePaymentMethodParams) (*PaymentMethodUpdateCheckout, error) {
 	body := buildBody(map[string]any{
 		"success_url": params.SuccessURL,
 	})
 	return parseDirectResponse[PaymentMethodUpdateCheckout](r.http.post(ctx, fmt.Sprintf("/subscriptions/%s/payment-method/update", id), body, params.IdempotencyKey))
+}
+
+// Creates a hosted checkout to pay billing periods of a recurring subscription in advance with any payment method. On an active subscription the paid periods start after the last paid period and replace any open prepaid-periods checkout. On a pending-payment subscription the first payment covers the requested periods and replaces its pending checkout. The billing interval does not change.
+func (r *SubscriptionsResource) CreatePrepaidPeriodsCheckout(ctx context.Context, id string, params *CreatePrepaidPeriodsCheckoutParams) (*PrepaidPeriodsCheckout, error) {
+	body := buildBody(map[string]any{
+		"periods":     params.Periods,
+		"offer_id":    params.OfferID,
+		"success_url": params.SuccessURL,
+	})
+	return parseDirectResponse[PrepaidPeriodsCheckout](r.http.post(ctx, fmt.Sprintf("/subscriptions/%s/prepaid-periods", id), body, params.IdempotencyKey))
 }
 
 // Preview proration details for an immediate plan change without applying it. Free-to-paid changes are never scheduled and the change-plan endpoint always returns hosted checkout for them. For paid plans, interval direction takes precedence: a longer interval is immediate and a shorter interval is scheduled. When the interval is unchanged, a higher-sort-order plan is immediate and a lower-sort-order plan is scheduled. A paid-to-free change is always scheduled. Returns credit, charge, and net amount. The target plan must belong to the same plan group as the current plan, otherwise a 400 with code `plans_not_in_same_group` is returned. A change between two free plans has nothing to prorate and returns a zero-amount estimate. Scheduled changes return a 400 with code `plan_change_scheduled`; apply those via the change-plan endpoint. Pass offerId to quote the destination plan with an Offer.
@@ -283,21 +302,23 @@ func (r *SubscriptionsResource) List(ctx context.Context, params *ListSubscripti
 // Create a subscription for a customer. Commet selects the default price when priceId is omitted. The subscription starts at the base USD price; market and currency are resolved from the buyer's request country when the checkout opens. Without an offer override, Commet applies the price's automatic introductory Offer. Pass offerId to apply an active compatible Offer directly, or cardPromotionId to preselect a card-eligible Promotional Offer for the initial checkout when card promotions are enabled for the organization. For the initial checkout, provider accepts either a processor name or an exact payment connection ID.
 func (r *SubscriptionsResource) Create(ctx context.Context, params *CreateSubscriptionParams) (*CreatedSubscription, error) {
 	body := buildBody(map[string]any{
-		"customer_id":       params.CustomerID,
-		"billing_interval":  params.BillingInterval,
-		"price_id":          params.PriceID,
-		"initial_seats":     params.InitialSeats,
-		"provider":          params.Provider,
-		"name":              params.Name,
-		"start_date":        params.StartDate,
-		"success_url":       params.SuccessURL,
-		"offer_id":          params.OfferID,
-		"promo_code":        params.PromoCode,
-		"custom_trial_days": params.CustomTrialDays,
-		"skip_trial":        params.SkipTrial,
-		"plan_id":           params.PlanID,
-		"plan_code":         params.PlanCode,
-		"card_promotion_id": params.CardPromotionID,
+		"customer_id":          params.CustomerID,
+		"billing_interval":     params.BillingInterval,
+		"price_id":             params.PriceID,
+		"initial_seats":        params.InitialSeats,
+		"provider":             params.Provider,
+		"name":                 params.Name,
+		"start_date":           params.StartDate,
+		"success_url":          params.SuccessURL,
+		"prepaid_periods":      params.PrepaidPeriods,
+		"cancel_at_period_end": params.CancelAtPeriodEnd,
+		"offer_id":             params.OfferID,
+		"promo_code":           params.PromoCode,
+		"custom_trial_days":    params.CustomTrialDays,
+		"skip_trial":           params.SkipTrial,
+		"plan_id":              params.PlanID,
+		"plan_code":            params.PlanCode,
+		"card_promotion_id":    params.CardPromotionID,
 	})
 	return parseDirectResponse[CreatedSubscription](r.http.post(ctx, "/subscriptions", body, params.IdempotencyKey))
 }
