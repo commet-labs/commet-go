@@ -76,12 +76,14 @@ market, err := client.Markets.Create(ctx, &commet.CreateMarketParams{
 	CountryCodes: []string{"AR"},
 })
 
+durationCycles := 3
 offer, err := client.Offers.Create(ctx, &commet.CreateOfferParams{
-	Name: "30-day trial",
+	Name: "First three months at 25% off",
 	Phases: []commet.CreateOfferParamsPhasesItem{{
 		Value: commet.CreateOfferParamsPhasesItemVariant1{
-			Type:         "free_trial",
-			DurationDays: 30,
+			Type:           "percentage",
+			DurationCycles: &durationCycles,
+			Percentage:     2500,
 		},
 	}},
 })

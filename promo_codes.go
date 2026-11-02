@@ -6,12 +6,13 @@ import (
 )
 
 type UpdatePromoCodeParams struct {
-	BillingInterval *string  `json:"billing_interval,omitempty"`
-	MaxRedemptions  *int     `json:"max_redemptions,omitempty"`
-	ExpiresAt       *string  `json:"expires_at,omitempty"`
-	Active          *bool    `json:"active,omitempty"`
-	PlanIds         []string `json:"plan_ids,omitempty"`
-	IdempotencyKey  string   `json:"-"`
+	BillingInterval   *string  `json:"billing_interval,omitempty"`
+	MaxRedemptions    *int     `json:"max_redemptions,omitempty"`
+	ExpiresAt         *string  `json:"expires_at,omitempty"`
+	Active            *bool    `json:"active,omitempty"`
+	PlanIds           []string `json:"plan_ids,omitempty"`
+	FirstPurchaseOnly *bool    `json:"first_purchase_only,omitempty"`
+	IdempotencyKey    string   `json:"-"`
 }
 
 type ListPromoCodesParams struct {
@@ -20,13 +21,14 @@ type ListPromoCodesParams struct {
 }
 
 type CreatePromoCodeParams struct {
-	Code            string   `json:"code"`
-	OfferID         string   `json:"offer_id"`
-	BillingInterval *string  `json:"billing_interval,omitempty"`
-	MaxRedemptions  *int     `json:"max_redemptions,omitempty"`
-	ExpiresAt       *string  `json:"expires_at,omitempty"`
-	PlanIds         []string `json:"plan_ids,omitempty"`
-	IdempotencyKey  string   `json:"-"`
+	Code              string   `json:"code"`
+	OfferID           string   `json:"offer_id"`
+	BillingInterval   *string  `json:"billing_interval,omitempty"`
+	MaxRedemptions    *int     `json:"max_redemptions,omitempty"`
+	ExpiresAt         *string  `json:"expires_at,omitempty"`
+	PlanIds           []string `json:"plan_ids,omitempty"`
+	FirstPurchaseOnly *bool    `json:"first_purchase_only,omitempty"`
+	IdempotencyKey    string   `json:"-"`
 }
 
 type PromoCodesResource struct {
@@ -41,11 +43,12 @@ func (r *PromoCodesResource) Get(ctx context.Context, id string) (*PromoCode, er
 // Update a promo code's billing interval, redemption limits, expiration, active status, or plan restrictions.
 func (r *PromoCodesResource) Update(ctx context.Context, id string, params *UpdatePromoCodeParams) (*PromoCode, error) {
 	body := buildBody(map[string]any{
-		"billing_interval": params.BillingInterval,
-		"max_redemptions":  params.MaxRedemptions,
-		"expires_at":       params.ExpiresAt,
-		"active":           params.Active,
-		"plan_ids":         params.PlanIds,
+		"billing_interval":    params.BillingInterval,
+		"max_redemptions":     params.MaxRedemptions,
+		"expires_at":          params.ExpiresAt,
+		"active":              params.Active,
+		"plan_ids":            params.PlanIds,
+		"first_purchase_only": params.FirstPurchaseOnly,
 	})
 	return parseDirectResponse[PromoCode](r.http.patch(ctx, fmt.Sprintf("/promo-codes/%s", id), body, params.IdempotencyKey))
 }
@@ -62,15 +65,16 @@ func (r *PromoCodesResource) List(ctx context.Context, params *ListPromoCodesPar
 	return parseDirectResponse[PromoCodesListResult](r.http.get(ctx, "/promo-codes", query))
 }
 
-// Create a distribution code for an existing Offer with one or more sequential discount phases and an optional leading trial. The code owns redemption restrictions.
+// Create a distribution code for an existing Offer with one or more sequential discount phases. The code owns redemption restrictions.
 func (r *PromoCodesResource) Create(ctx context.Context, params *CreatePromoCodeParams) (*PromoCode, error) {
 	body := buildBody(map[string]any{
-		"code":             params.Code,
-		"offer_id":         params.OfferID,
-		"billing_interval": params.BillingInterval,
-		"max_redemptions":  params.MaxRedemptions,
-		"expires_at":       params.ExpiresAt,
-		"plan_ids":         params.PlanIds,
+		"code":                params.Code,
+		"offer_id":            params.OfferID,
+		"billing_interval":    params.BillingInterval,
+		"max_redemptions":     params.MaxRedemptions,
+		"expires_at":          params.ExpiresAt,
+		"plan_ids":            params.PlanIds,
+		"first_purchase_only": params.FirstPurchaseOnly,
 	})
 	return parseDirectResponse[PromoCode](r.http.post(ctx, "/promo-codes", body, params.IdempotencyKey))
 }

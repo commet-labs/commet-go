@@ -36,27 +36,29 @@ type UpsertRegionalPricesParams struct {
 }
 
 type UpdatePlanPriceParams struct {
-	Price           *int                                    `json:"price,omitempty"`
-	IsDefault       *bool                                   `json:"is_default,omitempty"`
-	TrialDays       *int                                    `json:"trial_days,omitempty"`
-	IncludedBalance *int                                    `json:"included_balance,omitempty"`
-	IncludedCredits *int                                    `json:"included_credits,omitempty"`
-	Metadata        map[string]any                          `json:"metadata,omitempty"`
-	MarketPrices    []UpdatePlanPriceParamsMarketPricesItem `json:"market_prices,omitempty"`
-	IdempotencyKey  string                                  `json:"-"`
+	Price                      *int                                    `json:"price,omitempty"`
+	IsDefault                  *bool                                   `json:"is_default,omitempty"`
+	TrialDays                  *int                                    `json:"trial_days,omitempty"`
+	TrialRequiresPaymentMethod *bool                                   `json:"trial_requires_payment_method,omitempty"`
+	IncludedBalance            *int                                    `json:"included_balance,omitempty"`
+	IncludedCredits            *int                                    `json:"included_credits,omitempty"`
+	Metadata                   map[string]any                          `json:"metadata,omitempty"`
+	MarketPrices               []UpdatePlanPriceParamsMarketPricesItem `json:"market_prices,omitempty"`
+	IdempotencyKey             string                                  `json:"-"`
 }
 
 type AddPlanPriceParams struct {
-	BillingInterval     string                               `json:"billing_interval"`
-	Metadata            map[string]any                       `json:"metadata,omitempty"`
-	Price               *int                                 `json:"price,omitempty"`
-	TrialDays           *int                                 `json:"trial_days,omitempty"`
-	IsDefault           *bool                                `json:"is_default,omitempty"`
-	IncludedBalance     *int                                 `json:"included_balance,omitempty"`
-	IncludedCredits     *int                                 `json:"included_credits,omitempty"`
-	MarketPrices        []AddPlanPriceParamsMarketPricesItem `json:"market_prices,omitempty"`
-	InheritsFromPriceID *string                              `json:"inherits_from_price_id,omitempty"`
-	IdempotencyKey      string                               `json:"-"`
+	BillingInterval            string                               `json:"billing_interval"`
+	Metadata                   map[string]any                       `json:"metadata,omitempty"`
+	Price                      *int                                 `json:"price,omitempty"`
+	TrialDays                  *int                                 `json:"trial_days,omitempty"`
+	TrialRequiresPaymentMethod *bool                                `json:"trial_requires_payment_method,omitempty"`
+	IsDefault                  *bool                                `json:"is_default,omitempty"`
+	IncludedBalance            *int                                 `json:"included_balance,omitempty"`
+	IncludedCredits            *int                                 `json:"included_credits,omitempty"`
+	MarketPrices               []AddPlanPriceParamsMarketPricesItem `json:"market_prices,omitempty"`
+	InheritsFromPriceID        *string                              `json:"inherits_from_price_id,omitempty"`
+	IdempotencyKey             string                               `json:"-"`
 }
 
 type SetPlanRegionalPricingParams struct {
@@ -68,11 +70,14 @@ type SetPlanRegionalPricingParams struct {
 }
 
 type UpdatePlanParams struct {
-	Name           *string        `json:"name,omitempty"`
-	Description    *string        `json:"description,omitempty"`
-	Metadata       map[string]any `json:"metadata,omitempty"`
-	IsPublic       *bool          `json:"is_public,omitempty"`
-	IdempotencyKey string         `json:"-"`
+	Name              *string                            `json:"name,omitempty"`
+	Description       *string                            `json:"description,omitempty"`
+	Metadata          map[string]any                     `json:"metadata,omitempty"`
+	IsPublic          *bool                              `json:"is_public,omitempty"`
+	UnusedPlanCredits *UpdatePlanParamsUnusedPlanCredits `json:"unused_plan_credits,omitempty"`
+	PlanCreditLimit   *UpdatePlanParamsPlanCreditLimit   `json:"plan_credit_limit,omitempty"`
+	IsDefault         *bool                              `json:"is_default,omitempty"`
+	IdempotencyKey    string                             `json:"-"`
 }
 
 type SetPlanVisibilityParams struct {
@@ -85,16 +90,19 @@ type ListPlansParams struct {
 }
 
 type CreatePlanParams struct {
-	Name              string         `json:"name"`
-	Code              string         `json:"code"`
-	Description       *string        `json:"description,omitempty"`
-	ConsumptionModel  *string        `json:"consumption_model,omitempty"`
-	IsPublic          *bool          `json:"is_public,omitempty"`
-	IsFree            *bool          `json:"is_free,omitempty"`
-	BlockOnExhaustion *bool          `json:"block_on_exhaustion,omitempty"`
-	PlanGroupID       *string        `json:"plan_group_id,omitempty"`
-	Metadata          map[string]any `json:"metadata,omitempty"`
-	IdempotencyKey    string         `json:"-"`
+	Name              string                             `json:"name"`
+	Code              string                             `json:"code"`
+	Description       *string                            `json:"description,omitempty"`
+	ConsumptionModel  *string                            `json:"consumption_model,omitempty"`
+	IsPublic          *bool                              `json:"is_public,omitempty"`
+	IsFree            *bool                              `json:"is_free,omitempty"`
+	BlockOnExhaustion *bool                              `json:"block_on_exhaustion,omitempty"`
+	UnusedPlanCredits *CreatePlanParamsUnusedPlanCredits `json:"unused_plan_credits,omitempty"`
+	PlanCreditLimit   *CreatePlanParamsPlanCreditLimit   `json:"plan_credit_limit,omitempty"`
+	PlanGroupID       *string                            `json:"plan_group_id,omitempty"`
+	IsDefault         *bool                              `json:"is_default,omitempty"`
+	Metadata          map[string]any                     `json:"metadata,omitempty"`
+	IdempotencyKey    string                             `json:"-"`
 }
 
 type PlansResource struct {
@@ -154,13 +162,14 @@ func (r *PlansResource) DeleteRegionalPrices(ctx context.Context, id string, pri
 // Update a base price or market price variant. Removing a base market override is rejected while a variant depends on it. Offer terms are managed through Offers.
 func (r *PlansResource) UpdatePrice(ctx context.Context, id string, priceID string, params *UpdatePlanPriceParams) (*PlanPrice, error) {
 	body := buildBody(map[string]any{
-		"price":            params.Price,
-		"is_default":       params.IsDefault,
-		"trial_days":       params.TrialDays,
-		"included_balance": params.IncludedBalance,
-		"included_credits": params.IncludedCredits,
-		"metadata":         params.Metadata,
-		"market_prices":    params.MarketPrices,
+		"price":                         params.Price,
+		"is_default":                    params.IsDefault,
+		"trial_days":                    params.TrialDays,
+		"trial_requires_payment_method": params.TrialRequiresPaymentMethod,
+		"included_balance":              params.IncludedBalance,
+		"included_credits":              params.IncludedCredits,
+		"metadata":                      params.Metadata,
+		"market_prices":                 params.MarketPrices,
 	})
 	return parseDirectResponse[PlanPrice](r.http.patch(ctx, fmt.Sprintf("/plans/%s/prices/%s", id, priceID), body, params.IdempotencyKey))
 }
@@ -173,15 +182,16 @@ func (r *PlansResource) DeletePrice(ctx context.Context, id string, priceID stri
 // Add a base price or a selectable market price variant. Variants inherit their base price outside the markets they override. Configure introductory and promotional benefits through Offers.
 func (r *PlansResource) AddPrice(ctx context.Context, id string, params *AddPlanPriceParams) (*PlanPrice, error) {
 	body := buildBody(map[string]any{
-		"billing_interval":       params.BillingInterval,
-		"metadata":               params.Metadata,
-		"price":                  params.Price,
-		"trial_days":             params.TrialDays,
-		"is_default":             params.IsDefault,
-		"included_balance":       params.IncludedBalance,
-		"included_credits":       params.IncludedCredits,
-		"market_prices":          params.MarketPrices,
-		"inherits_from_price_id": params.InheritsFromPriceID,
+		"billing_interval":              params.BillingInterval,
+		"metadata":                      params.Metadata,
+		"price":                         params.Price,
+		"trial_days":                    params.TrialDays,
+		"trial_requires_payment_method": params.TrialRequiresPaymentMethod,
+		"is_default":                    params.IsDefault,
+		"included_balance":              params.IncludedBalance,
+		"included_credits":              params.IncludedCredits,
+		"market_prices":                 params.MarketPrices,
+		"inherits_from_price_id":        params.InheritsFromPriceID,
 	})
 	return parseDirectResponse[PlanPrice](r.http.post(ctx, fmt.Sprintf("/plans/%s/prices", id), body, params.IdempotencyKey))
 }
@@ -202,13 +212,16 @@ func (r *PlansResource) Get(ctx context.Context, id string) (*Plan, error) {
 	return parseDirectResponse[Plan](r.http.get(ctx, fmt.Sprintf("/plans/%s", id), nil))
 }
 
-// Update a plan's name, description, visibility, or metadata.
+// Update a plan's name, description, visibility, default status, metadata, what happens to its unused plan credits, or its plan credit limit.
 func (r *PlansResource) Update(ctx context.Context, id string, params *UpdatePlanParams) (*Plan, error) {
 	body := buildBody(map[string]any{
-		"name":        params.Name,
-		"description": params.Description,
-		"metadata":    params.Metadata,
-		"is_public":   params.IsPublic,
+		"name":                params.Name,
+		"description":         params.Description,
+		"metadata":            params.Metadata,
+		"is_public":           params.IsPublic,
+		"unused_plan_credits": params.UnusedPlanCredits,
+		"plan_credit_limit":   params.PlanCreditLimit,
+		"is_default":          params.IsDefault,
 	})
 	return parseDirectResponse[Plan](r.http.patch(ctx, fmt.Sprintf("/plans/%s", id), body, params.IdempotencyKey))
 }
@@ -245,7 +258,10 @@ func (r *PlansResource) Create(ctx context.Context, params *CreatePlanParams) (*
 		"is_public":           params.IsPublic,
 		"is_free":             params.IsFree,
 		"block_on_exhaustion": params.BlockOnExhaustion,
+		"unused_plan_credits": params.UnusedPlanCredits,
+		"plan_credit_limit":   params.PlanCreditLimit,
 		"plan_group_id":       params.PlanGroupID,
+		"is_default":          params.IsDefault,
 		"metadata":            params.Metadata,
 	})
 	return parseDirectResponse[Plan](r.http.post(ctx, "/plans", body, params.IdempotencyKey))
