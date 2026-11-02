@@ -53,6 +53,7 @@ type UpdateCustomerParams struct {
 
 type BatchCreateCustomersParams struct {
 	Customers      []BatchCreateCustomersParamsCustomersItem `json:"customers"`
+	PlanGroupID    *string                                   `json:"plan_group_id,omitempty"`
 	IdempotencyKey string                                    `json:"-"`
 }
 
@@ -72,6 +73,7 @@ type CreateCustomerParams struct {
 	Email          string                       `json:"email"`
 	Timezone       *Timezone                    `json:"timezone,omitempty"`
 	Metadata       map[string]any               `json:"metadata,omitempty"`
+	PlanGroupID    *string                      `json:"plan_group_id,omitempty"`
 	IdempotencyKey string                       `json:"-"`
 }
 
@@ -156,10 +158,11 @@ func (r *CustomersResource) Update(ctx context.Context, id string, params *Updat
 	return parseDirectResponse[Customer](r.http.patch(ctx, fmt.Sprintf("/customers/%s", id), body, params.IdempotencyKey))
 }
 
-// Create up to 100 customers in a single request.
+// Create up to 100 customers in a single request. With planGroupId, each customer without an open subscription starts on that group's starting plan (see planGroupId), and the entry of a deleted customer fails with customer_deleted.
 func (r *CustomersResource) CreateBatch(ctx context.Context, params *BatchCreateCustomersParams) (*CustomerBatch, error) {
 	body := buildBody(map[string]any{
-		"customers": params.Customers,
+		"customers":     params.Customers,
+		"plan_group_id": params.PlanGroupID,
 	})
 	return parseDirectResponse[CustomerBatch](r.http.post(ctx, "/customers/batch", body, params.IdempotencyKey))
 }
@@ -179,18 +182,19 @@ func (r *CustomersResource) List(ctx context.Context, params *ListCustomersParam
 	return parseDirectResponse[CustomersListResult](r.http.get(ctx, "/customers", query))
 }
 
-// Create a new customer. Idempotent when customerId is provided.
+// Create a new customer. Idempotent when customerId is provided. With planGroupId, a customer without an open subscription starts on that group's starting plan (see planGroupId), and the externalId of a deleted customer is rejected.
 func (r *CustomersResource) Create(ctx context.Context, params *CreateCustomerParams) (*Customer, error) {
 	body := buildBody(map[string]any{
-		"id":           params.ID,
-		"external_id":  params.ExternalID,
-		"full_name":    params.FullName,
-		"tax_document": params.TaxDocument,
-		"address":      params.Address,
-		"address_id":   params.AddressID,
-		"email":        params.Email,
-		"timezone":     params.Timezone,
-		"metadata":     params.Metadata,
+		"id":            params.ID,
+		"external_id":   params.ExternalID,
+		"full_name":     params.FullName,
+		"tax_document":  params.TaxDocument,
+		"address":       params.Address,
+		"address_id":    params.AddressID,
+		"email":         params.Email,
+		"timezone":      params.Timezone,
+		"metadata":      params.Metadata,
+		"plan_group_id": params.PlanGroupID,
 	})
 	return parseDirectResponse[Customer](r.http.post(ctx, "/customers", body, params.IdempotencyKey))
 }

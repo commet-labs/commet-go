@@ -10,6 +10,14 @@ type ActivateAddonParams struct {
 	IdempotencyKey string `json:"-"`
 }
 
+type UpdateSubscriptionAutoTopUpParams struct {
+	Enabled        *bool  `json:"enabled,omitempty"`
+	Threshold      *int   `json:"threshold,omitempty"`
+	Quantity       *int   `json:"quantity,omitempty"`
+	MaxPerPeriod   *int   `json:"max_per_period,omitempty"`
+	IdempotencyKey string `json:"-"`
+}
+
 type AdjustBalanceParams struct {
 	Amount         int     `json:"amount"`
 	Reason         *string `json:"reason,omitempty"`
@@ -33,12 +41,14 @@ type ChangePlanParams struct {
 	NewBillingInterval *string `json:"new_billing_interval,omitempty"`
 	SuccessURL         *string `json:"success_url,omitempty"`
 	OfferID            *string `json:"offer_id,omitempty"`
+	PromoCode          *string `json:"promo_code,omitempty"`
 	IdempotencyKey     string  `json:"-"`
 }
 
 type PurchaseCreditsParams struct {
-	CreditPackID   string `json:"credit_pack_id"`
-	IdempotencyKey string `json:"-"`
+	CreditPackID   *string `json:"credit_pack_id,omitempty"`
+	Quantity       *int    `json:"quantity,omitempty"`
+	IdempotencyKey string  `json:"-"`
 }
 
 type ApplySubscriptionOfferParams struct {
@@ -74,6 +84,7 @@ type PreviewChangePlanParams struct {
 	PlanID          string  `json:"plan_id"`
 	BillingInterval *string `json:"billing_interval,omitempty"`
 	OfferID         *string `json:"offer_id,omitempty"`
+	PromoCode       *string `json:"promo_code,omitempty"`
 	IdempotencyKey  string  `json:"-"`
 }
 
@@ -141,6 +152,22 @@ func (r *SubscriptionsResource) ActivateAddon(ctx context.Context, id string, pa
 	return parseDirectResponse[SubscriptionAddon](r.http.post(ctx, fmt.Sprintf("/subscriptions/%s/addons", id), body, params.IdempotencyKey))
 }
 
+// Read whether the subscription buys credits automatically with its saved payment method when credits reach a threshold, with the top-ups used this period and the last failure.
+func (r *SubscriptionsResource) GetAutoTopUp(ctx context.Context, id string) (*SubscriptionAutoTopUp, error) {
+	return parseDirectResponse[SubscriptionAutoTopUp](r.http.get(ctx, fmt.Sprintf("/subscriptions/%s/auto-top-up", id), nil))
+}
+
+// Turn automatic credit purchases on or off and set the threshold, the credits each top-up buys and the maximum top-ups per period. Send only the fields that change. Enabling requires a plan that sells credits. The quantity must be at least the plan's purchase minimum when auto top-up is enabled or when the quantity changes, so turning it off keeps working after the minimum rises. Saving it enabled resumes a paused auto top-up.
+func (r *SubscriptionsResource) UpdateAutoTopUp(ctx context.Context, id string, params *UpdateSubscriptionAutoTopUpParams) (*SubscriptionAutoTopUp, error) {
+	body := buildBody(map[string]any{
+		"enabled":        params.Enabled,
+		"threshold":      params.Threshold,
+		"quantity":       params.Quantity,
+		"max_per_period": params.MaxPerPeriod,
+	})
+	return parseDirectResponse[SubscriptionAutoTopUp](r.http.patch(ctx, fmt.Sprintf("/subscriptions/%s/auto-top-up", id), body, params.IdempotencyKey))
+}
+
 // Adjust a subscription's balance or credits by a signed amount. Positive adds, negative subtracts.
 func (r *SubscriptionsResource) AdjustBalance(ctx context.Context, id string, params *AdjustBalanceParams) (*BalanceAdjustment, error) {
 	body := buildBody(map[string]any{
@@ -168,26 +195,28 @@ func (r *SubscriptionsResource) Cancel(ctx context.Context, id string, params *C
 	return parseDirectResponse[Subscription](r.http.post(ctx, fmt.Sprintf("/subscriptions/%s/cancel", id), body, params.IdempotencyKey))
 }
 
-// Upgrade or change billing interval immediately, optionally applying an Offer. Scheduled changes do not accept offers.
+// Upgrade or change billing interval immediately, optionally applying an Offer by offerId or the Offer of a promoCode. Scheduled changes accept neither offerId nor promoCode. From a free plan, a promoCode opens the checkout with the code applied and counts its use when the checkout is paid; without offerId or promoCode, a destination price whose free trial requires no payment method starts that trial right away without checkout. During a trial without a payment method, an immediate change returns 409 no_payment_method; scheduled changes still apply.
 func (r *SubscriptionsResource) ChangePlan(ctx context.Context, id string, params *ChangePlanParams) (*PlanChange, error) {
 	body := buildBody(map[string]any{
 		"new_plan_id":          params.NewPlanID,
 		"new_billing_interval": params.NewBillingInterval,
 		"success_url":          params.SuccessURL,
 		"offer_id":             params.OfferID,
+		"promo_code":           params.PromoCode,
 	})
 	return parseDirectResponse[PlanChange](r.http.post(ctx, fmt.Sprintf("/subscriptions/%s/change-plan", id), body, params.IdempotencyKey))
 }
 
-// Purchase a credit pack for a subscription. Charges the customer and adds credits to their balance.
+// Purchase a fixed credit pack or choose a whole credit quantity at the subscription plan price and minimum. Charges the saved payment method and adds purchased credits.
 func (r *SubscriptionsResource) PurchaseCredits(ctx context.Context, id string, params *PurchaseCreditsParams) (*CreditGrant, error) {
 	body := buildBody(map[string]any{
 		"credit_pack_id": params.CreditPackID,
+		"quantity":       params.Quantity,
 	})
 	return parseDirectResponse[CreditGrant](r.http.post(ctx, fmt.Sprintf("/subscriptions/%s/credits", id), body, params.IdempotencyKey))
 }
 
-// Apply a direct Offer to a subscription. On a pending payment checkout it quotes or replaces the checkout discount and the existing checkout URL remains unchanged. On an active subscription it applies the Offer immediately with its discount phases starting at the next billing cycle; the call is rejected while another applied Offer still has active or upcoming discount phases. Offers with a free trial phase cannot be applied after checkout creation.
+// Apply a direct Offer to a subscription. On a pending checkout it quotes or replaces the checkout discount, which starts after the plan price trial when there is one, and the existing checkout URL remains unchanged. On an active subscription it applies the Offer immediately with its discount phases starting at the next billing cycle; the call is rejected while another applied Offer still has active or upcoming discount phases.
 func (r *SubscriptionsResource) ApplyOffer(ctx context.Context, id string, params *ApplySubscriptionOfferParams) (*Subscription, error) {
 	body := buildBody(map[string]any{
 		"offer_id":   params.OfferID,
@@ -240,12 +269,13 @@ func (r *SubscriptionsResource) CreatePrepaidPeriodsCheckout(ctx context.Context
 	return parseDirectResponse[PrepaidPeriodsCheckout](r.http.post(ctx, fmt.Sprintf("/subscriptions/%s/prepaid-periods", id), body, params.IdempotencyKey))
 }
 
-// Preview proration details for an immediate plan change without applying it. Free-to-paid changes are never scheduled and the change-plan endpoint always returns hosted checkout for them. For paid plans, interval direction takes precedence: a longer interval is immediate and a shorter interval is scheduled. When the interval is unchanged, a higher-sort-order plan is immediate and a lower-sort-order plan is scheduled. A paid-to-free change is always scheduled. Returns credit, charge, and net amount. The target plan must belong to the same plan group as the current plan, otherwise a 400 with code `plans_not_in_same_group` is returned. A change between two free plans has nothing to prorate and returns a zero-amount estimate. Scheduled changes return a 400 with code `plan_change_scheduled`; apply those via the change-plan endpoint. Pass offerId to quote the destination plan with an Offer.
+// Preview proration details for an immediate plan change without applying it. Free-to-paid changes are never scheduled and the change-plan endpoint returns hosted checkout for them, except a change without offerId or promoCode to a price whose free trial needs no payment method, for a customer who never had that plan: it starts the trial at once, so the preview reports nothing due today. For paid plans, interval direction takes precedence: a longer interval is immediate and a shorter interval is scheduled. When the interval is unchanged, a higher-sort-order plan is immediate and a lower-sort-order plan is scheduled. A paid-to-free change is always scheduled. Returns credit, charge, and net amount. The target plan must belong to the same plan group as the current plan, otherwise a 400 with code `plans_not_in_same_group` is returned. A change between two free plans has nothing to prorate and returns a zero-amount estimate. Scheduled changes return a 400 with code `plan_change_scheduled`; apply those via the change-plan endpoint. Pass offerId to quote the destination plan with an Offer, or promoCode to quote it with the Offer of a promo code validated with the checkout's rules.
 func (r *SubscriptionsResource) PreviewChange(ctx context.Context, id string, params *PreviewChangePlanParams) (*PreviewChange, error) {
 	body := buildBody(map[string]any{
 		"plan_id":          params.PlanID,
 		"billing_interval": params.BillingInterval,
 		"offer_id":         params.OfferID,
+		"promo_code":       params.PromoCode,
 	})
 	return parseDirectResponse[PreviewChange](r.http.post(ctx, fmt.Sprintf("/subscriptions/%s/preview-change", id), body, params.IdempotencyKey))
 }
@@ -271,6 +301,11 @@ func (r *SubscriptionsResource) Resume(ctx context.Context, id string, params *R
 // Get a subscription by its public ID, regardless of status (including pending_payment and past_due).
 func (r *SubscriptionsResource) Get(ctx context.Context, id string) (*Subscription, error) {
 	return parseDirectResponse[Subscription](r.http.get(ctx, fmt.Sprintf("/subscriptions/%s", id), nil))
+}
+
+// Revoke the plan or interval change scheduled for the end of the period, so the subscription stays on its current plan. Returns the updated subscription.
+func (r *SubscriptionsResource) RevokeScheduledPlanChange(ctx context.Context, id string) (*Subscription, error) {
+	return parseDirectResponse[Subscription](r.http.delete(ctx, fmt.Sprintf("/subscriptions/%s/scheduled-plan-change", id), nil, ""))
 }
 
 // Revert a scheduled cancellation and return the updated subscription. Only works before cancellation takes effect.
@@ -299,7 +334,7 @@ func (r *SubscriptionsResource) List(ctx context.Context, params *ListSubscripti
 	return parseDirectResponse[SubscriptionsListResult](r.http.get(ctx, "/subscriptions", query))
 }
 
-// Create a subscription for a customer. Commet selects the default price when priceId is omitted. The subscription starts at the base USD price; market and currency are resolved from the buyer's request country when the checkout opens. Without an offer override, Commet applies the price's automatic introductory Offer. Pass offerId to apply an active compatible Offer directly, or cardPromotionId to preselect a card-eligible Promotional Offer for the initial checkout when card promotions are enabled for the organization. For the initial checkout, provider accepts either a processor name or an exact payment connection ID.
+// Create a subscription for a customer. Commet selects the default price when priceId is omitted. The subscription starts at the base USD price; market and currency are resolved from the buyer's request country when the checkout opens. Without an offer override, Commet applies the price's automatic introductory Offer. Pass offerId to apply an active compatible Offer directly, or cardPromotionId to preselect a card-eligible Promotional Offer for the initial checkout when card promotions are enabled for the organization. For the initial checkout, provider accepts either a processor name or an exact payment connection ID. When the price's free trial requires no payment method, the subscription starts trialing right away with no checkout (checkoutUrl null, hasPaymentMethod false); it cannot be combined with offerId, promoCode, cardPromotionId or provider, and an organization that cannot charge yet receives 403.
 func (r *SubscriptionsResource) Create(ctx context.Context, params *CreateSubscriptionParams) (*CreatedSubscription, error) {
 	body := buildBody(map[string]any{
 		"customer_id":          params.CustomerID,
