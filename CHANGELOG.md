@@ -1,5 +1,15 @@
 # Changelog
 
+## 9.9.0
+
+- Subscriptions on a balance plan split their balance in two parts: the plan balance (spent first, replaced or rolled over at each reset) and the purchased balance (top-ups and manual adjustments, kept until the subscription ends), plus the total. Credits subscriptions add their plan credits and total. The existing remaining amount keeps its meaning.
+- `Plans.Create` and `Plans.Update` accept `UnusedPlanBalance` (expire or roll over up to a maximum plan balance) and `PlanBalanceLimit` (the most plan balance spent per day or week), and `Plans.Update` accepts `BlockOnExhaustion` to turn overage on or off. Plans return both settings.
+- `Subscriptions.UpdateAutoTopUp` accepts `Amount` for balance plans and `Subscriptions.GetAutoTopUp` returns it, so balance subscriptions top up automatically; `amount_below_minimum` is a new failure reason.
+- Usage checks, usage events and the `customer.state_changed` balance add the plan balance limit window and the plan, purchased and total balance parts.
+- New webhook events `balance.granted`, `balance.expired` and `payment_method.detached`.
+- `Customers.Create` and `Customers.Update` accept `BusinessTaxID`, and customers return it.
+- `Subscriptions.Create` accepts `PaymentMethodTypes` to limit the payment methods its initial checkout offers.
+
 ## 9.8.0
 
 - `Subscriptions.PurchaseCredits` buys a chosen `Quantity` of credits at the plan's price, besides a `CreditPackID`.
