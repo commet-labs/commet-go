@@ -10,12 +10,13 @@ type ListActiveAddonsParams struct {
 }
 
 type UpdateAddonParams struct {
-	Name           *string `json:"name,omitempty"`
-	Description    *string `json:"description,omitempty"`
-	BasePrice      *int    `json:"base_price,omitempty"`
-	IncludedUnits  *int    `json:"included_units,omitempty"`
-	OverageRate    *int    `json:"overage_rate,omitempty"`
-	IdempotencyKey string  `json:"-"`
+	Name           *string  `json:"name,omitempty"`
+	Description    *string  `json:"description,omitempty"`
+	BasePrice      *int     `json:"base_price,omitempty"`
+	IncludedUnits  *int     `json:"included_units,omitempty"`
+	OverageRate    *int     `json:"overage_rate,omitempty"`
+	PlanIds        []string `json:"plan_ids,omitempty"`
+	IdempotencyKey string   `json:"-"`
 }
 
 type ListAddonsParams struct {
@@ -24,15 +25,16 @@ type ListAddonsParams struct {
 }
 
 type CreateAddonParams struct {
-	Name             string  `json:"name"`
-	Description      *string `json:"description,omitempty"`
-	BasePrice        int     `json:"base_price"`
-	FeatureID        string  `json:"feature_id"`
-	ConsumptionModel string  `json:"consumption_model"`
-	IncludedUnits    *int    `json:"included_units,omitempty"`
-	OverageRate      *int    `json:"overage_rate,omitempty"`
-	CreditCost       *int    `json:"credit_cost,omitempty"`
-	IdempotencyKey   string  `json:"-"`
+	Name             string   `json:"name"`
+	Description      *string  `json:"description,omitempty"`
+	BasePrice        int      `json:"base_price"`
+	FeatureID        string   `json:"feature_id"`
+	PlanIds          []string `json:"plan_ids,omitempty"`
+	ConsumptionModel string   `json:"consumption_model"`
+	IncludedUnits    *int     `json:"included_units,omitempty"`
+	OverageRate      *int     `json:"overage_rate,omitempty"`
+	CreditCost       *int     `json:"credit_cost,omitempty"`
+	IdempotencyKey   string   `json:"-"`
 }
 
 type AddonsResource struct {
@@ -53,7 +55,7 @@ func (r *AddonsResource) Get(ctx context.Context, id string) (*Addon, error) {
 	return parseDirectResponse[Addon](r.http.get(ctx, fmt.Sprintf("/addons/%s", id), nil))
 }
 
-// Update an add-on's name, description, or pricing.
+// Update an add-on's name, description, pricing, or the plans that sell it.
 func (r *AddonsResource) Update(ctx context.Context, id string, params *UpdateAddonParams) (*Addon, error) {
 	body := buildBody(map[string]any{
 		"name":           params.Name,
@@ -61,6 +63,7 @@ func (r *AddonsResource) Update(ctx context.Context, id string, params *UpdateAd
 		"base_price":     params.BasePrice,
 		"included_units": params.IncludedUnits,
 		"overage_rate":   params.OverageRate,
+		"plan_ids":       params.PlanIds,
 	})
 	return parseDirectResponse[Addon](r.http.patch(ctx, fmt.Sprintf("/addons/%s", id), body, params.IdempotencyKey))
 }
@@ -89,6 +92,7 @@ func (r *AddonsResource) Create(ctx context.Context, params *CreateAddonParams) 
 		"description":       params.Description,
 		"base_price":        params.BasePrice,
 		"feature_id":        params.FeatureID,
+		"plan_ids":          params.PlanIds,
 		"consumption_model": params.ConsumptionModel,
 		"included_units":    params.IncludedUnits,
 		"overage_rate":      params.OverageRate,

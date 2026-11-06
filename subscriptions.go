@@ -46,6 +46,12 @@ type ChangePlanParams struct {
 	IdempotencyKey     string  `json:"-"`
 }
 
+type ChangeSubscriptionVersionParams struct {
+	PlanVersionID  string `json:"plan_version_id"`
+	Effective      string `json:"effective"`
+	IdempotencyKey string `json:"-"`
+}
+
 type PurchaseCreditsParams struct {
 	CreditPackID   *string `json:"credit_pack_id,omitempty"`
 	Quantity       *int    `json:"quantity,omitempty"`
@@ -111,8 +117,9 @@ type GetActiveSubscriptionParams struct {
 }
 
 type ListSubscriptionsParams struct {
-	CustomerID *string             `json:"customer_id,omitempty"`
-	Status     *SubscriptionStatus `json:"status,omitempty"`
+	CustomerID    *string             `json:"customer_id,omitempty"`
+	Status        *SubscriptionStatus `json:"status,omitempty"`
+	PlanVersionID *string             `json:"plan_version_id,omitempty"`
 }
 
 type CreateSubscriptionParams struct {
@@ -127,6 +134,7 @@ type CreateSubscriptionParams struct {
 	SuccessURL         *string        `json:"success_url,omitempty"`
 	PrepaidPeriods     *int           `json:"prepaid_periods,omitempty"`
 	CancelAtPeriodEnd  *bool          `json:"cancel_at_period_end,omitempty"`
+	PlanVersionID      *string        `json:"plan_version_id,omitempty"`
 	OfferID            *string        `json:"offer_id,omitempty"`
 	PromoCode          *string        `json:"promo_code,omitempty"`
 	CustomTrialDays    *int           `json:"custom_trial_days,omitempty"`
@@ -146,7 +154,7 @@ func (r *SubscriptionsResource) DeactivateAddon(ctx context.Context, id string, 
 	return parseDirectResponse[DeletedSubscriptionAddon](r.http.delete(ctx, fmt.Sprintf("/subscriptions/%s/addons/%s", id, addonID), nil, ""))
 }
 
-// Activate an add-on on a subscription. Charges a prorated amount for the current billing period.
+// Activate an add-on on a subscription. Charges a prorated amount for the current billing period. An add-on that the subscription's plan version does not sell is rejected with addon_unavailable.
 func (r *SubscriptionsResource) ActivateAddon(ctx context.Context, id string, params *ActivateAddonParams) (*SubscriptionAddon, error) {
 	body := buildBody(map[string]any{
 		"addon_id": params.AddonID,
@@ -210,7 +218,16 @@ func (r *SubscriptionsResource) ChangePlan(ctx context.Context, id string, param
 	return parseDirectResponse[PlanChange](r.http.post(ctx, fmt.Sprintf("/subscriptions/%s/change-plan", id), body, params.IdempotencyKey))
 }
 
-// Purchase a fixed credit pack or choose a whole credit quantity at the subscription plan price and minimum. Charges the saved payment method and adds purchased credits.
+// Move a subscription to a newer published version of its plan, now or at the end of the period, without proration; an older version is rejected with version_not_newer, and a subscription on a running experiment moves only to a later version of that experiment. The subscription keeps its currency and its price: a destination that does not sell its currency is rejected with missing_regional_price, and one that does not sell the price it pays with price_not_found. A free version moves only to a free version and a paid one only to a paid one (validation_error). A subscription whose usage does not fit the destination, or with an active add-on the destination does not sell, is not moved either, and the error says why. Repeating the same request changes nothing; a new one replaces the pending move.
+func (r *SubscriptionsResource) ChangeVersion(ctx context.Context, id string, params *ChangeSubscriptionVersionParams) (*Subscription, error) {
+	body := buildBody(map[string]any{
+		"plan_version_id": params.PlanVersionID,
+		"effective":       params.Effective,
+	})
+	return parseDirectResponse[Subscription](r.http.post(ctx, fmt.Sprintf("/subscriptions/%s/change-version", id), body, params.IdempotencyKey))
+}
+
+// Purchase a fixed credit pack or choose a whole credit quantity at the subscription plan price and minimum. Charges the saved payment method and adds purchased credits. A credit pack that the subscription's plan version does not sell is rejected with credit_pack_unavailable.
 func (r *SubscriptionsResource) PurchaseCredits(ctx context.Context, id string, params *PurchaseCreditsParams) (*CreditGrant, error) {
 	body := buildBody(map[string]any{
 		"credit_pack_id": params.CreditPackID,
@@ -311,6 +328,11 @@ func (r *SubscriptionsResource) RevokeScheduledPlanChange(ctx context.Context, i
 	return parseDirectResponse[Subscription](r.http.delete(ctx, fmt.Sprintf("/subscriptions/%s/scheduled-plan-change", id), nil, ""))
 }
 
+// Cancel the move to another plan version pending for the next renewal, so the subscription stays on its version, and send subscription.version_change_canceled with reason canceled_by_merchant. A move made now has nothing pending to revoke. With nothing pending it changes nothing. Returns the subscription.
+func (r *SubscriptionsResource) RevokeScheduledVersionChange(ctx context.Context, id string) (*Subscription, error) {
+	return parseDirectResponse[Subscription](r.http.delete(ctx, fmt.Sprintf("/subscriptions/%s/scheduled-version-change", id), nil, ""))
+}
+
 // Revert a scheduled cancellation and return the updated subscription. Only works before cancellation takes effect.
 func (r *SubscriptionsResource) Uncancel(ctx context.Context, id string, params *UncancelSubscriptionParams) (*Subscription, error) {
 	return parseDirectResponse[Subscription](r.http.post(ctx, fmt.Sprintf("/subscriptions/%s/uncancel", id), map[string]any{}, params.IdempotencyKey))
@@ -334,6 +356,9 @@ func (r *SubscriptionsResource) List(ctx context.Context, params *ListSubscripti
 	if params.Status != nil {
 		query["status"] = string(*params.Status)
 	}
+	if params.PlanVersionID != nil {
+		query["plan_version_id"] = *params.PlanVersionID
+	}
 	return parseDirectResponse[SubscriptionsListResult](r.http.get(ctx, "/subscriptions", query))
 }
 
@@ -351,6 +376,7 @@ func (r *SubscriptionsResource) Create(ctx context.Context, params *CreateSubscr
 		"success_url":          params.SuccessURL,
 		"prepaid_periods":      params.PrepaidPeriods,
 		"cancel_at_period_end": params.CancelAtPeriodEnd,
+		"plan_version_id":      params.PlanVersionID,
 		"offer_id":             params.OfferID,
 		"promo_code":           params.PromoCode,
 		"custom_trial_days":    params.CustomTrialDays,
