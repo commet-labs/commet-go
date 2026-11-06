@@ -44,6 +44,7 @@ type UpdateCustomerParams struct {
 	Email          *string                      `json:"email,omitempty"`
 	FullName       *string                      `json:"full_name,omitempty"`
 	TaxDocument    *string                      `json:"tax_document,omitempty"`
+	BusinessTaxID  *string                      `json:"business_tax_id,omitempty"`
 	ExternalID     *string                      `json:"external_id,omitempty"`
 	Timezone       *Timezone                    `json:"timezone,omitempty"`
 	Metadata       map[string]any               `json:"metadata,omitempty"`
@@ -68,6 +69,7 @@ type CreateCustomerParams struct {
 	ExternalID     *string                      `json:"external_id,omitempty"`
 	FullName       *string                      `json:"full_name,omitempty"`
 	TaxDocument    *string                      `json:"tax_document,omitempty"`
+	BusinessTaxID  *string                      `json:"business_tax_id,omitempty"`
 	Address        *CreateCustomerParamsAddress `json:"address,omitempty"`
 	AddressID      *string                      `json:"address_id,omitempty"`
 	Email          string                       `json:"email"`
@@ -147,13 +149,14 @@ func (r *CustomersResource) Get(ctx context.Context, id string) (*Customer, erro
 // Update a customer's name, external ID, or metadata.
 func (r *CustomersResource) Update(ctx context.Context, id string, params *UpdateCustomerParams) (*Customer, error) {
 	body := buildBody(map[string]any{
-		"email":        params.Email,
-		"full_name":    params.FullName,
-		"tax_document": params.TaxDocument,
-		"external_id":  params.ExternalID,
-		"timezone":     params.Timezone,
-		"metadata":     params.Metadata,
-		"address":      params.Address,
+		"email":           params.Email,
+		"full_name":       params.FullName,
+		"tax_document":    params.TaxDocument,
+		"business_tax_id": params.BusinessTaxID,
+		"external_id":     params.ExternalID,
+		"timezone":        params.Timezone,
+		"metadata":        params.Metadata,
+		"address":         params.Address,
 	})
 	return parseDirectResponse[Customer](r.http.patch(ctx, fmt.Sprintf("/customers/%s", id), body, params.IdempotencyKey))
 }
@@ -185,16 +188,17 @@ func (r *CustomersResource) List(ctx context.Context, params *ListCustomersParam
 // Create a new customer. Idempotent when customerId is provided. With planGroupId, a customer without an open subscription starts on that group's starting plan (see planGroupId), and the externalId of a deleted customer is rejected.
 func (r *CustomersResource) Create(ctx context.Context, params *CreateCustomerParams) (*Customer, error) {
 	body := buildBody(map[string]any{
-		"id":            params.ID,
-		"external_id":   params.ExternalID,
-		"full_name":     params.FullName,
-		"tax_document":  params.TaxDocument,
-		"address":       params.Address,
-		"address_id":    params.AddressID,
-		"email":         params.Email,
-		"timezone":      params.Timezone,
-		"metadata":      params.Metadata,
-		"plan_group_id": params.PlanGroupID,
+		"id":              params.ID,
+		"external_id":     params.ExternalID,
+		"full_name":       params.FullName,
+		"tax_document":    params.TaxDocument,
+		"business_tax_id": params.BusinessTaxID,
+		"address":         params.Address,
+		"address_id":      params.AddressID,
+		"email":           params.Email,
+		"timezone":        params.Timezone,
+		"metadata":        params.Metadata,
+		"plan_group_id":   params.PlanGroupID,
 	})
 	return parseDirectResponse[Customer](r.http.post(ctx, "/customers", body, params.IdempotencyKey))
 }
