@@ -45,6 +45,7 @@ const (
 	EventInvoiceUpcoming                   WebhookEventType = "invoice.upcoming"
 	EventPaymentMethodAttached             WebhookEventType = "payment_method.attached"
 	EventPaymentMethodUpdated              WebhookEventType = "payment_method.updated"
+	EventPaymentMethodDetached             WebhookEventType = "payment_method.detached"
 	EventCustomerCreated                   WebhookEventType = "customer.created"
 	EventCustomerUpdated                   WebhookEventType = "customer.updated"
 	EventCustomerStateChanged              WebhookEventType = "customer.state_changed"
@@ -57,9 +58,11 @@ const (
 	EventCreditsLow                        WebhookEventType = "credits.low"
 	EventCreditsDepleted                   WebhookEventType = "credits.depleted"
 	EventCreditsExpired                    WebhookEventType = "credits.expired"
+	EventBalanceGranted                    WebhookEventType = "balance.granted"
 	EventBalanceToppedUp                   WebhookEventType = "balance.topped_up"
 	EventBalanceLow                        WebhookEventType = "balance.low"
 	EventBalanceDepleted                   WebhookEventType = "balance.depleted"
+	EventBalanceExpired                    WebhookEventType = "balance.expired"
 	EventQuotaThresholdReached             WebhookEventType = "quota.threshold_reached"
 	EventQuotaExceeded                     WebhookEventType = "quota.exceeded"
 	EventSeatsUpdated                      WebhookEventType = "seats.updated"
@@ -533,32 +536,42 @@ type PaymentMethodUpdatedData struct {
 	Card          *WebhookCardInfo `json:"card"`
 }
 
+// Fired when a saved payment method is removed from a customer: the customer unlinked it at the payment provider (for example, revoking a Mercado Pago authorization), or removed it through the customer portal. Removing a method never changes the customer's subscriptions; a renewal that finds no usable method follows the usual failed-payment recovery.
+type PaymentMethodDetachedData struct {
+	CustomerID    string           `json:"customerId"`
+	PaymentMethod *PaymentMethod   `json:"paymentMethod"`
+	Card          *WebhookCardInfo `json:"card"`
+	Reason        string           `json:"reason"`
+}
+
 // Fired when a customer is created, via the API (including batch create), SDK, or dashboard. The payload is the customer resource exactly as GET /customers returns it.
 type CustomerCreatedData struct {
-	ID           string         `json:"id"`
-	ExternalID   *string        `json:"externalId"`
-	FullName     *string        `json:"fullName"`
-	Email        string         `json:"email"`
-	TaxDocument  *string        `json:"taxDocument"`
-	DocumentType *string        `json:"documentType"`
-	Timezone     *string        `json:"timezone"`
-	Metadata     map[string]any `json:"metadata"`
-	CreatedAt    string         `json:"createdAt"`
-	UpdatedAt    string         `json:"updatedAt"`
+	ID            string         `json:"id"`
+	ExternalID    *string        `json:"externalId"`
+	FullName      *string        `json:"fullName"`
+	Email         string         `json:"email"`
+	TaxDocument   *string        `json:"taxDocument"`
+	DocumentType  *string        `json:"documentType"`
+	BusinessTaxID any            `json:"businessTaxId"`
+	Timezone      *string        `json:"timezone"`
+	Metadata      map[string]any `json:"metadata"`
+	CreatedAt     string         `json:"createdAt"`
+	UpdatedAt     string         `json:"updatedAt"`
 }
 
 // Fired when a customer's details change (email, name, timezone, externalId, or metadata). Carries the same customer resource shape as customer.created with the current values.
 type CustomerUpdatedData struct {
-	ID           string         `json:"id"`
-	ExternalID   *string        `json:"externalId"`
-	FullName     *string        `json:"fullName"`
-	Email        string         `json:"email"`
-	TaxDocument  *string        `json:"taxDocument"`
-	DocumentType *string        `json:"documentType"`
-	Timezone     *string        `json:"timezone"`
-	Metadata     map[string]any `json:"metadata"`
-	CreatedAt    string         `json:"createdAt"`
-	UpdatedAt    string         `json:"updatedAt"`
+	ID            string         `json:"id"`
+	ExternalID    *string        `json:"externalId"`
+	FullName      *string        `json:"fullName"`
+	Email         string         `json:"email"`
+	TaxDocument   *string        `json:"taxDocument"`
+	DocumentType  *string        `json:"documentType"`
+	BusinessTaxID any            `json:"businessTaxId"`
+	Timezone      *string        `json:"timezone"`
+	Metadata      map[string]any `json:"metadata"`
+	CreatedAt     string         `json:"createdAt"`
+	UpdatedAt     string         `json:"updatedAt"`
 }
 
 // Aggregate entitlement event answering one question: what can this customer access right now? Fired on every entitlement transition (subscription lifecycle, pauses, plan changes, trials, past due, scheduled cancellations) with the customer's CURRENT subscription, plan, features, seats, and credits or balance. Handle this single event to keep access in sync instead of wiring every lifecycle event.
@@ -678,7 +691,7 @@ type CreditsPurchasedData struct {
 	Credits        float64 `json:"credits"`
 }
 
-// Fired when a subscription's remaining credits cross below 10% of the credits granted for the current period. Emitted once per billing period, when the crossing happens.
+// Fired when a subscription's available credits (plan plus purchased) cross below 10% of their last refill: a period reset, a purchase or a manual adjustment. Emitted once per crossing, the same rule as balance.low.
 type CreditsLowData struct {
 	SubscriptionID   string  `json:"subscriptionId"`
 	CustomerID       string  `json:"customerId"`
@@ -687,7 +700,7 @@ type CreditsLowData struct {
 	PeriodCredits    float64 `json:"periodCredits"`
 }
 
-// Fired when a subscription's credits hit zero. Usage requests that need more credits than remain are rejected from this point. Also fires customer.state_changed with trigger credits_depleted.
+// Fired each time a subscription's available credits cross to zero or below. Usage that needs more credits than remain is rejected from this point, unless the plan allows overage, which is billed at its price per credit at the next renewal. Also fires customer.state_changed with trigger credits_depleted.
 type CreditsDepletedData struct {
 	SubscriptionID   string  `json:"subscriptionId"`
 	CustomerID       string  `json:"customerId"`
@@ -701,7 +714,16 @@ type CreditsExpiredData struct {
 	ExpiredCredits float64 `json:"expiredCredits"`
 }
 
-// Fired when a customer on a balance plan tops up their prepaid balance through the customer portal and the payment succeeds.
+// Fired when non-purchase balance is granted to a subscription: the plan balance at the start of each billing period, or a manual adjustment from the dashboard or the API, which goes to the purchased balance. Balance top-ups fire balance.topped_up instead.
+type BalanceGrantedData struct {
+	SubscriptionID string  `json:"subscriptionId"`
+	CustomerID     string  `json:"customerId"`
+	Amount         float64 `json:"amount"`
+	Currency       string  `json:"currency"`
+	Reason         string  `json:"reason"`
+}
+
+// Fired when a balance top-up succeeds: through the API, an automatic top-up or the customer portal. The amount goes to the purchased balance, which is spent after the plan balance and kept until the subscription ends.
 type BalanceToppedUpData struct {
 	SubscriptionID string  `json:"subscriptionId"`
 	CustomerID     string  `json:"customerId"`
@@ -725,6 +747,14 @@ type BalanceDepletedData struct {
 	SubscriptionID string  `json:"subscriptionId"`
 	CustomerID     string  `json:"customerId"`
 	CurrentBalance float64 `json:"currentBalance"`
+	Currency       string  `json:"currency"`
+}
+
+// Fired at a reset when unused plan balance is discarded. On a plan whose unused plan balance expires, all of it expires at each reset. On a plan that rolls it over, a reset keeps it, up to the plan's maxPlanBalance when it has one, and only the excess expires. An overage debt invoiced at the renewal counts as nothing left over. Purchased balance never expires and is not affected.
+type BalanceExpiredData struct {
+	SubscriptionID string  `json:"subscriptionId"`
+	CustomerID     string  `json:"customerId"`
+	ExpiredAmount  float64 `json:"expiredAmount"`
 	Currency       string  `json:"currency"`
 }
 
@@ -1168,6 +1198,14 @@ func (e *WebhookEvent) AsPaymentMethodUpdated() (*PaymentMethodUpdatedData, erro
 	return &d, nil
 }
 
+func (e *WebhookEvent) AsPaymentMethodDetached() (*PaymentMethodDetachedData, error) {
+	var d PaymentMethodDetachedData
+	if err := json.Unmarshal(e.Data, &d); err != nil {
+		return nil, err
+	}
+	return &d, nil
+}
+
 func (e *WebhookEvent) AsCustomerCreated() (*CustomerCreatedData, error) {
 	var d CustomerCreatedData
 	if err := json.Unmarshal(e.Data, &d); err != nil {
@@ -1264,6 +1302,14 @@ func (e *WebhookEvent) AsCreditsExpired() (*CreditsExpiredData, error) {
 	return &d, nil
 }
 
+func (e *WebhookEvent) AsBalanceGranted() (*BalanceGrantedData, error) {
+	var d BalanceGrantedData
+	if err := json.Unmarshal(e.Data, &d); err != nil {
+		return nil, err
+	}
+	return &d, nil
+}
+
 func (e *WebhookEvent) AsBalanceToppedUp() (*BalanceToppedUpData, error) {
 	var d BalanceToppedUpData
 	if err := json.Unmarshal(e.Data, &d); err != nil {
@@ -1282,6 +1328,14 @@ func (e *WebhookEvent) AsBalanceLow() (*BalanceLowData, error) {
 
 func (e *WebhookEvent) AsBalanceDepleted() (*BalanceDepletedData, error) {
 	var d BalanceDepletedData
+	if err := json.Unmarshal(e.Data, &d); err != nil {
+		return nil, err
+	}
+	return &d, nil
+}
+
+func (e *WebhookEvent) AsBalanceExpired() (*BalanceExpiredData, error) {
+	var d BalanceExpiredData
 	if err := json.Unmarshal(e.Data, &d); err != nil {
 		return nil, err
 	}

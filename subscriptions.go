@@ -14,6 +14,7 @@ type UpdateSubscriptionAutoTopUpParams struct {
 	Enabled        *bool  `json:"enabled,omitempty"`
 	Threshold      *int   `json:"threshold,omitempty"`
 	Quantity       *int   `json:"quantity,omitempty"`
+	Amount         *int   `json:"amount,omitempty"`
 	MaxPerPeriod   *int   `json:"max_per_period,omitempty"`
 	IdempotencyKey string `json:"-"`
 }
@@ -115,24 +116,25 @@ type ListSubscriptionsParams struct {
 }
 
 type CreateSubscriptionParams struct {
-	CustomerID        string         `json:"customer_id"`
-	BillingInterval   *string        `json:"billing_interval,omitempty"`
-	PriceID           *string        `json:"price_id,omitempty"`
-	InitialSeats      map[string]int `json:"initial_seats,omitempty"`
-	Provider          *string        `json:"provider,omitempty"`
-	Name              *string        `json:"name,omitempty"`
-	StartDate         *string        `json:"start_date,omitempty"`
-	SuccessURL        *string        `json:"success_url,omitempty"`
-	PrepaidPeriods    *int           `json:"prepaid_periods,omitempty"`
-	CancelAtPeriodEnd *bool          `json:"cancel_at_period_end,omitempty"`
-	OfferID           *string        `json:"offer_id,omitempty"`
-	PromoCode         *string        `json:"promo_code,omitempty"`
-	CustomTrialDays   *int           `json:"custom_trial_days,omitempty"`
-	SkipTrial         *bool          `json:"skip_trial,omitempty"`
-	PlanID            *string        `json:"plan_id,omitempty"`
-	PlanCode          *string        `json:"plan_code,omitempty"`
-	CardPromotionID   *string        `json:"card_promotion_id,omitempty"`
-	IdempotencyKey    string         `json:"-"`
+	CustomerID         string         `json:"customer_id"`
+	BillingInterval    *string        `json:"billing_interval,omitempty"`
+	PriceID            *string        `json:"price_id,omitempty"`
+	InitialSeats       map[string]int `json:"initial_seats,omitempty"`
+	Provider           *string        `json:"provider,omitempty"`
+	PaymentMethodTypes []string       `json:"payment_method_types,omitempty"`
+	Name               *string        `json:"name,omitempty"`
+	StartDate          *string        `json:"start_date,omitempty"`
+	SuccessURL         *string        `json:"success_url,omitempty"`
+	PrepaidPeriods     *int           `json:"prepaid_periods,omitempty"`
+	CancelAtPeriodEnd  *bool          `json:"cancel_at_period_end,omitempty"`
+	OfferID            *string        `json:"offer_id,omitempty"`
+	PromoCode          *string        `json:"promo_code,omitempty"`
+	CustomTrialDays    *int           `json:"custom_trial_days,omitempty"`
+	SkipTrial          *bool          `json:"skip_trial,omitempty"`
+	PlanID             *string        `json:"plan_id,omitempty"`
+	PlanCode           *string        `json:"plan_code,omitempty"`
+	CardPromotionID    *string        `json:"card_promotion_id,omitempty"`
+	IdempotencyKey     string         `json:"-"`
 }
 
 type SubscriptionsResource struct {
@@ -152,17 +154,18 @@ func (r *SubscriptionsResource) ActivateAddon(ctx context.Context, id string, pa
 	return parseDirectResponse[SubscriptionAddon](r.http.post(ctx, fmt.Sprintf("/subscriptions/%s/addons", id), body, params.IdempotencyKey))
 }
 
-// Read whether the subscription buys credits automatically with its saved payment method when credits reach a threshold, with the top-ups used this period and the last failure.
+// Read whether the subscription tops up automatically with its saved payment method when its available credits or balance reach a threshold, with the top-ups used this period and the last failure.
 func (r *SubscriptionsResource) GetAutoTopUp(ctx context.Context, id string) (*SubscriptionAutoTopUp, error) {
 	return parseDirectResponse[SubscriptionAutoTopUp](r.http.get(ctx, fmt.Sprintf("/subscriptions/%s/auto-top-up", id), nil))
 }
 
-// Turn automatic credit purchases on or off and set the threshold, the credits each top-up buys and the maximum top-ups per period. Send only the fields that change. Enabling requires a plan that sells credits. The quantity must be at least the plan's purchase minimum when auto top-up is enabled or when the quantity changes, so turning it off keeps working after the minimum rises. Saving it enabled resumes a paused auto top-up.
+// Turn automatic top-ups on or off and set the threshold, the size of each top-up and the maximum top-ups per period. Send only the fields that change. On a credits plan each top-up buys `quantity` credits; on a balance plan it adds `amount` in minor units of the subscription currency, plus tax, and `threshold` is in the same minor units. Enabling requires a plan that sells credits or has balance top-ups on. The size must be at least the plan's minimum when auto top-up is enabled or when the size changes, so turning it off keeps working after the minimum rises. Saving it enabled resumes a paused auto top-up.
 func (r *SubscriptionsResource) UpdateAutoTopUp(ctx context.Context, id string, params *UpdateSubscriptionAutoTopUpParams) (*SubscriptionAutoTopUp, error) {
 	body := buildBody(map[string]any{
 		"enabled":        params.Enabled,
 		"threshold":      params.Threshold,
 		"quantity":       params.Quantity,
+		"amount":         params.Amount,
 		"max_per_period": params.MaxPerPeriod,
 	})
 	return parseDirectResponse[SubscriptionAutoTopUp](r.http.patch(ctx, fmt.Sprintf("/subscriptions/%s/auto-top-up", id), body, params.IdempotencyKey))
@@ -178,7 +181,7 @@ func (r *SubscriptionsResource) AdjustBalance(ctx context.Context, id string, pa
 	return parseDirectResponse[BalanceAdjustment](r.http.post(ctx, fmt.Sprintf("/subscriptions/%s/balance/adjust", id), body, params.IdempotencyKey))
 }
 
-// Top up a subscription's balance. Charges the customer's payment method for the specified amount.
+// Top up a balance subscription. Charges the customer's payment method for the amount plus tax, adds it to the subscription's purchased balance (after paying back any overage owed on the plan balance), creates its invoice and emits `balance.topped_up`. Purchased balance is spent after the plan balance and is kept until the subscription ends. Rejected with 400 when the subscription is not on a balance plan, its plan has top-ups turned off, or the amount is below the effective minimum: the plan's minimum top-up in the subscription currency, raised to the currency's minimum charge.
 func (r *SubscriptionsResource) TopupBalance(ctx context.Context, id string, params *TopupBalanceParams) (*BalanceTopup, error) {
 	body := buildBody(map[string]any{
 		"amount": params.Amount,
@@ -342,6 +345,7 @@ func (r *SubscriptionsResource) Create(ctx context.Context, params *CreateSubscr
 		"price_id":             params.PriceID,
 		"initial_seats":        params.InitialSeats,
 		"provider":             params.Provider,
+		"payment_method_types": params.PaymentMethodTypes,
 		"name":                 params.Name,
 		"start_date":           params.StartDate,
 		"success_url":          params.SuccessURL,
