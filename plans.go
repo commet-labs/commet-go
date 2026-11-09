@@ -344,7 +344,7 @@ func (r *PlansResource) CancelMoveSubscription(ctx context.Context, id string, m
 	return parseDirectResponse[PlanMove](r.http.post(ctx, fmt.Sprintf("/plans/%s/moves/%s/subscriptions/%s/cancel", id, moveID, subscriptionID), map[string]any{}, params.IdempotencyKey))
 }
 
-// List a plan's latest moves of subscribers between versions, newest first, with how many are moving, moved, need a change, were left out, canceled or kept on their version.
+// List a plan's latest moves of subscribers between versions, newest first, including the change of a single subscription, with how many are moving, moved, need a change, were left out, canceled or kept on their version.
 func (r *PlansResource) ListMoves(ctx context.Context, id string) (*PlansListMovesResult, error) {
 	return parseDirectResponse[PlansListMovesResult](r.http.get(ctx, fmt.Sprintf("/plans/%s/moves", id), nil))
 }

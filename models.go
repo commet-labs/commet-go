@@ -3715,14 +3715,14 @@ type SetPlanRegionalPricingParamsPricesItem struct {
 }
 
 type SubscriberNeedingAChange struct {
-	SubscriptionID string  `json:"subscription_id"`
-	MoveID         *string `json:"move_id"`
-	FromVersionID  string  `json:"from_version_id"`
-	ToVersionID    string  `json:"to_version_id"`
-	Code           string  `json:"code"`
-	Message        string  `json:"message"`
-	Object         string  `json:"object"`
-	Livemode       bool    `json:"livemode"`
+	SubscriptionID string `json:"subscription_id"`
+	MoveID         string `json:"move_id"`
+	FromVersionID  string `json:"from_version_id"`
+	ToVersionID    string `json:"to_version_id"`
+	Code           string `json:"code"`
+	Message        string `json:"message"`
+	Object         string `json:"object"`
+	Livemode       bool   `json:"livemode"`
 }
 
 type Subscription struct {
