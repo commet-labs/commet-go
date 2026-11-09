@@ -4619,6 +4619,7 @@ type Transaction struct {
 	Subtotal          *int                       `json:"subtotal"`
 	TaxAmount         *int                       `json:"tax_amount"`
 	PresentmentAmount *int                       `json:"presentment_amount"`
+	AmountRefunded    int                        `json:"amount_refunded"`
 	Currency          string                     `json:"currency"`
 	Provider          PaymentProvider            `json:"provider"`
 	PaymentMethod     *PaymentMethod             `json:"payment_method"`
@@ -4642,6 +4643,7 @@ type TransactionListItem struct {
 	Subtotal          *int                               `json:"subtotal"`
 	TaxAmount         *int                               `json:"tax_amount"`
 	PresentmentAmount *int                               `json:"presentment_amount"`
+	AmountRefunded    int                                `json:"amount_refunded"`
 	Currency          string                             `json:"currency"`
 	Provider          PaymentProvider                    `json:"provider"`
 	PaymentMethod     *PaymentMethod                     `json:"payment_method"`

@@ -398,6 +398,7 @@ type PaymentRefundedData struct {
 	InvoiceNumber        *string `json:"invoiceNumber"`
 	CustomerID           *string `json:"customerId"`
 	SubscriptionID       *string `json:"subscriptionId"`
+	AmountRefunded       int     `json:"amountRefunded"`
 	RefundAmount         float64 `json:"refundAmount"`
 	Currency             string  `json:"currency"`
 }

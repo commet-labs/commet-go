@@ -355,6 +355,7 @@ Fired when a payment is refunded, fully or partially. A refund does not change t
 - `invoiceNumber` (`string`)
 - `customerId` (`string`)
 - `subscriptionId` (`string`)
+- `amountRefunded` (`int`)
 - `refundAmount` (`float64`)
 - `currency` (`string`)
 

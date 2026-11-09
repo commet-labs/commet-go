@@ -6,6 +6,7 @@ import (
 )
 
 type RefundTransactionParams struct {
+	Amount         *int   `json:"amount,omitempty"`
 	IdempotencyKey string `json:"-"`
 }
 
@@ -24,9 +25,12 @@ type TransactionsResource struct {
 	http *httpClient
 }
 
-// Issue a full refund and return the provider-neutral refund resource with its actual status.
+// Refund a positive amount in the payment currency’s smallest unit, or omit amount to refund the remaining amount. Returns the refund resource with its actual status.
 func (r *TransactionsResource) Refund(ctx context.Context, id string, params *RefundTransactionParams) (*Refund, error) {
-	return parseDirectResponse[Refund](r.http.post(ctx, fmt.Sprintf("/transactions/%s/refund", id), map[string]any{}, params.IdempotencyKey))
+	body := buildBody(map[string]any{
+		"amount": params.Amount,
+	})
+	return parseDirectResponse[Refund](r.http.post(ctx, fmt.Sprintf("/transactions/%s/refund", id), body, params.IdempotencyKey))
 }
 
 // Retry a failed subscription renewal and return an honest retry result. The original failed transaction remains immutable.
