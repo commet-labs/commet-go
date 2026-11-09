@@ -5,6 +5,56 @@ import (
 	"fmt"
 )
 
+type PublishPlanDraftParams struct {
+	PublishAs      string                              `json:"publish_as"`
+	Move           *string                             `json:"move,omitempty"`
+	Changes        []PublishPlanDraftParamsChangesItem `json:"changes,omitempty"`
+	Preview        *bool                               `json:"preview,omitempty"`
+	ExperimentCode *string                             `json:"experiment_code,omitempty"`
+	IdempotencyKey string                              `json:"-"`
+}
+
+type UpdatePlanDraftParams struct {
+	Prices         []UpdatePlanDraftParamsPricesItem    `json:"prices,omitempty"`
+	Countries      []UpdatePlanDraftParamsCountriesItem `json:"countries,omitempty"`
+	Rules          *UpdatePlanDraftParamsRules          `json:"rules,omitempty"`
+	Undo           []string                             `json:"undo,omitempty"`
+	IdempotencyKey string                               `json:"-"`
+}
+
+type CreatePlanDraftParams struct {
+	FromVersionID  *string `json:"from_version_id,omitempty"`
+	IdempotencyKey string  `json:"-"`
+}
+
+type ArchivePlanExperimentParams struct {
+	Subscribers    *string                                  `json:"subscribers,omitempty"`
+	Changes        []ArchivePlanExperimentParamsChangesItem `json:"changes,omitempty"`
+	Preview        *bool                                    `json:"preview,omitempty"`
+	IdempotencyKey string                                   `json:"-"`
+}
+
+type MakePlanExperimentCurrentParams struct {
+	IdempotencyKey string `json:"-"`
+}
+
+type CreatePlanExperimentVersionParams struct {
+	Prices         []CreatePlanExperimentVersionParamsPricesItem     `json:"prices,omitempty"`
+	Currencies     []CreatePlanExperimentVersionParamsCurrenciesItem `json:"currencies,omitempty"`
+	MaxPlanCredits *int                                              `json:"max_plan_credits,omitempty"`
+	MaxPlanBalance *int                                              `json:"max_plan_balance,omitempty"`
+	IdempotencyKey string                                            `json:"-"`
+}
+
+type CreatePlanExperimentParams struct {
+	Prices         []CreatePlanExperimentParamsPricesItem     `json:"prices,omitempty"`
+	Currencies     []CreatePlanExperimentParamsCurrenciesItem `json:"currencies,omitempty"`
+	MaxPlanCredits *int                                       `json:"max_plan_credits,omitempty"`
+	MaxPlanBalance *int                                       `json:"max_plan_balance,omitempty"`
+	Code           string                                     `json:"code"`
+	IdempotencyKey string                                     `json:"-"`
+}
+
 type UpdatePlanFeatureParams struct {
 	Enabled        *bool                           `json:"enabled,omitempty"`
 	IncludedAmount *int                            `json:"included_amount,omitempty"`
@@ -24,6 +74,28 @@ type AddPlanFeatureParams struct {
 	PricingMode    *string                      `json:"pricing_mode,omitempty"`
 	Margin         *int                         `json:"margin,omitempty"`
 	IdempotencyKey string                       `json:"-"`
+}
+
+type CancelPlanMoveParams struct {
+	IdempotencyKey string `json:"-"`
+}
+
+type CancelPlanMoveSubscriptionParams struct {
+	IdempotencyKey string `json:"-"`
+}
+
+type CreatePlanMoveParams struct {
+	SubscriptionIds []string                          `json:"subscription_ids,omitempty"`
+	ToVersionID     string                            `json:"to_version_id"`
+	Effective       string                            `json:"effective"`
+	Changes         []CreatePlanMoveParamsChangesItem `json:"changes,omitempty"`
+	Preview         *bool                             `json:"preview,omitempty"`
+	FromVersionID   *string                           `json:"from_version_id,omitempty"`
+	IdempotencyKey  string                            `json:"-"`
+}
+
+type KeepPlanSubscriberOnVersionParams struct {
+	IdempotencyKey string `json:"-"`
 }
 
 type SetDefaultPlanPriceParams struct {
@@ -83,6 +155,23 @@ type UpdatePlanParams struct {
 	IdempotencyKey    string                             `json:"-"`
 }
 
+type ComparePlanVersionsParams struct {
+	Against string `json:"against"`
+}
+
+type ListPlanVersionsParams struct {
+	Cursor *string `json:"cursor,omitempty"`
+	Limit  *int    `json:"limit,omitempty"`
+}
+
+type CreatePlanVersionParams struct {
+	Prices         []CreatePlanVersionParamsPricesItem     `json:"prices,omitempty"`
+	Currencies     []CreatePlanVersionParamsCurrenciesItem `json:"currencies,omitempty"`
+	MaxPlanCredits *int                                    `json:"max_plan_credits,omitempty"`
+	MaxPlanBalance *int                                    `json:"max_plan_balance,omitempty"`
+	IdempotencyKey string                                  `json:"-"`
+}
+
 type SetPlanVisibilityParams struct {
 	IsPublic       bool   `json:"is_public"`
 	IdempotencyKey string `json:"-"`
@@ -112,6 +201,100 @@ type CreatePlanParams struct {
 
 type PlansResource struct {
 	http *httpClient
+}
+
+// Publish a draft as the plan's current version, as a new experiment with its own code, or as the next version of the experiment it started from. A country missing a price, or removing the signup trial of the plan's group from the current version, stops the publication. With move, subscribers of earlier versions move at their renewal or now; if any of them does not fit the new version, nothing is published and the response lists each one with what would make it fit, to send back in changes. Paused subscribers stay where they are. Send preview to check without publishing.
+func (r *PlansResource) PublishDraft(ctx context.Context, id string, draftID string, params *PublishPlanDraftParams) (*PlanDraftPublication, error) {
+	body := buildBody(map[string]any{
+		"publish_as":      params.PublishAs,
+		"move":            params.Move,
+		"changes":         params.Changes,
+		"preview":         params.Preview,
+		"experiment_code": params.ExperimentCode,
+	})
+	return parseDirectResponse[PlanDraftPublication](r.http.post(ctx, fmt.Sprintf("/plans/%s/drafts/%s/publish", id, draftID), body, params.IdempotencyKey))
+}
+
+// Retrieve a draft with the version it started from and what it changes.
+func (r *PlansResource) GetDraft(ctx context.Context, id string, draftID string) (*PlanDraft, error) {
+	return parseDirectResponse[PlanDraft](r.http.get(ctx, fmt.Sprintf("/plans/%s/drafts/%s", id, draftID), nil))
+}
+
+// Change a draft's prices per interval, trials, the interval shown first, countries with their currency and prices, and credit or balance rules, or undo single changes. Each block sent replaces that block; blocks left out stay as they are. Buyers and subscribers see nothing until the draft is published.
+func (r *PlansResource) UpdateDraft(ctx context.Context, id string, draftID string, params *UpdatePlanDraftParams) (*PlanDraft, error) {
+	body := buildBody(map[string]any{
+		"prices":    params.Prices,
+		"countries": params.Countries,
+		"rules":     params.Rules,
+		"undo":      params.Undo,
+	})
+	return parseDirectResponse[PlanDraft](r.http.patch(ctx, fmt.Sprintf("/plans/%s/drafts/%s", id, draftID), body, params.IdempotencyKey))
+}
+
+// Discard a draft. Nothing it changed was ever sold.
+func (r *PlansResource) DeleteDraft(ctx context.Context, id string, draftID string) (*DeletedObject, error) {
+	return parseDirectResponse[DeletedObject](r.http.delete(ctx, fmt.Sprintf("/plans/%s/drafts/%s", id, draftID), nil, ""))
+}
+
+// List the plan's open drafts, oldest first, each with the version it started from and what it changes. Drafts sell nothing until published.
+func (r *PlansResource) ListDrafts(ctx context.Context, id string) (*PlansListDraftsResult, error) {
+	return parseDirectResponse[PlansListDraftsResult](r.http.get(ctx, fmt.Sprintf("/plans/%s/drafts", id), nil))
+}
+
+// Start a draft from a version of the plan: the current one, an experiment's version or an older one. A plan can have any number of drafts. Edit it, then publish it as the current version, as an experiment or as an experiment's next version; nothing changes for buyers or subscribers until then.
+func (r *PlansResource) CreateDraft(ctx context.Context, id string, params *CreatePlanDraftParams) (*PlanDraft, error) {
+	body := buildBody(map[string]any{
+		"from_version_id": params.FromVersionID,
+	})
+	return parseDirectResponse[PlanDraft](r.http.post(ctx, fmt.Sprintf("/plans/%s/drafts", id), body, params.IdempotencyKey))
+}
+
+// Stop selling the experiment. Its code sells the plan's current version from then on, so links already shared keep working. Choose what happens to its subscribers: keep them on its versions, or move them to the current version at their renewal or now. If any of them does not fit, nothing changes and the response lists each one with what would make it fit, to send back in changes.
+func (r *PlansResource) ArchiveExperiment(ctx context.Context, id string, code string, params *ArchivePlanExperimentParams) (*PlanExperimentArchive, error) {
+	body := buildBody(map[string]any{
+		"subscribers": params.Subscribers,
+		"changes":     params.Changes,
+		"preview":     params.Preview,
+	})
+	return parseDirectResponse[PlanExperimentArchive](r.http.post(ctx, fmt.Sprintf("/plans/%s/experiments/%s/archive", id, code), body, params.IdempotencyKey))
+}
+
+// Make the experiment's latest version the plan's current version, with exactly its content and the next version number. New buyers get it; its subscribers are already on it. The experiment closes, and its code sells the plan's current version from then on. Nobody else moves.
+func (r *PlansResource) MakeExperimentCurrent(ctx context.Context, id string, code string, params *MakePlanExperimentCurrentParams) (*PlanVersion, error) {
+	return parseDirectResponse[PlanVersion](r.http.post(ctx, fmt.Sprintf("/plans/%s/experiments/%s/make-current", id, code), map[string]any{}, params.IdempotencyKey))
+}
+
+// Get one experiment of a plan by its own code, with the version it sells and how many subscriptions are on it.
+func (r *PlansResource) GetExperiment(ctx context.Context, id string, code string) (*PlanExperiment, error) {
+	return parseDirectResponse[PlanExperiment](r.http.get(ctx, fmt.Sprintf("/plans/%s/experiments/%s", id, code), nil))
+}
+
+// Publish the experiment's next version from its latest version with the changes given. Its code sells the new version from now on; subscribers on its earlier versions stay where they are until moved.
+func (r *PlansResource) CreateExperimentVersion(ctx context.Context, id string, code string, params *CreatePlanExperimentVersionParams) (*PlanVersion, error) {
+	body := buildBody(map[string]any{
+		"prices":           params.Prices,
+		"currencies":       params.Currencies,
+		"max_plan_credits": params.MaxPlanCredits,
+		"max_plan_balance": params.MaxPlanBalance,
+	})
+	return parseDirectResponse[PlanVersion](r.http.post(ctx, fmt.Sprintf("/plans/%s/experiments/%s/versions", id, code), body, params.IdempotencyKey))
+}
+
+// List a plan's experiments, newest first, with the version each one sells and how many subscriptions are on them.
+func (r *PlansResource) ListExperiments(ctx context.Context, id string) (*PlansListExperimentsResult, error) {
+	return parseDirectResponse[PlansListExperimentsResult](r.http.get(ctx, fmt.Sprintf("/plans/%s/experiments", id), nil))
+}
+
+// Start an experiment from the plan's current version with the changes given. It is sold only through its code (planCode `<plan code>:<code>`); new buyers of the plan keep getting the current version.
+func (r *PlansResource) CreateExperiment(ctx context.Context, id string, params *CreatePlanExperimentParams) (*PlanExperiment, error) {
+	body := buildBody(map[string]any{
+		"prices":           params.Prices,
+		"currencies":       params.Currencies,
+		"max_plan_credits": params.MaxPlanCredits,
+		"max_plan_balance": params.MaxPlanBalance,
+		"code":             params.Code,
+	})
+	return parseDirectResponse[PlanExperiment](r.http.post(ctx, fmt.Sprintf("/plans/%s/experiments", id), body, params.IdempotencyKey))
 }
 
 // Update limits, overage, or enabled status of a feature on a plan.
@@ -144,6 +327,49 @@ func (r *PlansResource) AddFeature(ctx context.Context, id string, params *AddPl
 		"margin":           params.Margin,
 	})
 	return parseDirectResponse[PlanFeature](r.http.post(ctx, fmt.Sprintf("/plans/%s/features", id), body, params.IdempotencyKey))
+}
+
+// Cancel a move for every subscriber who has not moved yet. They stay on their version; those already moved stay moved.
+func (r *PlansResource) CancelMove(ctx context.Context, id string, moveID string, params *CancelPlanMoveParams) (*PlanMove, error) {
+	return parseDirectResponse[PlanMove](r.http.post(ctx, fmt.Sprintf("/plans/%s/moves/%s/cancel", id, moveID), map[string]any{}, params.IdempotencyKey))
+}
+
+// Read a move of subscribers between plan versions with each subscriber's status: moving, moved, needs a change, left out, canceled or kept on its version.
+func (r *PlansResource) GetMove(ctx context.Context, id string, moveID string) (*PlanMove, error) {
+	return parseDirectResponse[PlanMove](r.http.get(ctx, fmt.Sprintf("/plans/%s/moves/%s", id, moveID), nil))
+}
+
+// Cancel a move for one subscriber who has not moved yet. It stays on its version; the rest of the move continues.
+func (r *PlansResource) CancelMoveSubscription(ctx context.Context, id string, moveID string, subscriptionID string, params *CancelPlanMoveSubscriptionParams) (*PlanMove, error) {
+	return parseDirectResponse[PlanMove](r.http.post(ctx, fmt.Sprintf("/plans/%s/moves/%s/subscriptions/%s/cancel", id, moveID, subscriptionID), map[string]any{}, params.IdempotencyKey))
+}
+
+// List a plan's latest moves of subscribers between versions, newest first, including the change of a single subscription, with how many are moving, moved, need a change, were left out, canceled or kept on their version.
+func (r *PlansResource) ListMoves(ctx context.Context, id string) (*PlansListMovesResult, error) {
+	return parseDirectResponse[PlansListMovesResult](r.http.get(ctx, fmt.Sprintf("/plans/%s/moves", id), nil))
+}
+
+// Move a list of subscriptions, or every subscription of another version, to a newer version of the plan, at their next renewal or now. Nobody moves unless every one of them fits or has a change in changes; otherwise the response lists each one with what would make it fit. Only active, trialing and past due subscriptions move. Paused ones, and listed subscriptions in another status or already on the destination, are left out. Send preview to check without moving anyone.
+func (r *PlansResource) CreateMove(ctx context.Context, id string, params *CreatePlanMoveParams) (*PlanMove, error) {
+	body := buildBody(map[string]any{
+		"subscription_ids": params.SubscriptionIds,
+		"to_version_id":    params.ToVersionID,
+		"effective":        params.Effective,
+		"changes":          params.Changes,
+		"preview":          params.Preview,
+		"from_version_id":  params.FromVersionID,
+	})
+	return parseDirectResponse[PlanMove](r.http.post(ctx, fmt.Sprintf("/plans/%s/moves", id), body, params.IdempotencyKey))
+}
+
+// Leave a subscriber that needs a change on its version. It stops appearing among the subscribers that need a change; move it later like any other subscriber.
+func (r *PlansResource) KeepSubscriberOnVersion(ctx context.Context, id string, subscriptionID string, params *KeepPlanSubscriberOnVersionParams) (*KeptOnVersion, error) {
+	return parseDirectResponse[KeptOnVersion](r.http.post(ctx, fmt.Sprintf("/plans/%s/needs-a-change/%s/keep", id, subscriptionID), map[string]any{}, params.IdempotencyKey))
+}
+
+// List the plan's subscribers whose move could not complete, with the version they stay on, the one they could not move to and why. Move them again with a change, or keep them on their version so they leave this list.
+func (r *PlansResource) ListSubscribersNeedingAChange(ctx context.Context, id string) (*PlansListSubscribersNeedingAChangeResult, error) {
+	return parseDirectResponse[PlansListSubscribersNeedingAChangeResult](r.http.get(ctx, fmt.Sprintf("/plans/%s/needs-a-change", id), nil))
 }
 
 // Set a specific price as the default and return the updated plan price.
@@ -179,7 +405,7 @@ func (r *PlansResource) UpdatePrice(ctx context.Context, id string, priceID stri
 	return parseDirectResponse[PlanPrice](r.http.patch(ctx, fmt.Sprintf("/plans/%s/prices/%s", id, priceID), body, params.IdempotencyKey))
 }
 
-// Archive a price for new subscriptions. Existing subscriptions that selected it continue using its current catalog value.
+// Archive a price for new subscriptions. This publishes a new version of the plan; existing subscriptions that selected the price keep paying it on their version until moved.
 func (r *PlansResource) DeletePrice(ctx context.Context, id string, priceID string) (*DeletedObject, error) {
 	return parseDirectResponse[DeletedObject](r.http.delete(ctx, fmt.Sprintf("/plans/%s/prices/%s", id, priceID), nil, ""))
 }
@@ -237,6 +463,43 @@ func (r *PlansResource) Update(ctx context.Context, id string, params *UpdatePla
 // Soft-delete a plan.
 func (r *PlansResource) Delete(ctx context.Context, id string) (*DeletedObject, error) {
 	return parseDirectResponse[DeletedObject](r.http.delete(ctx, fmt.Sprintf("/plans/%s", id), nil, ""))
+}
+
+// List what changes from one version of a plan to another: prices, trials, features, rules, add-ons, credit packs and countries.
+func (r *PlansResource) CompareVersions(ctx context.Context, id string, versionID string, params *ComparePlanVersionsParams) (*PlanVersionComparison, error) {
+	query := map[string]string{}
+	if params.Against != "" {
+		query["against"] = params.Against
+	}
+	return parseDirectResponse[PlanVersionComparison](r.http.get(ctx, fmt.Sprintf("/plans/%s/versions/%s/changes", id, versionID), query))
+}
+
+// Get one published version of a plan with its prices and how many subscriptions are on it.
+func (r *PlansResource) GetVersion(ctx context.Context, id string, versionID string) (*PlanVersion, error) {
+	return parseDirectResponse[PlanVersion](r.http.get(ctx, fmt.Sprintf("/plans/%s/versions/%s", id, versionID), nil))
+}
+
+// List a plan's published versions, newest first, with their prices and how many subscriptions are on each. Versions published before Commet recorded every term are not listed.
+func (r *PlansResource) ListVersions(ctx context.Context, id string, params *ListPlanVersionsParams) (*PlansListVersionsResult, error) {
+	query := map[string]string{}
+	if params.Cursor != nil {
+		query["cursor"] = *params.Cursor
+	}
+	if params.Limit != nil {
+		query["limit"] = fmt.Sprintf("%d", *params.Limit)
+	}
+	return parseDirectResponse[PlansListVersionsResult](r.http.get(ctx, fmt.Sprintf("/plans/%s/versions", id), query))
+}
+
+// Publish a new current version of the plan from its current version, changing prices per interval, included credits or balance, per-currency amounts and the rollover cap. New buyers get it; every subscriber stays on its version until moved. To try changes without selling them to everyone, create an experiment instead.
+func (r *PlansResource) CreateVersion(ctx context.Context, id string, params *CreatePlanVersionParams) (*PlanVersion, error) {
+	body := buildBody(map[string]any{
+		"prices":           params.Prices,
+		"currencies":       params.Currencies,
+		"max_plan_credits": params.MaxPlanCredits,
+		"max_plan_balance": params.MaxPlanBalance,
+	})
+	return parseDirectResponse[PlanVersion](r.http.post(ctx, fmt.Sprintf("/plans/%s/versions", id), body, params.IdempotencyKey))
 }
 
 // Set a plan's public visibility and return the updated plan.

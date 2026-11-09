@@ -21,6 +21,8 @@ const (
 	EventSubscriptionCancellationRevoked   WebhookEventType = "subscription.cancellation_revoked"
 	EventSubscriptionPlanChangeScheduled   WebhookEventType = "subscription.plan_change_scheduled"
 	EventSubscriptionPlanChangeRevoked     WebhookEventType = "subscription.plan_change_revoked"
+	EventSubscriptionVersionChanged        WebhookEventType = "subscription.version_changed"
+	EventSubscriptionVersionChangeCanceled WebhookEventType = "subscription.version_change_canceled"
 	EventSubscriptionPastDue               WebhookEventType = "subscription.past_due"
 	EventTrialStarted                      WebhookEventType = "trial.started"
 	EventTrialConverted                    WebhookEventType = "trial.converted"
@@ -243,6 +245,24 @@ type SubscriptionPlanChangeRevokedData struct {
 	RevokedPlan            WebhookPlanRef `json:"revokedPlan"`
 	BillingInterval        *string        `json:"billingInterval"`
 	RevokedBillingInterval *string        `json:"revokedBillingInterval"`
+}
+
+// Fired when a subscription moves to another version of its plan: a move applied now or a scheduled move that took effect at renewal. Making an experiment current moves nobody, so it sends none. The plan stays the same; the version's prices and features apply from now on.
+type SubscriptionVersionChangedData struct {
+	SubscriptionID  string `json:"subscriptionId"`
+	CustomerID      string `json:"customerId"`
+	FromVersionID   string `json:"fromVersionId"`
+	ToVersionID     string `json:"toVersionId"`
+	Currency        string `json:"currency"`
+	BillingInterval string `json:"billingInterval"`
+}
+
+// Fired when a scheduled move to another plan version will no longer take effect because the subscription no longer fit the version at its renewal, or because the merchant revoked the scheduled version change or canceled the plan move. A new move that replaces it, a move made now, a plan change or an immediate cancellation sends none. The subscription stays on its version; reason says why.
+type SubscriptionVersionChangeCanceledData struct {
+	SubscriptionID string `json:"subscriptionId"`
+	CustomerID     string `json:"customerId"`
+	ToVersionID    string `json:"toVersionId"`
+	Reason         string `json:"reason"`
 }
 
 // Fired when a recurring payment fails on a previously paid subscription and its status becomes past_due. past_due is a grace window, not a cutoff: usage and seats keep working while new purchases are blocked, and dunning retries the charge — use this to notify the customer and recover the payment.
@@ -1000,6 +1020,22 @@ func (e *WebhookEvent) AsSubscriptionPlanChangeScheduled() (*SubscriptionPlanCha
 
 func (e *WebhookEvent) AsSubscriptionPlanChangeRevoked() (*SubscriptionPlanChangeRevokedData, error) {
 	var d SubscriptionPlanChangeRevokedData
+	if err := json.Unmarshal(e.Data, &d); err != nil {
+		return nil, err
+	}
+	return &d, nil
+}
+
+func (e *WebhookEvent) AsSubscriptionVersionChanged() (*SubscriptionVersionChangedData, error) {
+	var d SubscriptionVersionChangedData
+	if err := json.Unmarshal(e.Data, &d); err != nil {
+		return nil, err
+	}
+	return &d, nil
+}
+
+func (e *WebhookEvent) AsSubscriptionVersionChangeCanceled() (*SubscriptionVersionChangeCanceledData, error) {
+	var d SubscriptionVersionChangeCanceledData
 	if err := json.Unmarshal(e.Data, &d); err != nil {
 		return nil, err
 	}

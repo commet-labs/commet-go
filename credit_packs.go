@@ -6,28 +6,30 @@ import (
 )
 
 type UpdateCreditPackParams struct {
-	Name           *string `json:"name,omitempty"`
-	Description    *string `json:"description,omitempty"`
-	Credits        *int    `json:"credits,omitempty"`
-	Price          *int    `json:"price,omitempty"`
-	IsActive       *bool   `json:"is_active,omitempty"`
-	IdempotencyKey string  `json:"-"`
+	Name           *string  `json:"name,omitempty"`
+	Description    *string  `json:"description,omitempty"`
+	Credits        *int     `json:"credits,omitempty"`
+	Price          *int     `json:"price,omitempty"`
+	IsActive       *bool    `json:"is_active,omitempty"`
+	PlanIds        []string `json:"plan_ids,omitempty"`
+	IdempotencyKey string   `json:"-"`
 }
 
 type CreateCreditPackParams struct {
-	Name           string  `json:"name"`
-	Description    *string `json:"description,omitempty"`
-	Credits        int     `json:"credits"`
-	Price          int     `json:"price"`
-	IsActive       *bool   `json:"is_active,omitempty"`
-	IdempotencyKey string  `json:"-"`
+	Name           string   `json:"name"`
+	Description    *string  `json:"description,omitempty"`
+	Credits        int      `json:"credits"`
+	Price          int      `json:"price"`
+	IsActive       *bool    `json:"is_active,omitempty"`
+	PlanIds        []string `json:"plan_ids,omitempty"`
+	IdempotencyKey string   `json:"-"`
 }
 
 type CreditPacksResource struct {
 	http *httpClient
 }
 
-// Update a credit pack's name, description, credits, price, or active status.
+// Update a credit pack's name, description, credits, price, active status, or the plans that sell it.
 func (r *CreditPacksResource) Update(ctx context.Context, id string, params *UpdateCreditPackParams) (*CreditPack, error) {
 	body := buildBody(map[string]any{
 		"name":        params.Name,
@@ -35,6 +37,7 @@ func (r *CreditPacksResource) Update(ctx context.Context, id string, params *Upd
 		"credits":     params.Credits,
 		"price":       params.Price,
 		"is_active":   params.IsActive,
+		"plan_ids":    params.PlanIds,
 	})
 	return parseDirectResponse[CreditPack](r.http.patch(ctx, fmt.Sprintf("/credit-packs/%s", id), body, params.IdempotencyKey))
 }
@@ -57,6 +60,7 @@ func (r *CreditPacksResource) Create(ctx context.Context, params *CreateCreditPa
 		"credits":     params.Credits,
 		"price":       params.Price,
 		"is_active":   params.IsActive,
+		"plan_ids":    params.PlanIds,
 	})
 	return parseDirectResponse[CreditPack](r.http.post(ctx, "/credit-packs", body, params.IdempotencyKey))
 }

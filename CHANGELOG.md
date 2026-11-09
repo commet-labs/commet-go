@@ -1,5 +1,14 @@
 # Changelog
 
+## 9.10.0
+
+- Plans have versions. Editing a plan publishes a new version, and existing subscriptions stay on theirs until moved. `Plans.ListVersions`, `Plans.GetVersion`, `Plans.CompareVersions` and `Plans.CreateVersion` read and publish versions; `Plans.CreateDraft`, `Plans.UpdateDraft`, `Plans.PublishDraft` and the other draft methods prepare one; `Plans.CreateExperiment`, `Plans.MakeExperimentCurrent`, `Plans.ArchiveExperiment` and the other experiment methods sell a version through its own code; `Plans.CreateMove`, `Plans.CancelMove` and the other move methods move subscribers to a newer version; `Plans.ListSubscribersNeedingAChange` and `Plans.KeepSubscriberOnVersion` handle the subscribers that do not fit it.
+- `Subscriptions.ChangeVersion` moves one subscription to a newer version of its plan, now or at the end of the period, and `Subscriptions.RevokeScheduledVersionChange` cancels a pending move. Subscriptions return `PlanVersion` and `ScheduledVersionChange`.
+- `Subscriptions.Create` accepts `PlanVersionID`, and `PlanCode` as `<plan code>:<experiment code>` to sell an experiment. `Subscriptions.List` filters by `PlanVersionID`.
+- Plans return `Countries`. `Addons.Create`, `Addons.Update`, `CreditPacks.Create` and `CreditPacks.Update` accept `PlanIds`, and add-ons and credit packs return them. `Subscriptions.PreviewChange` returns `DeactivatedAddons`.
+- New webhook events `subscription.version_changed` and `subscription.version_change_canceled`.
+- New errors `plan_version_not_found`, `plan_experiment_not_found`, `subscribers_do_not_fit`, `version_not_newer`, `addon_unavailable` and `credit_pack_unavailable`.
+
 ## 9.9.0
 
 - Subscriptions on a balance plan split their balance in two parts: the plan balance (spent first, replaced or rolled over at each reset) and the purchased balance (top-ups and manual adjustments, kept until the subscription ends), plus the total. Credits subscriptions add their plan credits and total. The existing remaining amount keeps its meaning.
