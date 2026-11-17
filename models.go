@@ -98,6 +98,7 @@ type ArchivePlanExperimentParamsChangesItem struct {
 	BillingInterval *string  `json:"billing_interval,omitempty"`
 	SeatLimit       any      `json:"seat_limit,omitempty"`
 	RemoveAddonIds  []string `json:"remove_addon_ids,omitempty"`
+	Currency        *string  `json:"currency,omitempty"`
 }
 
 type BalanceAdjustment struct {
@@ -110,19 +111,21 @@ type BalanceAdjustment struct {
 
 type BalanceTopup struct {
 	Amount   int    `json:"amount"`
+	Status   string `json:"status"`
 	Object   string `json:"object"`
 	Livemode bool   `json:"livemode"`
 }
 
 type BatchCreateCustomersParamsCustomersItem struct {
-	Email       string                                          `json:"email"`
-	ID          *string                                         `json:"id,omitempty"`
-	ExternalID  *string                                         `json:"external_id,omitempty"`
-	FullName    *string                                         `json:"full_name,omitempty"`
-	TaxDocument *string                                         `json:"tax_document,omitempty"`
-	Timezone    *Timezone                                       `json:"timezone,omitempty"`
-	Metadata    map[string]any                                  `json:"metadata,omitempty"`
-	Address     *BatchCreateCustomersParamsCustomersItemAddress `json:"address,omitempty"`
+	Email         string                                          `json:"email"`
+	ID            *string                                         `json:"id,omitempty"`
+	ExternalID    *string                                         `json:"external_id,omitempty"`
+	FullName      *string                                         `json:"full_name,omitempty"`
+	TaxDocument   *string                                         `json:"tax_document,omitempty"`
+	BusinessTaxID *string                                         `json:"business_tax_id,omitempty"`
+	Timezone      *Timezone                                       `json:"timezone,omitempty"`
+	Metadata      map[string]any                                  `json:"metadata,omitempty"`
+	Address       *BatchCreateCustomersParamsCustomersItemAddress `json:"address,omitempty"`
 }
 
 type BatchCreateCustomersParamsCustomersItemAddress struct {
@@ -513,6 +516,7 @@ type CreatePlanMoveParamsChangesItem struct {
 	BillingInterval *string  `json:"billing_interval,omitempty"`
 	SeatLimit       any      `json:"seat_limit,omitempty"`
 	RemoveAddonIds  []string `json:"remove_addon_ids,omitempty"`
+	Currency        *string  `json:"currency,omitempty"`
 }
 
 type CreatePlanParamsPlanBalanceLimit struct {
@@ -702,6 +706,7 @@ type CreatePlanVersionParamsPricesItemRegionalPricesItem struct {
 
 type CreditGrant struct {
 	Credits  int    `json:"credits"`
+	Status   string `json:"status"`
 	Object   string `json:"object"`
 	Livemode bool   `json:"livemode"`
 }
@@ -769,14 +774,15 @@ type CustomerBatchFailedItem struct {
 }
 
 type CustomerBatchFailedItemData struct {
-	ID          *string                             `json:"id,omitempty"`
-	ExternalID  *string                             `json:"external_id,omitempty"`
-	Email       string                              `json:"email"`
-	FullName    *string                             `json:"full_name,omitempty"`
-	TaxDocument *string                             `json:"tax_document,omitempty"`
-	Timezone    *string                             `json:"timezone,omitempty"`
-	Metadata    map[string]any                      `json:"metadata,omitempty"`
-	Address     *CustomerBatchFailedItemDataAddress `json:"address,omitempty"`
+	ID            *string                             `json:"id,omitempty"`
+	ExternalID    *string                             `json:"external_id,omitempty"`
+	Email         string                              `json:"email"`
+	FullName      *string                             `json:"full_name,omitempty"`
+	TaxDocument   *string                             `json:"tax_document,omitempty"`
+	BusinessTaxID *string                             `json:"business_tax_id,omitempty"`
+	Timezone      *string                             `json:"timezone,omitempty"`
+	Metadata      map[string]any                      `json:"metadata,omitempty"`
+	Address       *CustomerBatchFailedItemDataAddress `json:"address,omitempty"`
 }
 
 type CustomerBatchFailedItemDataAddress struct {
@@ -1076,7 +1082,7 @@ func (value *FeatureAccessVariant2Consumption) UnmarshalJSON(data []byte) error 
 		value.Value = decoded
 		return nil
 	}
-	if hasJSONFields(fields, "model", "period", "units_used", "credits_per_unit", "credits_consumed", "available_units") {
+	if hasJSONFields(fields, "model", "period", "units_used", "credits_per_unit", "credits_consumed", "unlimited") {
 		var decoded FeatureAccessVariant2ConsumptionVariant2
 		if err := json.Unmarshal(data, &decoded); err != nil {
 			return err
@@ -1084,7 +1090,7 @@ func (value *FeatureAccessVariant2Consumption) UnmarshalJSON(data []byte) error 
 		value.Value = decoded
 		return nil
 	}
-	if hasJSONFields(fields, "model", "period", "units_used", "spent") {
+	if hasJSONFields(fields, "model", "period", "units_used", "spent", "unlimited") {
 		var decoded FeatureAccessVariant2ConsumptionVariant3
 		if err := json.Unmarshal(data, &decoded); err != nil {
 			return err
@@ -1152,7 +1158,8 @@ type FeatureAccessVariant2ConsumptionVariant2 struct {
 	UnitsUsed       float64                                        `json:"units_used"`
 	CreditsPerUnit  int                                            `json:"credits_per_unit"`
 	CreditsConsumed float64                                        `json:"credits_consumed"`
-	AvailableUnits  int                                            `json:"available_units"`
+	Unlimited       bool                                           `json:"unlimited"`
+	AvailableUnits  *int                                           `json:"available_units,omitempty"`
 }
 
 type FeatureAccessVariant2ConsumptionVariant2Period struct {
@@ -1165,6 +1172,7 @@ type FeatureAccessVariant2ConsumptionVariant3 struct {
 	Period         FeatureAccessVariant2ConsumptionVariant3Period     `json:"period"`
 	UnitsUsed      float64                                            `json:"units_used"`
 	Spent          FeatureAccessVariant2ConsumptionVariant3Spent      `json:"spent"`
+	Unlimited      bool                                               `json:"unlimited"`
 	AvailableUnits *int                                               `json:"available_units,omitempty"`
 	UnitPrice      *FeatureAccessVariant2ConsumptionVariant3UnitPrice `json:"unit_price,omitempty"`
 }
@@ -1696,30 +1704,32 @@ type PayoutBankAccount struct {
 }
 
 type Plan struct {
-	ID                string                  `json:"id"`
-	Name              string                  `json:"name"`
-	Code              string                  `json:"code"`
-	Description       *string                 `json:"description"`
-	ConsumptionModel  *ConsumptionModel       `json:"consumption_model"`
-	IsPublic          bool                    `json:"is_public"`
-	IsDefault         bool                    `json:"is_default"`
-	IsFree            bool                    `json:"is_free"`
-	BlockOnExhaustion *bool                   `json:"block_on_exhaustion"`
-	UnusedPlanCredits *PlanUnusedPlanCredits  `json:"unused_plan_credits"`
-	PlanCreditLimit   *PlanPlanCreditLimit    `json:"plan_credit_limit"`
-	UnusedPlanBalance *PlanUnusedPlanBalance  `json:"unused_plan_balance"`
-	PlanBalanceLimit  *PlanPlanBalanceLimit   `json:"plan_balance_limit"`
-	SortOrder         int                     `json:"sort_order"`
-	PlanGroupID       *string                 `json:"plan_group_id"`
-	Metadata          map[string]any          `json:"metadata"`
-	CreatedAt         string                  `json:"created_at"`
-	UpdatedAt         string                  `json:"updated_at"`
-	Features          []PlanFeaturesItem      `json:"features"`
-	Prices            []PlanPricesItem        `json:"prices"`
-	ExchangeRates     []PlanExchangeRatesItem `json:"exchange_rates"`
-	Countries         []PlanCountriesItem     `json:"countries"`
-	Object            string                  `json:"object"`
-	Livemode          bool                    `json:"livemode"`
+	ID                   string                  `json:"id"`
+	Name                 string                  `json:"name"`
+	Code                 string                  `json:"code"`
+	Description          *string                 `json:"description"`
+	ConsumptionModel     *ConsumptionModel       `json:"consumption_model"`
+	IsPublic             bool                    `json:"is_public"`
+	IsDefault            bool                    `json:"is_default"`
+	IsFree               bool                    `json:"is_free"`
+	BlockOnExhaustion    *bool                   `json:"block_on_exhaustion"`
+	UnusedPlanCredits    *PlanUnusedPlanCredits  `json:"unused_plan_credits"`
+	UnlimitedPlanCredits *bool                   `json:"unlimited_plan_credits"`
+	PlanCreditLimit      *PlanPlanCreditLimit    `json:"plan_credit_limit"`
+	UnusedPlanBalance    *PlanUnusedPlanBalance  `json:"unused_plan_balance"`
+	UnlimitedPlanBalance *bool                   `json:"unlimited_plan_balance"`
+	PlanBalanceLimit     *PlanPlanBalanceLimit   `json:"plan_balance_limit"`
+	SortOrder            int                     `json:"sort_order"`
+	PlanGroupID          *string                 `json:"plan_group_id"`
+	Metadata             map[string]any          `json:"metadata"`
+	CreatedAt            string                  `json:"created_at"`
+	UpdatedAt            string                  `json:"updated_at"`
+	Features             []PlanFeaturesItem      `json:"features"`
+	Prices               []PlanPricesItem        `json:"prices"`
+	ExchangeRates        []PlanExchangeRatesItem `json:"exchange_rates"`
+	Countries            []PlanCountriesItem     `json:"countries"`
+	Object               string                  `json:"object"`
+	Livemode             bool                    `json:"livemode"`
 }
 
 type PlanChange struct {
@@ -3343,6 +3353,7 @@ type PublishPlanDraftParamsChangesItem struct {
 	BillingInterval *string  `json:"billing_interval,omitempty"`
 	SeatLimit       any      `json:"seat_limit,omitempty"`
 	RemoveAddonIds  []string `json:"remove_addon_ids,omitempty"`
+	Currency        *string  `json:"currency,omitempty"`
 }
 
 type QuotaGetAllResult struct {
@@ -3788,12 +3799,13 @@ type SubscriptionAutoTopUpLastFailure struct {
 }
 
 type SubscriptionBalance struct {
-	Remaining float64 `json:"remaining"`
-	Included  float64 `json:"included"`
-	Currency  string  `json:"currency"`
-	Plan      float64 `json:"plan"`
-	Purchased float64 `json:"purchased"`
-	Total     float64 `json:"total"`
+	Unlimited bool     `json:"unlimited"`
+	Remaining *float64 `json:"remaining,omitempty"`
+	Included  float64  `json:"included"`
+	Currency  string   `json:"currency"`
+	Plan      *float64 `json:"plan,omitempty"`
+	Purchased float64  `json:"purchased"`
+	Total     *float64 `json:"total,omitempty"`
 }
 
 type SubscriptionCancellation struct {
@@ -3803,11 +3815,12 @@ type SubscriptionCancellation struct {
 }
 
 type SubscriptionCredits struct {
-	Remaining float64 `json:"remaining"`
-	Included  float64 `json:"included"`
-	Purchased float64 `json:"purchased"`
-	Plan      float64 `json:"plan"`
-	Total     float64 `json:"total"`
+	Unlimited bool     `json:"unlimited"`
+	Remaining *float64 `json:"remaining,omitempty"`
+	Included  float64  `json:"included"`
+	Purchased float64  `json:"purchased"`
+	Plan      *float64 `json:"plan,omitempty"`
+	Total     *float64 `json:"total,omitempty"`
 }
 
 type SubscriptionCurrentPeriod struct {
@@ -4392,6 +4405,7 @@ type SubscriptionScheduledVersionChange struct {
 	PlanVersionID string `json:"plan_version_id"`
 	Label         string `json:"label"`
 	EffectiveAt   string `json:"effective_at"`
+	Currency      string `json:"currency"`
 }
 
 type SubscriptionsListResult struct {
@@ -4619,6 +4633,7 @@ type Transaction struct {
 	Subtotal          *int                       `json:"subtotal"`
 	TaxAmount         *int                       `json:"tax_amount"`
 	PresentmentAmount *int                       `json:"presentment_amount"`
+	AmountRefunded    int                        `json:"amount_refunded"`
 	Currency          string                     `json:"currency"`
 	Provider          PaymentProvider            `json:"provider"`
 	PaymentMethod     *PaymentMethod             `json:"payment_method"`
@@ -4642,6 +4657,7 @@ type TransactionListItem struct {
 	Subtotal          *int                               `json:"subtotal"`
 	TaxAmount         *int                               `json:"tax_amount"`
 	PresentmentAmount *int                               `json:"presentment_amount"`
+	AmountRefunded    int                                `json:"amount_refunded"`
 	Currency          string                             `json:"currency"`
 	Provider          PaymentProvider                    `json:"provider"`
 	PaymentMethod     *PaymentMethod                     `json:"payment_method"`
@@ -5170,10 +5186,12 @@ type UpdatePlanDraftParamsRules struct {
 	FreeIncludedBalance      *int    `json:"free_included_balance,omitempty"`
 	UnusedPlanCredits        *string `json:"unused_plan_credits,omitempty"`
 	MaxPlanCredits           *int    `json:"max_plan_credits,omitempty"`
+	UnlimitedPlanCredits     *bool   `json:"unlimited_plan_credits,omitempty"`
 	PlanCreditLimit          *int    `json:"plan_credit_limit,omitempty"`
 	PlanCreditLimitInterval  *string `json:"plan_credit_limit_interval,omitempty"`
 	UnusedPlanBalance        *string `json:"unused_plan_balance,omitempty"`
 	MaxPlanBalance           *int    `json:"max_plan_balance,omitempty"`
+	UnlimitedPlanBalance     *bool   `json:"unlimited_plan_balance,omitempty"`
 	PlanBalanceLimit         *int    `json:"plan_balance_limit,omitempty"`
 	PlanBalanceLimitInterval *string `json:"plan_balance_limit_interval,omitempty"`
 	BlockOnExhaustion        *bool   `json:"block_on_exhaustion,omitempty"`
@@ -5418,16 +5436,8 @@ func (value *UsageCheck) UnmarshalJSON(data []byte) error {
 		value.Value = decoded
 		return nil
 	}
-	if hasJSONFields(fields, "allowed", "subscription_status", "feature_code", "quantity", "consumption_model", "unit_price", "estimated_amount", "current_balance", "plan_balance", "purchased_balance", "total_balance", "plan_balance_limit", "block_on_exhaustion", "currency", "object", "livemode") {
+	if hasJSONFields(fields, "allowed", "subscription_status", "feature_code", "quantity", "consumption_model", "unit_price", "estimated_amount", "unlimited", "purchased_balance", "plan_balance_limit", "block_on_exhaustion", "currency", "object", "livemode") {
 		var decoded UsageCheckVariant3
-		if err := json.Unmarshal(data, &decoded); err != nil {
-			return err
-		}
-		value.Value = decoded
-		return nil
-	}
-	if hasJSONFields(fields, "allowed", "subscription_status", "feature_code", "quantity", "consumption_model", "credits_per_unit", "estimated_credits", "plan_credits", "purchased_credits", "total_credits", "plan_credit_limit", "block_on_exhaustion", "object", "livemode") {
-		var decoded UsageCheckVariant2
 		if err := json.Unmarshal(data, &decoded); err != nil {
 			return err
 		}
@@ -5436,6 +5446,14 @@ func (value *UsageCheck) UnmarshalJSON(data []byte) error {
 	}
 	if hasJSONFields(fields, "allowed", "subscription_status", "feature_code", "quantity", "consumption_model", "current", "remaining", "unlimited", "included", "overage_enabled", "overage_unit_price", "object", "livemode") {
 		var decoded UsageCheckVariant1
+		if err := json.Unmarshal(data, &decoded); err != nil {
+			return err
+		}
+		value.Value = decoded
+		return nil
+	}
+	if hasJSONFields(fields, "allowed", "subscription_status", "feature_code", "quantity", "consumption_model", "credits_per_unit", "estimated_credits", "unlimited", "purchased_credits", "plan_credit_limit", "block_on_exhaustion", "object", "livemode") {
+		var decoded UsageCheckVariant2
 		if err := json.Unmarshal(data, &decoded); err != nil {
 			return err
 		}
@@ -5497,9 +5515,10 @@ type UsageCheckVariant2 struct {
 	ConsumptionModel   string                             `json:"consumption_model"`
 	CreditsPerUnit     int                                `json:"credits_per_unit"`
 	EstimatedCredits   int                                `json:"estimated_credits"`
-	PlanCredits        int                                `json:"plan_credits"`
+	Unlimited          bool                               `json:"unlimited"`
+	PlanCredits        *int                               `json:"plan_credits,omitempty"`
 	PurchasedCredits   int                                `json:"purchased_credits"`
-	TotalCredits       int                                `json:"total_credits"`
+	TotalCredits       *int                               `json:"total_credits,omitempty"`
 	PlanCreditLimit    *UsageCheckVariant2PlanCreditLimit `json:"plan_credit_limit"`
 	BlockOnExhaustion  bool                               `json:"block_on_exhaustion"`
 	Object             string                             `json:"object"`
@@ -5524,10 +5543,11 @@ type UsageCheckVariant3 struct {
 	ConsumptionModel   string                              `json:"consumption_model"`
 	UnitPrice          float64                             `json:"unit_price"`
 	EstimatedAmount    float64                             `json:"estimated_amount"`
-	CurrentBalance     float64                             `json:"current_balance"`
-	PlanBalance        float64                             `json:"plan_balance"`
+	Unlimited          bool                                `json:"unlimited"`
+	CurrentBalance     *float64                            `json:"current_balance,omitempty"`
+	PlanBalance        *float64                            `json:"plan_balance,omitempty"`
 	PurchasedBalance   float64                             `json:"purchased_balance"`
-	TotalBalance       float64                             `json:"total_balance"`
+	TotalBalance       *float64                            `json:"total_balance,omitempty"`
 	PlanBalanceLimit   *UsageCheckVariant3PlanBalanceLimit `json:"plan_balance_limit"`
 	BlockOnExhaustion  bool                                `json:"block_on_exhaustion"`
 	Currency           string                              `json:"currency"`
@@ -5560,7 +5580,8 @@ type UsageEvent struct {
 type UsageEventConsumption struct {
 	Model            string                                 `json:"model"`
 	Deducted         float64                                `json:"deducted"`
-	Remaining        float64                                `json:"remaining"`
+	Unlimited        bool                                   `json:"unlimited"`
+	Remaining        *float64                               `json:"remaining,omitempty"`
 	Blocked          bool                                   `json:"blocked"`
 	PlanCreditLimit  *UsageEventConsumptionPlanCreditLimit  `json:"plan_credit_limit,omitempty"`
 	PlanBalanceLimit *UsageEventConsumptionPlanBalanceLimit `json:"plan_balance_limit,omitempty"`
@@ -5630,10 +5651,11 @@ type WebhookAddonRef struct {
 }
 
 type WebhookBalance struct {
-	CurrentBalance   float64 `json:"current_balance"`
-	PlanBalance      float64 `json:"plan_balance"`
-	PurchasedBalance float64 `json:"purchased_balance"`
-	TotalBalance     float64 `json:"total_balance"`
+	Unlimited        bool     `json:"unlimited"`
+	CurrentBalance   *float64 `json:"current_balance,omitempty"`
+	PlanBalance      *float64 `json:"plan_balance,omitempty"`
+	PurchasedBalance float64  `json:"purchased_balance"`
+	TotalBalance     *float64 `json:"total_balance,omitempty"`
 }
 
 type WebhookBankRef struct {
@@ -5649,9 +5671,10 @@ type WebhookCardInfo struct {
 }
 
 type WebhookCreditsBalance struct {
-	PlanCredits      float64 `json:"plan_credits"`
-	PurchasedCredits float64 `json:"purchased_credits"`
-	TotalCredits     float64 `json:"total_credits"`
+	Unlimited        bool     `json:"unlimited"`
+	PlanCredits      *float64 `json:"plan_credits,omitempty"`
+	PurchasedCredits float64  `json:"purchased_credits"`
+	TotalCredits     *float64 `json:"total_credits,omitempty"`
 }
 
 type WebhookPlanGrantTimelineEvent struct {

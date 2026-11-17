@@ -47,9 +47,10 @@ type ChangePlanParams struct {
 }
 
 type ChangeSubscriptionVersionParams struct {
-	PlanVersionID  string `json:"plan_version_id"`
-	Effective      string `json:"effective"`
-	IdempotencyKey string `json:"-"`
+	PlanVersionID  string  `json:"plan_version_id"`
+	Effective      string  `json:"effective"`
+	Currency       *string `json:"currency,omitempty"`
+	IdempotencyKey string  `json:"-"`
 }
 
 type PurchaseCreditsParams struct {
@@ -154,7 +155,7 @@ func (r *SubscriptionsResource) DeactivateAddon(ctx context.Context, id string, 
 	return parseDirectResponse[DeletedSubscriptionAddon](r.http.delete(ctx, fmt.Sprintf("/subscriptions/%s/addons/%s", id, addonID), nil, ""))
 }
 
-// Activate an add-on on a subscription. Charges a prorated amount for the current billing period. An add-on that the subscription's plan version does not sell is rejected with addon_unavailable.
+// Activate an add-on on a subscription. Creates the activation invoice and charges a prorated amount for the current billing period; the add-on is active once the payment is confirmed. Rejected with 409 while the add-on is active or an activation of it is still processing. An add-on that the subscription's plan version does not sell is rejected with addon_unavailable.
 func (r *SubscriptionsResource) ActivateAddon(ctx context.Context, id string, params *ActivateAddonParams) (*SubscriptionAddon, error) {
 	body := buildBody(map[string]any{
 		"addon_id": params.AddonID,
@@ -189,7 +190,7 @@ func (r *SubscriptionsResource) AdjustBalance(ctx context.Context, id string, pa
 	return parseDirectResponse[BalanceAdjustment](r.http.post(ctx, fmt.Sprintf("/subscriptions/%s/balance/adjust", id), body, params.IdempotencyKey))
 }
 
-// Top up a balance subscription. Charges the customer's payment method for the amount plus tax, adds it to the subscription's purchased balance (after paying back any overage owed on the plan balance), creates its invoice and emits `balance.topped_up`. Purchased balance is spent after the plan balance and is kept until the subscription ends. Rejected with 400 when the subscription is not on a balance plan, its plan has top-ups turned off, or the amount is below the effective minimum: the plan's minimum top-up in the subscription currency, raised to the currency's minimum charge.
+// Top up a balance subscription. Creates the top-up invoice and charges the customer's payment method for the amount plus tax. Once the payment is confirmed, adds the amount to the subscription's purchased balance (after paying back any overage owed on the plan balance), marks the invoice paid and emits `balance.topped_up`. Purchased balance is spent after the plan balance and is kept until the subscription ends. Rejected with 400 when the subscription is not on a balance plan, its plan has top-ups turned off, or the amount is below the effective minimum: the plan's minimum top-up in the subscription currency, raised to the currency's minimum charge.
 func (r *SubscriptionsResource) TopupBalance(ctx context.Context, id string, params *TopupBalanceParams) (*BalanceTopup, error) {
 	body := buildBody(map[string]any{
 		"amount": params.Amount,
@@ -218,16 +219,17 @@ func (r *SubscriptionsResource) ChangePlan(ctx context.Context, id string, param
 	return parseDirectResponse[PlanChange](r.http.post(ctx, fmt.Sprintf("/subscriptions/%s/change-plan", id), body, params.IdempotencyKey))
 }
 
-// Move a subscription to a newer published version of its plan, now or at the end of the period, without proration; an older version is rejected with version_not_newer, and a subscription on a running experiment moves only to a later version of that experiment. The subscription keeps its currency and its price: a destination that does not sell its currency is rejected with missing_regional_price, and one that does not sell the price it pays with price_not_found. A free version moves only to a free version and a paid one only to a paid one (validation_error). A subscription whose usage does not fit the destination, or with an active add-on the destination does not sell, is not moved either, and the error says why. Each change is recorded as a move of this one subscription in the plan's moves. Repeating the same request changes nothing; a new one replaces the pending move.
+// Move a subscription to a newer published version of its plan, now or at the end of the period, without proration; an older version is rejected with version_not_newer, and a subscription on a running experiment moves only to a later version of that experiment. The subscription keeps its currency and its price: a destination that does not sell its currency is rejected with missing_regional_price unless currency asks to charge it in USD from its renewal, and one that does not sell the price it pays with price_not_found. A free version moves only to a free version and a paid one only to a paid one (validation_error). A subscription whose usage does not fit the destination, or with an active add-on the destination does not sell, is not moved either, and the error says why. Each change is recorded as a move of this one subscription in the plan's moves. Repeating the same request changes nothing; a new one replaces the pending move.
 func (r *SubscriptionsResource) ChangeVersion(ctx context.Context, id string, params *ChangeSubscriptionVersionParams) (*Subscription, error) {
 	body := buildBody(map[string]any{
 		"plan_version_id": params.PlanVersionID,
 		"effective":       params.Effective,
+		"currency":        params.Currency,
 	})
 	return parseDirectResponse[Subscription](r.http.post(ctx, fmt.Sprintf("/subscriptions/%s/change-version", id), body, params.IdempotencyKey))
 }
 
-// Purchase a fixed credit pack or choose a whole credit quantity at the subscription plan price and minimum. Charges the saved payment method and adds purchased credits. A credit pack that the subscription's plan version does not sell is rejected with credit_pack_unavailable.
+// Purchase a fixed credit pack or choose a whole credit quantity at the subscription plan price and minimum. Creates the purchase invoice, charges the saved payment method and adds the purchased credits once the payment is confirmed. A credit pack that the subscription's plan version does not sell is rejected with credit_pack_unavailable.
 func (r *SubscriptionsResource) PurchaseCredits(ctx context.Context, id string, params *PurchaseCreditsParams) (*CreditGrant, error) {
 	body := buildBody(map[string]any{
 		"credit_pack_id": params.CreditPackID,

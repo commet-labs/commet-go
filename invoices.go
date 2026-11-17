@@ -14,7 +14,6 @@ type SendInvoiceParams struct {
 }
 
 type UpdateInvoiceStatusParams struct {
-	Status         string `json:"status"`
 	IdempotencyKey string `json:"-"`
 }
 
@@ -53,12 +52,9 @@ func (r *InvoicesResource) Send(ctx context.Context, id string, params *SendInvo
 	return parseDirectResponse[SentInvoice](r.http.post(ctx, fmt.Sprintf("/invoices/%s/send", id), map[string]any{}, params.IdempotencyKey))
 }
 
-// Mark an outstanding invoice as "paid" or "void" and return the updated invoice. Cannot change the status of already paid or voided invoices.
-func (r *InvoicesResource) UpdateStatus(ctx context.Context, id string, params *UpdateInvoiceStatusParams) (*Invoice, error) {
-	body := buildBody(map[string]any{
-		"status": params.Status,
-	})
-	return parseDirectResponse[Invoice](r.http.patch(ctx, fmt.Sprintf("/invoices/%s/status", id), body, params.IdempotencyKey))
+// Deprecated: No longer changes the invoice. An invoice is paid when its charge settles: to collect a past-due subscription, reactivate it or send the customer a recovery link.
+func (r *InvoicesResource) UpdateStatus(ctx context.Context, id string, params *UpdateInvoiceStatusParams) (*struct{}, error) {
+	return parseDirectResponse[struct{}](r.http.patch(ctx, fmt.Sprintf("/invoices/%s/status", id), map[string]any{}, params.IdempotencyKey))
 }
 
 // List invoices with cursor-based pagination. Filter by customer, status, or subscription.

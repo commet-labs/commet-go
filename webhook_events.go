@@ -398,6 +398,7 @@ type PaymentRefundedData struct {
 	InvoiceNumber        *string `json:"invoiceNumber"`
 	CustomerID           *string `json:"customerId"`
 	SubscriptionID       *string `json:"subscriptionId"`
+	AmountRefunded       int     `json:"amountRefunded"`
 	RefundAmount         float64 `json:"refundAmount"`
 	Currency             string  `json:"currency"`
 }
@@ -498,7 +499,7 @@ type InvoiceCreatedData struct {
 	SubscriptionID *string `json:"subscriptionId"`
 }
 
-// Fired when an invoice is voided — nullified before collection, either manually or automatically when its subscription is canceled. Voiding is terminal: a void invoice is never retried or collected.
+// Fired when an invoice is voided — nullified before collection, for example when its subscription is canceled. Voiding is terminal: a void invoice is never retried or collected.
 type InvoiceVoidedData struct {
 	InvoiceID      string  `json:"invoiceId"`
 	InvoiceNumber  string  `json:"invoiceNumber"`
