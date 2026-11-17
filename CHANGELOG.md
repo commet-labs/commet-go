@@ -1,5 +1,14 @@
 # Changelog
 
+## 9.11.0
+
+- Plans can give unlimited plan credits or plan balance. `Plans.Create` and `Plans.Update` accept `UnlimitedPlanCredits` and `UnlimitedPlanBalance`, draft rules accept them too, and plans return them. Subscriptions, usage checks, usage events and feature access return `Unlimited`, and omit the plan and total amounts when it is true.
+- Credit purchases, balance top-ups and add-on activations return a `Status`: `processing` when the payment method confirms later, and the credits, balance or add-on arrive once it is confirmed.
+- Transactions return `AmountRefunded`, and `Transactions.Refund` accepts `Amount` for a partial refund.
+- A version move can charge a subscriber in USD: `Subscriptions.ChangeVersion`, `Plans.CreateMove`, `Plans.PublishDraft` and `Plans.ArchiveExperiment` accept `Currency`, and the scheduled version change returns it. New errors `currency_held_by_payment_method`, `currency_held_by_customer_credit`, `currency_held_by_balance_plan`, `currency_held_by_fixed_amount_discount`, `currency_held_by_prepaid_period` and `currency_held_by_scheduled_pause`.
+- `Customers.CreateBatch` accepts `BusinessTaxID` for each customer.
+- `Invoices.UpdateStatus` is deprecated and no longer takes a status: the API no longer changes the invoice, which is paid when its charge settles.
+
 ## 9.10.0
 
 - Plans have versions. Editing a plan publishes a new version, and existing subscriptions stay on theirs until moved. `Plans.ListVersions`, `Plans.GetVersion`, `Plans.CompareVersions` and `Plans.CreateVersion` read and publish versions; `Plans.CreateDraft`, `Plans.UpdateDraft`, `Plans.PublishDraft` and the other draft methods prepare one; `Plans.CreateExperiment`, `Plans.MakeExperimentCurrent`, `Plans.ArchiveExperiment` and the other experiment methods sell a version through its own code; `Plans.CreateMove`, `Plans.CancelMove` and the other move methods move subscribers to a newer version; `Plans.ListSubscribersNeedingAChange` and `Plans.KeepSubscriberOnVersion` handle the subscribers that do not fit it.
