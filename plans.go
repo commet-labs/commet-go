@@ -142,17 +142,19 @@ type SetPlanRegionalPricingParams struct {
 }
 
 type UpdatePlanParams struct {
-	Name              *string                            `json:"name,omitempty"`
-	Description       *string                            `json:"description,omitempty"`
-	Metadata          map[string]any                     `json:"metadata,omitempty"`
-	IsPublic          *bool                              `json:"is_public,omitempty"`
-	UnusedPlanCredits *UpdatePlanParamsUnusedPlanCredits `json:"unused_plan_credits,omitempty"`
-	PlanCreditLimit   *UpdatePlanParamsPlanCreditLimit   `json:"plan_credit_limit,omitempty"`
-	UnusedPlanBalance *UpdatePlanParamsUnusedPlanBalance `json:"unused_plan_balance,omitempty"`
-	PlanBalanceLimit  *UpdatePlanParamsPlanBalanceLimit  `json:"plan_balance_limit,omitempty"`
-	BlockOnExhaustion *bool                              `json:"block_on_exhaustion,omitempty"`
-	IsDefault         *bool                              `json:"is_default,omitempty"`
-	IdempotencyKey    string                             `json:"-"`
+	Name                 *string                            `json:"name,omitempty"`
+	Description          *string                            `json:"description,omitempty"`
+	Metadata             map[string]any                     `json:"metadata,omitempty"`
+	IsPublic             *bool                              `json:"is_public,omitempty"`
+	UnusedPlanCredits    *UpdatePlanParamsUnusedPlanCredits `json:"unused_plan_credits,omitempty"`
+	UnlimitedPlanCredits *bool                              `json:"unlimited_plan_credits,omitempty"`
+	PlanCreditLimit      *UpdatePlanParamsPlanCreditLimit   `json:"plan_credit_limit,omitempty"`
+	UnusedPlanBalance    *UpdatePlanParamsUnusedPlanBalance `json:"unused_plan_balance,omitempty"`
+	UnlimitedPlanBalance *bool                              `json:"unlimited_plan_balance,omitempty"`
+	PlanBalanceLimit     *UpdatePlanParamsPlanBalanceLimit  `json:"plan_balance_limit,omitempty"`
+	BlockOnExhaustion    *bool                              `json:"block_on_exhaustion,omitempty"`
+	IsDefault            *bool                              `json:"is_default,omitempty"`
+	IdempotencyKey       string                             `json:"-"`
 }
 
 type ComparePlanVersionsParams struct {
@@ -182,21 +184,23 @@ type ListPlansParams struct {
 }
 
 type CreatePlanParams struct {
-	Name              string                             `json:"name"`
-	Code              string                             `json:"code"`
-	Description       *string                            `json:"description,omitempty"`
-	ConsumptionModel  *string                            `json:"consumption_model,omitempty"`
-	IsPublic          *bool                              `json:"is_public,omitempty"`
-	IsFree            *bool                              `json:"is_free,omitempty"`
-	BlockOnExhaustion *bool                              `json:"block_on_exhaustion,omitempty"`
-	UnusedPlanCredits *CreatePlanParamsUnusedPlanCredits `json:"unused_plan_credits,omitempty"`
-	PlanCreditLimit   *CreatePlanParamsPlanCreditLimit   `json:"plan_credit_limit,omitempty"`
-	UnusedPlanBalance *CreatePlanParamsUnusedPlanBalance `json:"unused_plan_balance,omitempty"`
-	PlanBalanceLimit  *CreatePlanParamsPlanBalanceLimit  `json:"plan_balance_limit,omitempty"`
-	PlanGroupID       *string                            `json:"plan_group_id,omitempty"`
-	IsDefault         *bool                              `json:"is_default,omitempty"`
-	Metadata          map[string]any                     `json:"metadata,omitempty"`
-	IdempotencyKey    string                             `json:"-"`
+	Name                 string                             `json:"name"`
+	Code                 string                             `json:"code"`
+	Description          *string                            `json:"description,omitempty"`
+	ConsumptionModel     *string                            `json:"consumption_model,omitempty"`
+	IsPublic             *bool                              `json:"is_public,omitempty"`
+	IsFree               *bool                              `json:"is_free,omitempty"`
+	BlockOnExhaustion    *bool                              `json:"block_on_exhaustion,omitempty"`
+	UnusedPlanCredits    *CreatePlanParamsUnusedPlanCredits `json:"unused_plan_credits,omitempty"`
+	UnlimitedPlanCredits *bool                              `json:"unlimited_plan_credits,omitempty"`
+	PlanCreditLimit      *CreatePlanParamsPlanCreditLimit   `json:"plan_credit_limit,omitempty"`
+	UnusedPlanBalance    *CreatePlanParamsUnusedPlanBalance `json:"unused_plan_balance,omitempty"`
+	UnlimitedPlanBalance *bool                              `json:"unlimited_plan_balance,omitempty"`
+	PlanBalanceLimit     *CreatePlanParamsPlanBalanceLimit  `json:"plan_balance_limit,omitempty"`
+	PlanGroupID          *string                            `json:"plan_group_id,omitempty"`
+	IsDefault            *bool                              `json:"is_default,omitempty"`
+	Metadata             map[string]any                     `json:"metadata,omitempty"`
+	IdempotencyKey       string                             `json:"-"`
 }
 
 type PlansResource struct {
@@ -446,16 +450,18 @@ func (r *PlansResource) Get(ctx context.Context, id string) (*Plan, error) {
 // Update a plan's name, description, visibility, default status, metadata, overage behavior, what happens to its unused plan credits or plan balance, or its plan credit or plan balance limit.
 func (r *PlansResource) Update(ctx context.Context, id string, params *UpdatePlanParams) (*Plan, error) {
 	body := buildBody(map[string]any{
-		"name":                params.Name,
-		"description":         params.Description,
-		"metadata":            params.Metadata,
-		"is_public":           params.IsPublic,
-		"unused_plan_credits": params.UnusedPlanCredits,
-		"plan_credit_limit":   params.PlanCreditLimit,
-		"unused_plan_balance": params.UnusedPlanBalance,
-		"plan_balance_limit":  params.PlanBalanceLimit,
-		"block_on_exhaustion": params.BlockOnExhaustion,
-		"is_default":          params.IsDefault,
+		"name":                   params.Name,
+		"description":            params.Description,
+		"metadata":               params.Metadata,
+		"is_public":              params.IsPublic,
+		"unused_plan_credits":    params.UnusedPlanCredits,
+		"unlimited_plan_credits": params.UnlimitedPlanCredits,
+		"plan_credit_limit":      params.PlanCreditLimit,
+		"unused_plan_balance":    params.UnusedPlanBalance,
+		"unlimited_plan_balance": params.UnlimitedPlanBalance,
+		"plan_balance_limit":     params.PlanBalanceLimit,
+		"block_on_exhaustion":    params.BlockOnExhaustion,
+		"is_default":             params.IsDefault,
 	})
 	return parseDirectResponse[Plan](r.http.patch(ctx, fmt.Sprintf("/plans/%s", id), body, params.IdempotencyKey))
 }
@@ -522,20 +528,22 @@ func (r *PlansResource) List(ctx context.Context, params *ListPlansParams) (*Pla
 // Create a new plan with optional consumption model, visibility, plan group assignment, overage behavior, and the rollover and spend limit of its plan credits or plan balance.
 func (r *PlansResource) Create(ctx context.Context, params *CreatePlanParams) (*Plan, error) {
 	body := buildBody(map[string]any{
-		"name":                params.Name,
-		"code":                params.Code,
-		"description":         params.Description,
-		"consumption_model":   params.ConsumptionModel,
-		"is_public":           params.IsPublic,
-		"is_free":             params.IsFree,
-		"block_on_exhaustion": params.BlockOnExhaustion,
-		"unused_plan_credits": params.UnusedPlanCredits,
-		"plan_credit_limit":   params.PlanCreditLimit,
-		"unused_plan_balance": params.UnusedPlanBalance,
-		"plan_balance_limit":  params.PlanBalanceLimit,
-		"plan_group_id":       params.PlanGroupID,
-		"is_default":          params.IsDefault,
-		"metadata":            params.Metadata,
+		"name":                   params.Name,
+		"code":                   params.Code,
+		"description":            params.Description,
+		"consumption_model":      params.ConsumptionModel,
+		"is_public":              params.IsPublic,
+		"is_free":                params.IsFree,
+		"block_on_exhaustion":    params.BlockOnExhaustion,
+		"unused_plan_credits":    params.UnusedPlanCredits,
+		"unlimited_plan_credits": params.UnlimitedPlanCredits,
+		"plan_credit_limit":      params.PlanCreditLimit,
+		"unused_plan_balance":    params.UnusedPlanBalance,
+		"unlimited_plan_balance": params.UnlimitedPlanBalance,
+		"plan_balance_limit":     params.PlanBalanceLimit,
+		"plan_group_id":          params.PlanGroupID,
+		"is_default":             params.IsDefault,
+		"metadata":               params.Metadata,
 	})
 	return parseDirectResponse[Plan](r.http.post(ctx, "/plans", body, params.IdempotencyKey))
 }
