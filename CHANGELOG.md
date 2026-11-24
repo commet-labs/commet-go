@@ -1,5 +1,11 @@
 # Changelog
 
+## 9.12.0
+
+- `Subscriptions.PurchaseCredits`, `Subscriptions.TopupBalance` and `Subscriptions.ActivateAddon` accept `SuccessURL`. When the subscription has no saved payment method, they return the status `requires_checkout` with a `CheckoutURL` where the customer pays and saves the method in one step.
+- `Subscriptions.ChangePlan` can return the outcome `processing` while its charge is being confirmed.
+- Payment methods include `apple_pay` and `link`.
+
 ## 9.11.0
 
 - Plans can give unlimited plan credits or plan balance. `Plans.Create` and `Plans.Update` accept `UnlimitedPlanCredits` and `UnlimitedPlanBalance`, draft rules accept them too, and plans return them. Subscriptions, usage checks, usage events and feature access return `Unlimited`, and omit the plan and total amounts when it is true.
