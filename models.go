@@ -110,10 +110,11 @@ type BalanceAdjustment struct {
 }
 
 type BalanceTopup struct {
-	Amount   int    `json:"amount"`
-	Status   string `json:"status"`
-	Object   string `json:"object"`
-	Livemode bool   `json:"livemode"`
+	Amount      int     `json:"amount"`
+	Status      string  `json:"status"`
+	CheckoutURL *string `json:"checkout_url,omitempty"`
+	Object      string  `json:"object"`
+	Livemode    bool    `json:"livemode"`
 }
 
 type BatchCreateCustomersParamsCustomersItem struct {
@@ -705,10 +706,11 @@ type CreatePlanVersionParamsPricesItemRegionalPricesItem struct {
 }
 
 type CreditGrant struct {
-	Credits  int    `json:"credits"`
-	Status   string `json:"status"`
-	Object   string `json:"object"`
-	Livemode bool   `json:"livemode"`
+	Credits     int     `json:"credits"`
+	Status      string  `json:"status"`
+	CheckoutURL *string `json:"checkout_url,omitempty"`
+	Object      string  `json:"object"`
+	Livemode    bool    `json:"livemode"`
 }
 
 type CreditPack struct {
@@ -1769,6 +1771,13 @@ func (value *PlanChange) UnmarshalJSON(data []byte) error {
 		}
 		value.Value = decoded
 		return nil
+	case "processing":
+		var decoded PlanChangeVariant4
+		if err := json.Unmarshal(data, &decoded); err != nil {
+			return err
+		}
+		value.Value = decoded
+		return nil
 	}
 	if hasJSONFields(fields, "outcome", "id", "scheduled", "customer_id", "previous_plan", "current_plan", "billing_interval", "billing", "object", "livemode") {
 		var decoded PlanChangeVariant3
@@ -1788,6 +1797,14 @@ func (value *PlanChange) UnmarshalJSON(data []byte) error {
 	}
 	if hasJSONFields(fields, "outcome", "requires_checkout", "checkout_url", "object", "livemode") {
 		var decoded PlanChangeVariant1
+		if err := json.Unmarshal(data, &decoded); err != nil {
+			return err
+		}
+		value.Value = decoded
+		return nil
+	}
+	if hasJSONFields(fields, "outcome", "invoice_id", "object", "livemode") {
+		var decoded PlanChangeVariant4
 		if err := json.Unmarshal(data, &decoded); err != nil {
 			return err
 		}
@@ -1818,6 +1835,11 @@ func (value PlanChange) AsPlanChangeVariant2() (PlanChangeVariant2, bool) {
 
 func (value PlanChange) AsPlanChangeVariant3() (PlanChangeVariant3, bool) {
 	decoded, ok := value.Value.(PlanChangeVariant3)
+	return decoded, ok
+}
+
+func (value PlanChange) AsPlanChangeVariant4() (PlanChangeVariant4, bool) {
+	decoded, ok := value.Value.(PlanChangeVariant4)
 	return decoded, ok
 }
 
@@ -2406,6 +2428,13 @@ type PlanChangeVariant3OfferApplicationPhasesItemVariant4 struct {
 type PlanChangeVariant3PreviousPlan struct {
 	ID   string `json:"id"`
 	Name string `json:"name"`
+}
+
+type PlanChangeVariant4 struct {
+	Outcome   string `json:"outcome"`
+	InvoiceID string `json:"invoice_id"`
+	Object    string `json:"object"`
+	Livemode  bool   `json:"livemode"`
 }
 
 type PlanCountriesItem struct {
@@ -3772,11 +3801,12 @@ type Subscription struct {
 }
 
 type SubscriptionAddon struct {
-	AddonID        string `json:"addon_id"`
-	Status         string `json:"status"`
-	ProratedCharge int    `json:"prorated_charge"`
-	Object         string `json:"object"`
-	Livemode       bool   `json:"livemode"`
+	AddonID        string  `json:"addon_id"`
+	Status         string  `json:"status"`
+	ProratedCharge int     `json:"prorated_charge"`
+	CheckoutURL    *string `json:"checkout_url,omitempty"`
+	Object         string  `json:"object"`
+	Livemode       bool    `json:"livemode"`
 }
 
 type SubscriptionAutoTopUp struct {
