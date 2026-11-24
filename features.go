@@ -40,7 +40,7 @@ func (r *FeaturesResource) Update(ctx context.Context, code string, params *Upda
 	return parseDirectResponse[Feature](r.http.patch(ctx, fmt.Sprintf("/features/%s", code), body, params.IdempotencyKey))
 }
 
-// Delete a feature. Fails if the feature is attached to active plans or has an active add-on.
+// Delete a feature. Fails while a plan's current version, a running experiment or a draft includes it, or while it has an active add-on. Subscribers whose plan version includes it keep it, and its code can be used by a new feature right away.
 func (r *FeaturesResource) Delete(ctx context.Context, code string) (*DeletedObject, error) {
 	return parseDirectResponse[DeletedObject](r.http.delete(ctx, fmt.Sprintf("/features/%s", code), nil, ""))
 }

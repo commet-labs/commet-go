@@ -6,8 +6,9 @@ import (
 )
 
 type ActivateAddonParams struct {
-	AddonID        string `json:"addon_id"`
-	IdempotencyKey string `json:"-"`
+	AddonID        string  `json:"addon_id"`
+	SuccessURL     *string `json:"success_url,omitempty"`
+	IdempotencyKey string  `json:"-"`
 }
 
 type UpdateSubscriptionAutoTopUpParams struct {
@@ -27,8 +28,9 @@ type AdjustBalanceParams struct {
 }
 
 type TopupBalanceParams struct {
-	Amount         int    `json:"amount"`
-	IdempotencyKey string `json:"-"`
+	Amount         int     `json:"amount"`
+	SuccessURL     *string `json:"success_url,omitempty"`
+	IdempotencyKey string  `json:"-"`
 }
 
 type CancelSubscriptionParams struct {
@@ -56,6 +58,7 @@ type ChangeSubscriptionVersionParams struct {
 type PurchaseCreditsParams struct {
 	CreditPackID   *string `json:"credit_pack_id,omitempty"`
 	Quantity       *int    `json:"quantity,omitempty"`
+	SuccessURL     *string `json:"success_url,omitempty"`
 	IdempotencyKey string  `json:"-"`
 }
 
@@ -155,10 +158,11 @@ func (r *SubscriptionsResource) DeactivateAddon(ctx context.Context, id string, 
 	return parseDirectResponse[DeletedSubscriptionAddon](r.http.delete(ctx, fmt.Sprintf("/subscriptions/%s/addons/%s", id, addonID), nil, ""))
 }
 
-// Activate an add-on on a subscription. Creates the activation invoice and charges a prorated amount for the current billing period; the add-on is active once the payment is confirmed. Rejected with 409 while the add-on is active or an activation of it is still processing. An add-on that the subscription's plan version does not sell is rejected with addon_unavailable.
+// Activate an add-on on a subscription. Creates the activation invoice and charges a prorated amount for the current billing period; the add-on is active once the payment is confirmed. Without a saved payment method, send successUrl to receive a checkout that charges the activation and saves the method. Rejected with 409 while the add-on is active or an activation of it is still processing. An add-on that the subscription's plan version does not sell is rejected with addon_unavailable.
 func (r *SubscriptionsResource) ActivateAddon(ctx context.Context, id string, params *ActivateAddonParams) (*SubscriptionAddon, error) {
 	body := buildBody(map[string]any{
-		"addon_id": params.AddonID,
+		"addon_id":    params.AddonID,
+		"success_url": params.SuccessURL,
 	})
 	return parseDirectResponse[SubscriptionAddon](r.http.post(ctx, fmt.Sprintf("/subscriptions/%s/addons", id), body, params.IdempotencyKey))
 }
@@ -190,10 +194,11 @@ func (r *SubscriptionsResource) AdjustBalance(ctx context.Context, id string, pa
 	return parseDirectResponse[BalanceAdjustment](r.http.post(ctx, fmt.Sprintf("/subscriptions/%s/balance/adjust", id), body, params.IdempotencyKey))
 }
 
-// Top up a balance subscription. Creates the top-up invoice and charges the customer's payment method for the amount plus tax. Once the payment is confirmed, adds the amount to the subscription's purchased balance (after paying back any overage owed on the plan balance), marks the invoice paid and emits `balance.topped_up`. Purchased balance is spent after the plan balance and is kept until the subscription ends. Rejected with 400 when the subscription is not on a balance plan, its plan has top-ups turned off, or the amount is below the effective minimum: the plan's minimum top-up in the subscription currency, raised to the currency's minimum charge.
+// Top up a balance subscription. Creates the top-up invoice and charges the customer's payment method for the amount plus tax. Once the payment is confirmed, adds the amount to the subscription's purchased balance (after paying back any overage owed on the plan balance), marks the invoice paid and emits `balance.topped_up`. Purchased balance is spent after the plan balance and is kept until the subscription ends. Without a saved payment method, send successUrl to receive a checkout that charges the top-up and saves the method. Rejected with 400 when the subscription is not on a balance plan, its plan has top-ups turned off, or the amount is below the effective minimum: the plan's minimum top-up in the subscription currency, raised to the currency's minimum charge.
 func (r *SubscriptionsResource) TopupBalance(ctx context.Context, id string, params *TopupBalanceParams) (*BalanceTopup, error) {
 	body := buildBody(map[string]any{
-		"amount": params.Amount,
+		"amount":      params.Amount,
+		"success_url": params.SuccessURL,
 	})
 	return parseDirectResponse[BalanceTopup](r.http.post(ctx, fmt.Sprintf("/subscriptions/%s/balance/topup", id), body, params.IdempotencyKey))
 }
@@ -229,11 +234,12 @@ func (r *SubscriptionsResource) ChangeVersion(ctx context.Context, id string, pa
 	return parseDirectResponse[Subscription](r.http.post(ctx, fmt.Sprintf("/subscriptions/%s/change-version", id), body, params.IdempotencyKey))
 }
 
-// Purchase a fixed credit pack or choose a whole credit quantity at the subscription plan price and minimum. Creates the purchase invoice, charges the saved payment method and adds the purchased credits once the payment is confirmed. A credit pack that the subscription's plan version does not sell is rejected with credit_pack_unavailable.
+// Purchase a fixed credit pack or choose a whole credit quantity at the subscription plan price and minimum. Creates the purchase invoice, charges the saved payment method and adds the purchased credits once the payment is confirmed. Without a saved payment method, send successUrl to receive a checkout that charges the purchase and saves the method. A credit pack that the subscription's plan version does not sell is rejected with credit_pack_unavailable.
 func (r *SubscriptionsResource) PurchaseCredits(ctx context.Context, id string, params *PurchaseCreditsParams) (*CreditGrant, error) {
 	body := buildBody(map[string]any{
 		"credit_pack_id": params.CreditPackID,
 		"quantity":       params.Quantity,
+		"success_url":    params.SuccessURL,
 	})
 	return parseDirectResponse[CreditGrant](r.http.post(ctx, fmt.Sprintf("/subscriptions/%s/credits", id), body, params.IdempotencyKey))
 }
@@ -302,7 +308,7 @@ func (r *SubscriptionsResource) PreviewChange(ctx context.Context, id string, pa
 	return parseDirectResponse[PreviewChange](r.http.post(ctx, fmt.Sprintf("/subscriptions/%s/preview-change", id), body, params.IdempotencyKey))
 }
 
-// Reactivates a subscription. A past_due subscription retries its outstanding renewal charge (recovering to active on success). A canceled subscription generates a fresh invoice, charges the saved card, and resets the billing period. On a successful charge the subscription becomes active; a declined charge returns an error with a recoveryUrl in the error details that can be sent to the customer to update their card. A canceled subscription may apply an Offer by offerId; past-due recovery cannot.
+// Reactivates a subscription. A past_due subscription retries its outstanding renewal charge (recovering to active on success). A canceled subscription generates a fresh invoice, charges the saved card, and resets the billing period; when that invoice totals zero, for example under an Offer, it is marked paid without a charge and the subscription becomes active at once, still requiring a saved payment method. On a successful charge the subscription becomes active; a declined charge returns an error with a recoveryUrl in the error details that can be sent to the customer to update their card. A canceled subscription may apply an Offer by offerId; past-due recovery cannot.
 func (r *SubscriptionsResource) Reactivate(ctx context.Context, id string, params *ReactivateSubscriptionParams) (*ReactivatedSubscription, error) {
 	body := buildBody(map[string]any{
 		"offer_id": params.OfferID,

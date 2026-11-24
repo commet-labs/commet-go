@@ -52,6 +52,8 @@ const (
 	PaymentMethodMercadoPago PaymentMethod = "mercado_pago"
 	PaymentMethodGooglePay   PaymentMethod = "google_pay"
 	PaymentMethodSmartpix    PaymentMethod = "smartpix"
+	PaymentMethodApplePay    PaymentMethod = "apple_pay"
+	PaymentMethodLink        PaymentMethod = "link"
 )
 
 type PaymentProvider string
